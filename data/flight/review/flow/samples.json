@@ -1,0 +1,8988 @@
+[
+  {
+    "id": "01",
+    "title": "统一默认",
+    "change": "五个坐标系和八个角度都取标准定义。",
+    "domain": "飞行力学",
+    "process": "空间坐标转换",
+    "declaration_products": {
+      "gRb": "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
+      "gRp": "Cz(-φ)*Cy(-μ)",
+      "pRa": "Cx(-γ)",
+      "bRg": "Cx(Φ)*Cy(θ)*Cz(ψ)",
+      "bRs": "Cy(α)",
+      "sRa": "Cz(-β)",
+      "bRa": "Cy(α)*Cz(-β)"
+    },
+    "questions": [
+      {
+        "id": "1",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "2",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "3",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左手系",
+          "右手系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "4",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面右方偏转",
+          "地面左方偏转"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "5",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "6",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "轴向",
+          "侧向",
+          "法向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "7",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "主动",
+          "被动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "8",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "动轴内旋",
+          "定轴外旋"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "9",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "最左侧",
+          "最右侧"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "10",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "机体系到地面系",
+          "地面系到机体系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "11",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "本身",
+          "转置"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "12",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
+          "Cx(Φ)*Cy(θ)*Cz(ψ)",
+          "Cz(ψ)*Cy(θ)*Cx(Φ)",
+          "Cy(θ)*Cz(ψ)*Cx(Φ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "13",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "14",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "gRb*[1, 0, 0]",
+          "gRb^T*[1, 0, 0]"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "15",
+        "label": "A2",
+        "answer": "[cos(20°)*cos(30°), sin(30°)*cos(20°), -sin(20°)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "16",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "17",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "三列",
+          "二列",
+          "一列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "18",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "三列",
+          "一列",
+          "二列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "19",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "负矩阵",
+          "行列式",
+          "逆矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "20",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "21",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Xg",
+          "Yg",
+          "Zg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "22",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "23",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Zp",
+          "Xp",
+          "Yp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "24",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "gRp",
+          "pRg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "25",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-φ)*Cy(-μ)",
+          "Cz(φ)*Cy(μ)",
+          "Cy(-μ)*Cz(-φ)",
+          "Cz(-φ)*Cy(μ)",
+          "Cz(-φ)*Cy(-μ)*Cx(-γ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "26",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "27",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRp^T",
+          "gRp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "28",
+        "label": "A2",
+        "answer": "C",
+        "options": [
+          "sin(10°)",
+          "cos(10°)",
+          "-sin(10°)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "29",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "30",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "31",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "保持不变",
+          "转动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "32",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "不改变",
+          "改变"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "33",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "气流系 Ya、Za 相对航迹系的方向",
+          "航迹系 Yp、Zp 轴",
+          "空速大小"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "34",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "35",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "机翼展向投影",
+          "对称面内的投影"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "36",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "37",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "38",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "航迹方位角",
+          "迎角",
+          "侧滑角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "39",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "侧滑角",
+          "迎角",
+          "偏航角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "40",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cy(α)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "41",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cz(β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "42",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cz(-β)*Cy(-α)",
+          "Cy(α)*Cz(β)",
+          "Cy(α)*Cz(-β)",
+          "Cy(-α)*Cz(-β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "43",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "44",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "bRa",
+          "bRa^T"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "45",
+        "label": "A2",
+        "answer": "[cos(α)*cos(β), sin(β), sin(α)*cos(β)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "46",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "47",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "48",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vy, sqrt(vx^2+vz^2))",
+          "atan2(-vy, sqrt(vx^2+vz^2))",
+          "atan2(vz, sqrt(vx^2+vy^2))",
+          "atan2(vx, vy)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "49",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "负",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "50",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "51",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vz, vx)",
+          "atan2(-vz, vx)",
+          "atan2(vy, vx)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "52",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "53",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRb*vg",
+          "gRb^T*vg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "54",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "不直接进入机体系空速分量公式",
+          "必须加入"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "55",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "56",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一般不相关",
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "57",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "必定不存在错误",
+          "至少存在一处错误"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "58",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "忽略空速轴向",
+          "只比较滚转角",
+          "只比较空速向量"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "59",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "2",
+          "0",
+          "1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "60",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "气流系向机体系",
+          "机体系向气流系",
+          "气流系向稳定性系后停止"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "61",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "由A变为G",
+          "由G变为A",
+          "始终为A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "62",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Z_b",
+          "X_b",
+          "Y_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "63",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Y_b",
+          "X_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "64",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "X_b",
+          "Y_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "65",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "-Z_a",
+          "-X_a",
+          "+X_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "66",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "-Z_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "67",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "-Y_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "68",
+        "label": "A2",
+        "answer": "[-D, Y, -L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "69",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "+X_a",
+          "+Y_a",
+          "+Z_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "70",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "+X_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "71",
+        "label": "A2",
+        "answer": "[l_a, m_a, n_a]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "72",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "73",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "74",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "75",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "76",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "77",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "78",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←s*T_s←b",
+          "T_s←b*T_a←s"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "79",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "80",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "81",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), sin(β), sin(α)*cos(β)], [-cos(α)*sin(β), cos(β), -sin(α)*sin(β)], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "82",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←b 的转置",
+          "T_a←b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "83",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), -cos(α)*sin(β), -sin(α)], [sin(β), cos(β), 0], [sin(α)*cos(β), -sin(α)*sin(β), cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "84",
+        "label": "A2",
+        "answer": "-D*cos(α)*cos(β) - Y*cos(α)*sin(β) + L*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "85",
+        "label": "A2",
+        "answer": "-D*sin(β) + Y*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "86",
+        "label": "A2",
+        "answer": "-D*sin(α)*cos(β) - Y*sin(α)*sin(β) - L*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "87",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "88",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "89",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "不能确定",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "90",
+        "label": "A2",
+        "answer": "[0, 0, -4]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "91",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "一般增大",
+          "一般减小",
+          "相同"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "92",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "额外加入力臂平移",
+          "同一个矩阵 B",
+          "B 的负矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "93",
+        "label": "A2",
+        "answer": "l_a*cos(α)*cos(β) - m_a*cos(α)*sin(β) - n_a*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "94",
+        "label": "A2",
+        "answer": "l_a*sin(β) + m_a*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "95",
+        "label": "A2",
+        "answer": "l_a*sin(α)*cos(β) - m_a*sin(α)*sin(β) + n_a*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "96",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "重合",
+          "相互垂直",
+          "方向无法确定"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "97",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "98",
+        "label": "A2",
+        "answer": "ρ*V^2/2",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "99",
+        "label": "A2",
+        "answer": "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "100",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "使用同一矩阵 B 直接转换",
+          "必须分别乘不同参考长度后才能转换"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "101",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "直接将 B 乘 [C_la, C_ma, C_na]",
+          "先恢复有量纲力矩，旋转后按输出轴参考长度归一化"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "102",
+        "label": "A2",
+        "answer": "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "103",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "G",
+          "N",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "104",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "N",
+          "G",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "105",
+        "label": "A2",
+        "answer": "L_f - L_A",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "106",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "后方",
+          "前方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "107",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "108",
+        "label": "A2",
+        "answer": "X_N - x_Ge",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "109",
+        "label": "A2",
+        "answer": "[X_N - x_Ge, y_Ge, z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "110",
+        "label": "A2",
+        "answer": "[x_Ge - X_N, -y_Ge, -z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "111",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "保持不变",
+          "必须取反",
+          "必须增加一个力臂项"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "112",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "r_AG×F_b",
+          "r_GA×M_A",
+          "r_GA×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "113",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "M_G=F_b-r_AG×M_A",
+          "M_G=M_A-r_AG×F_b",
+          "M_G=M_A+r_AG×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "114",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "115",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "116",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "117",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "118",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "119",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "120",
+        "label": "A2",
+        "answer": "l_A + z*Y_b - y*Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "121",
+        "label": "A2",
+        "answer": "m_A + x*Z - z*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "122",
+        "label": "A2",
+        "answer": "n_A + y*X - x*Y_b",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "123",
+        "label": "A2",
+        "answer": "m_A + (X_N - x_Ge)*Z - z_Ge*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "124",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "抬头方向",
+          "零",
+          "低头方向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "125",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "零",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "126",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "相同",
+          "必定相反",
+          "不能建立关系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "127",
+        "label": "A2",
+        "answer": "C_lA + (z/b)*C_Yb - (y/b)*C_Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "128",
+        "label": "A2",
+        "answer": "C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "129",
+        "label": "A2",
+        "answer": "C_nA + (y/b)*C_X - (x/b)*C_Yb",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "130",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "机体系而不作转换",
+          "任意坐标系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "131",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "一般没有关系",
+          "相同",
+          "互为相反数"
+        ],
+        "format": "无"
+      }
+    ]
+  },
+  {
+    "id": "02",
+    "title": "偏航取负",
+    "change": "偏航角改为机头向地面右方偏时为负。",
+    "domain": "飞行力学",
+    "process": "空间坐标转换",
+    "declaration_products": {
+      "gRb": "Cz(ψ)*Cy(-θ)*Cx(-Φ)",
+      "gRp": "Cz(-φ)*Cy(-μ)",
+      "pRa": "Cx(-γ)",
+      "bRg": "Cx(Φ)*Cy(θ)*Cz(-ψ)",
+      "bRs": "Cy(α)",
+      "sRa": "Cz(-β)",
+      "bRa": "Cy(α)*Cz(-β)"
+    },
+    "questions": [
+      {
+        "id": "1",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "2",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "3",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左手系",
+          "右手系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "4",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面左方偏转",
+          "地面右方偏转"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "5",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "6",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "轴向",
+          "侧向",
+          "法向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "7",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "主动",
+          "被动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "8",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "动轴内旋",
+          "定轴外旋"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "9",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "最左侧",
+          "最右侧"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "10",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "机体系到地面系",
+          "地面系到机体系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "11",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "本身",
+          "转置"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "12",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(ψ)*Cy(-θ)*Cx(-Φ)",
+          "Cx(Φ)*Cy(θ)*Cz(ψ)",
+          "Cz(ψ)*Cy(θ)*Cx(Φ)",
+          "Cy(θ)*Cz(ψ)*Cx(Φ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "13",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "14",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "gRb*[1, 0, 0]",
+          "gRb^T*[1, 0, 0]"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "15",
+        "label": "A2",
+        "answer": "[cos(20°)*cos(30°), -sin(30°)*cos(20°), -sin(20°)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "16",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "17",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "三列",
+          "二列",
+          "一列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "18",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "三列",
+          "一列",
+          "二列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "19",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "负矩阵",
+          "行列式",
+          "逆矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "20",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "21",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Xg",
+          "Yg",
+          "Zg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "22",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "23",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Zp",
+          "Xp",
+          "Yp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "24",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "gRp",
+          "pRg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "25",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-φ)*Cy(-μ)",
+          "Cz(φ)*Cy(μ)",
+          "Cy(-μ)*Cz(-φ)",
+          "Cz(-φ)*Cy(μ)",
+          "Cz(-φ)*Cy(-μ)*Cx(-γ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "26",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "27",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRp^T",
+          "gRp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "28",
+        "label": "A2",
+        "answer": "C",
+        "options": [
+          "sin(10°)",
+          "cos(10°)",
+          "-sin(10°)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "29",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "30",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "31",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "保持不变",
+          "转动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "32",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "不改变",
+          "改变"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "33",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "气流系 Ya、Za 相对航迹系的方向",
+          "航迹系 Yp、Zp 轴",
+          "空速大小"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "34",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "35",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "机翼展向投影",
+          "对称面内的投影"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "36",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "37",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "38",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "航迹方位角",
+          "迎角",
+          "侧滑角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "39",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "侧滑角",
+          "迎角",
+          "偏航角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "40",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cy(α)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "41",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cz(β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "42",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cz(-β)*Cy(-α)",
+          "Cy(α)*Cz(β)",
+          "Cy(α)*Cz(-β)",
+          "Cy(-α)*Cz(-β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "43",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "44",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "bRa",
+          "bRa^T"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "45",
+        "label": "A2",
+        "answer": "[cos(α)*cos(β), sin(β), sin(α)*cos(β)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "46",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "47",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "48",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vy, sqrt(vx^2+vz^2))",
+          "atan2(-vy, sqrt(vx^2+vz^2))",
+          "atan2(vz, sqrt(vx^2+vy^2))",
+          "atan2(vx, vy)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "49",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "负",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "50",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "51",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vz, vx)",
+          "atan2(-vz, vx)",
+          "atan2(vy, vx)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "52",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "53",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRb*vg",
+          "gRb^T*vg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "54",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "不直接进入机体系空速分量公式",
+          "必须加入"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "55",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "56",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一般不相关",
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "57",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "必定不存在错误",
+          "至少存在一处错误"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "58",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "忽略空速轴向",
+          "只比较滚转角",
+          "只比较空速向量"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "59",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "2",
+          "0",
+          "1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "60",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "气流系向机体系",
+          "机体系向气流系",
+          "气流系向稳定性系后停止"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "61",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "由A变为G",
+          "由G变为A",
+          "始终为A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "62",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Z_b",
+          "X_b",
+          "Y_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "63",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Y_b",
+          "X_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "64",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "X_b",
+          "Y_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "65",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "-Z_a",
+          "-X_a",
+          "+X_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "66",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "-Z_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "67",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "-Y_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "68",
+        "label": "A2",
+        "answer": "[-D, Y, -L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "69",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "+X_a",
+          "+Y_a",
+          "+Z_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "70",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "+X_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "71",
+        "label": "A2",
+        "answer": "[l_a, m_a, n_a]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "72",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "73",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "74",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "75",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "76",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "77",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "78",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←s*T_s←b",
+          "T_s←b*T_a←s"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "79",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "80",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "81",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), sin(β), sin(α)*cos(β)], [-cos(α)*sin(β), cos(β), -sin(α)*sin(β)], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "82",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←b 的转置",
+          "T_a←b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "83",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), -cos(α)*sin(β), -sin(α)], [sin(β), cos(β), 0], [sin(α)*cos(β), -sin(α)*sin(β), cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "84",
+        "label": "A2",
+        "answer": "-D*cos(α)*cos(β) - Y*cos(α)*sin(β) + L*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "85",
+        "label": "A2",
+        "answer": "-D*sin(β) + Y*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "86",
+        "label": "A2",
+        "answer": "-D*sin(α)*cos(β) - Y*sin(α)*sin(β) - L*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "87",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "88",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "89",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "不能确定",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "90",
+        "label": "A2",
+        "answer": "[0, 0, -4]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "91",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "一般增大",
+          "一般减小",
+          "相同"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "92",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "额外加入力臂平移",
+          "同一个矩阵 B",
+          "B 的负矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "93",
+        "label": "A2",
+        "answer": "l_a*cos(α)*cos(β) - m_a*cos(α)*sin(β) - n_a*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "94",
+        "label": "A2",
+        "answer": "l_a*sin(β) + m_a*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "95",
+        "label": "A2",
+        "answer": "l_a*sin(α)*cos(β) - m_a*sin(α)*sin(β) + n_a*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "96",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "重合",
+          "相互垂直",
+          "方向无法确定"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "97",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "98",
+        "label": "A2",
+        "answer": "ρ*V^2/2",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "99",
+        "label": "A2",
+        "answer": "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "100",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "使用同一矩阵 B 直接转换",
+          "必须分别乘不同参考长度后才能转换"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "101",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "直接将 B 乘 [C_la, C_ma, C_na]",
+          "先恢复有量纲力矩，旋转后按输出轴参考长度归一化"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "102",
+        "label": "A2",
+        "answer": "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "103",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "G",
+          "N",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "104",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "N",
+          "G",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "105",
+        "label": "A2",
+        "answer": "L_f - L_A",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "106",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "后方",
+          "前方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "107",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "108",
+        "label": "A2",
+        "answer": "X_N - x_Ge",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "109",
+        "label": "A2",
+        "answer": "[X_N - x_Ge, y_Ge, z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "110",
+        "label": "A2",
+        "answer": "[x_Ge - X_N, -y_Ge, -z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "111",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "保持不变",
+          "必须取反",
+          "必须增加一个力臂项"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "112",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "r_AG×F_b",
+          "r_GA×M_A",
+          "r_GA×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "113",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "M_G=F_b-r_AG×M_A",
+          "M_G=M_A-r_AG×F_b",
+          "M_G=M_A+r_AG×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "114",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "115",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "116",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "117",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "118",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "119",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "120",
+        "label": "A2",
+        "answer": "l_A + z*Y_b - y*Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "121",
+        "label": "A2",
+        "answer": "m_A + x*Z - z*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "122",
+        "label": "A2",
+        "answer": "n_A + y*X - x*Y_b",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "123",
+        "label": "A2",
+        "answer": "m_A + (X_N - x_Ge)*Z - z_Ge*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "124",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "抬头方向",
+          "零",
+          "低头方向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "125",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "零",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "126",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "相同",
+          "必定相反",
+          "不能建立关系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "127",
+        "label": "A2",
+        "answer": "C_lA + (z/b)*C_Yb - (y/b)*C_Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "128",
+        "label": "A2",
+        "answer": "C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "129",
+        "label": "A2",
+        "answer": "C_nA + (y/b)*C_X - (x/b)*C_Yb",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "130",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "机体系而不作转换",
+          "任意坐标系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "131",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "一般没有关系",
+          "相同",
+          "互为相反数"
+        ],
+        "format": "无"
+      }
+    ]
+  },
+  {
+    "id": "03",
+    "title": "俯仰取负",
+    "change": "俯仰角改为机头向地面上方偏时为负。",
+    "domain": "飞行力学",
+    "process": "空间坐标转换",
+    "declaration_products": {
+      "gRb": "Cz(-ψ)*Cy(θ)*Cx(-Φ)",
+      "gRp": "Cz(-φ)*Cy(-μ)",
+      "pRa": "Cx(-γ)",
+      "bRg": "Cx(Φ)*Cy(-θ)*Cz(ψ)",
+      "bRs": "Cy(α)",
+      "sRa": "Cz(-β)",
+      "bRa": "Cy(α)*Cz(-β)"
+    },
+    "questions": [
+      {
+        "id": "1",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "2",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "3",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左手系",
+          "右手系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "4",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面右方偏转",
+          "地面左方偏转"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "5",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "6",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "轴向",
+          "侧向",
+          "法向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "7",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "主动",
+          "被动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "8",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "动轴内旋",
+          "定轴外旋"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "9",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "最左侧",
+          "最右侧"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "10",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "机体系到地面系",
+          "地面系到机体系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "11",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "本身",
+          "转置"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "12",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-ψ)*Cy(θ)*Cx(-Φ)",
+          "Cx(Φ)*Cy(θ)*Cz(ψ)",
+          "Cz(ψ)*Cy(θ)*Cx(Φ)",
+          "Cy(θ)*Cz(ψ)*Cx(Φ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "13",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "14",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "gRb*[1, 0, 0]",
+          "gRb^T*[1, 0, 0]"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "15",
+        "label": "A2",
+        "answer": "[cos(20°)*cos(30°), sin(30°)*cos(20°), sin(20°)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "16",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "17",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "三列",
+          "二列",
+          "一列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "18",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "三列",
+          "一列",
+          "二列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "19",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "负矩阵",
+          "行列式",
+          "逆矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "20",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "21",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Xg",
+          "Yg",
+          "Zg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "22",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "23",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Zp",
+          "Xp",
+          "Yp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "24",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "gRp",
+          "pRg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "25",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-φ)*Cy(-μ)",
+          "Cz(φ)*Cy(μ)",
+          "Cy(-μ)*Cz(-φ)",
+          "Cz(-φ)*Cy(μ)",
+          "Cz(-φ)*Cy(-μ)*Cx(-γ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "26",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "27",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRp^T",
+          "gRp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "28",
+        "label": "A2",
+        "answer": "C",
+        "options": [
+          "sin(10°)",
+          "cos(10°)",
+          "-sin(10°)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "29",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "30",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "31",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "保持不变",
+          "转动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "32",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "不改变",
+          "改变"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "33",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "气流系 Ya、Za 相对航迹系的方向",
+          "航迹系 Yp、Zp 轴",
+          "空速大小"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "34",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "35",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "机翼展向投影",
+          "对称面内的投影"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "36",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "37",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "38",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "航迹方位角",
+          "迎角",
+          "侧滑角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "39",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "侧滑角",
+          "迎角",
+          "偏航角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "40",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cy(α)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "41",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cz(β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "42",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cz(-β)*Cy(-α)",
+          "Cy(α)*Cz(β)",
+          "Cy(α)*Cz(-β)",
+          "Cy(-α)*Cz(-β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "43",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "44",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "bRa",
+          "bRa^T"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "45",
+        "label": "A2",
+        "answer": "[cos(α)*cos(β), sin(β), sin(α)*cos(β)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "46",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "47",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "48",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vy, sqrt(vx^2+vz^2))",
+          "atan2(-vy, sqrt(vx^2+vz^2))",
+          "atan2(vz, sqrt(vx^2+vy^2))",
+          "atan2(vx, vy)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "49",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "负",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "50",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "51",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vz, vx)",
+          "atan2(-vz, vx)",
+          "atan2(vy, vx)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "52",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "53",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRb*vg",
+          "gRb^T*vg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "54",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "不直接进入机体系空速分量公式",
+          "必须加入"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "55",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "56",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一般不相关",
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "57",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "必定不存在错误",
+          "至少存在一处错误"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "58",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "忽略空速轴向",
+          "只比较滚转角",
+          "只比较空速向量"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "59",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "2",
+          "0",
+          "1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "60",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "气流系向机体系",
+          "机体系向气流系",
+          "气流系向稳定性系后停止"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "61",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "由A变为G",
+          "由G变为A",
+          "始终为A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "62",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Z_b",
+          "X_b",
+          "Y_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "63",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Y_b",
+          "X_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "64",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "X_b",
+          "Y_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "65",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "-Z_a",
+          "-X_a",
+          "+X_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "66",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "-Z_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "67",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "-Y_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "68",
+        "label": "A2",
+        "answer": "[-D, Y, -L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "69",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "+X_a",
+          "+Y_a",
+          "+Z_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "70",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "+X_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "71",
+        "label": "A2",
+        "answer": "[l_a, m_a, n_a]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "72",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "73",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "74",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "75",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "76",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "77",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "78",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←s*T_s←b",
+          "T_s←b*T_a←s"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "79",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "80",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "81",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), sin(β), sin(α)*cos(β)], [-cos(α)*sin(β), cos(β), -sin(α)*sin(β)], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "82",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←b 的转置",
+          "T_a←b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "83",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), -cos(α)*sin(β), -sin(α)], [sin(β), cos(β), 0], [sin(α)*cos(β), -sin(α)*sin(β), cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "84",
+        "label": "A2",
+        "answer": "-D*cos(α)*cos(β) - Y*cos(α)*sin(β) + L*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "85",
+        "label": "A2",
+        "answer": "-D*sin(β) + Y*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "86",
+        "label": "A2",
+        "answer": "-D*sin(α)*cos(β) - Y*sin(α)*sin(β) - L*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "87",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "88",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "89",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "不能确定",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "90",
+        "label": "A2",
+        "answer": "[0, 0, -4]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "91",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "一般增大",
+          "一般减小",
+          "相同"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "92",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "额外加入力臂平移",
+          "同一个矩阵 B",
+          "B 的负矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "93",
+        "label": "A2",
+        "answer": "l_a*cos(α)*cos(β) - m_a*cos(α)*sin(β) - n_a*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "94",
+        "label": "A2",
+        "answer": "l_a*sin(β) + m_a*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "95",
+        "label": "A2",
+        "answer": "l_a*sin(α)*cos(β) - m_a*sin(α)*sin(β) + n_a*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "96",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "重合",
+          "相互垂直",
+          "方向无法确定"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "97",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "98",
+        "label": "A2",
+        "answer": "ρ*V^2/2",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "99",
+        "label": "A2",
+        "answer": "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "100",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "使用同一矩阵 B 直接转换",
+          "必须分别乘不同参考长度后才能转换"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "101",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "直接将 B 乘 [C_la, C_ma, C_na]",
+          "先恢复有量纲力矩，旋转后按输出轴参考长度归一化"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "102",
+        "label": "A2",
+        "answer": "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "103",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "G",
+          "N",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "104",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "N",
+          "G",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "105",
+        "label": "A2",
+        "answer": "L_f - L_A",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "106",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "后方",
+          "前方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "107",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "108",
+        "label": "A2",
+        "answer": "X_N - x_Ge",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "109",
+        "label": "A2",
+        "answer": "[X_N - x_Ge, y_Ge, z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "110",
+        "label": "A2",
+        "answer": "[x_Ge - X_N, -y_Ge, -z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "111",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "保持不变",
+          "必须取反",
+          "必须增加一个力臂项"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "112",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "r_AG×F_b",
+          "r_GA×M_A",
+          "r_GA×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "113",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "M_G=F_b-r_AG×M_A",
+          "M_G=M_A-r_AG×F_b",
+          "M_G=M_A+r_AG×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "114",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "115",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "116",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "117",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "118",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "119",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "120",
+        "label": "A2",
+        "answer": "l_A + z*Y_b - y*Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "121",
+        "label": "A2",
+        "answer": "m_A + x*Z - z*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "122",
+        "label": "A2",
+        "answer": "n_A + y*X - x*Y_b",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "123",
+        "label": "A2",
+        "answer": "m_A + (X_N - x_Ge)*Z - z_Ge*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "124",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "抬头方向",
+          "零",
+          "低头方向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "125",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "零",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "126",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "相同",
+          "必定相反",
+          "不能建立关系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "127",
+        "label": "A2",
+        "answer": "C_lA + (z/b)*C_Yb - (y/b)*C_Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "128",
+        "label": "A2",
+        "answer": "C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "129",
+        "label": "A2",
+        "answer": "C_nA + (y/b)*C_X - (x/b)*C_Yb",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "130",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "机体系而不作转换",
+          "任意坐标系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "131",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "一般没有关系",
+          "相同",
+          "互为相反数"
+        ],
+        "format": "无"
+      }
+    ]
+  },
+  {
+    "id": "04",
+    "title": "滚转取负",
+    "change": "滚转角改为向机体右侧滚转时为负。",
+    "domain": "飞行力学",
+    "process": "空间坐标转换",
+    "declaration_products": {
+      "gRb": "Cz(-ψ)*Cy(-θ)*Cx(Φ)",
+      "gRp": "Cz(-φ)*Cy(-μ)",
+      "pRa": "Cx(-γ)",
+      "bRg": "Cx(-Φ)*Cy(θ)*Cz(ψ)",
+      "bRs": "Cy(α)",
+      "sRa": "Cz(-β)",
+      "bRa": "Cy(α)*Cz(-β)"
+    },
+    "questions": [
+      {
+        "id": "1",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "2",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "3",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左手系",
+          "右手系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "4",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面右方偏转",
+          "地面左方偏转"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "5",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "6",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "轴向",
+          "侧向",
+          "法向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "7",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "主动",
+          "被动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "8",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "动轴内旋",
+          "定轴外旋"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "9",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "最左侧",
+          "最右侧"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "10",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "机体系到地面系",
+          "地面系到机体系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "11",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "本身",
+          "转置"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "12",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-ψ)*Cy(-θ)*Cx(Φ)",
+          "Cx(Φ)*Cy(θ)*Cz(ψ)",
+          "Cz(ψ)*Cy(θ)*Cx(Φ)",
+          "Cy(θ)*Cz(ψ)*Cx(Φ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "13",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "14",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "gRb*[1, 0, 0]",
+          "gRb^T*[1, 0, 0]"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "15",
+        "label": "A2",
+        "answer": "[cos(20°)*cos(30°), sin(30°)*cos(20°), -sin(20°)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "16",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "17",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "三列",
+          "二列",
+          "一列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "18",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "三列",
+          "一列",
+          "二列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "19",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "负矩阵",
+          "行列式",
+          "逆矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "20",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "21",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Xg",
+          "Yg",
+          "Zg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "22",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "23",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Zp",
+          "Xp",
+          "Yp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "24",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "gRp",
+          "pRg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "25",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-φ)*Cy(-μ)",
+          "Cz(φ)*Cy(μ)",
+          "Cy(-μ)*Cz(-φ)",
+          "Cz(-φ)*Cy(μ)",
+          "Cz(-φ)*Cy(-μ)*Cx(-γ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "26",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "27",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRp^T",
+          "gRp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "28",
+        "label": "A2",
+        "answer": "C",
+        "options": [
+          "sin(10°)",
+          "cos(10°)",
+          "-sin(10°)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "29",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "30",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "31",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "保持不变",
+          "转动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "32",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "不改变",
+          "改变"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "33",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "气流系 Ya、Za 相对航迹系的方向",
+          "航迹系 Yp、Zp 轴",
+          "空速大小"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "34",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "35",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "机翼展向投影",
+          "对称面内的投影"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "36",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "37",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "38",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "航迹方位角",
+          "迎角",
+          "侧滑角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "39",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "侧滑角",
+          "迎角",
+          "偏航角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "40",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cy(α)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "41",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cz(β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "42",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cz(-β)*Cy(-α)",
+          "Cy(α)*Cz(β)",
+          "Cy(α)*Cz(-β)",
+          "Cy(-α)*Cz(-β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "43",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "44",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "bRa",
+          "bRa^T"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "45",
+        "label": "A2",
+        "answer": "[cos(α)*cos(β), sin(β), sin(α)*cos(β)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "46",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "47",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "48",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vy, sqrt(vx^2+vz^2))",
+          "atan2(-vy, sqrt(vx^2+vz^2))",
+          "atan2(vz, sqrt(vx^2+vy^2))",
+          "atan2(vx, vy)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "49",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "负",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "50",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "51",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vz, vx)",
+          "atan2(-vz, vx)",
+          "atan2(vy, vx)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "52",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "53",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRb*vg",
+          "gRb^T*vg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "54",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "不直接进入机体系空速分量公式",
+          "必须加入"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "55",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "56",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一般不相关",
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "57",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "必定不存在错误",
+          "至少存在一处错误"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "58",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "忽略空速轴向",
+          "只比较滚转角",
+          "只比较空速向量"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "59",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "2",
+          "0",
+          "1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "60",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "气流系向机体系",
+          "机体系向气流系",
+          "气流系向稳定性系后停止"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "61",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "由A变为G",
+          "由G变为A",
+          "始终为A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "62",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Z_b",
+          "X_b",
+          "Y_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "63",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Y_b",
+          "X_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "64",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "X_b",
+          "Y_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "65",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "-Z_a",
+          "-X_a",
+          "+X_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "66",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "-Z_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "67",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "-Y_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "68",
+        "label": "A2",
+        "answer": "[-D, Y, -L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "69",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "+X_a",
+          "+Y_a",
+          "+Z_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "70",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "+X_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "71",
+        "label": "A2",
+        "answer": "[l_a, m_a, n_a]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "72",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "73",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "74",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "75",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "76",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "77",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "78",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←s*T_s←b",
+          "T_s←b*T_a←s"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "79",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "80",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "81",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), sin(β), sin(α)*cos(β)], [-cos(α)*sin(β), cos(β), -sin(α)*sin(β)], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "82",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←b 的转置",
+          "T_a←b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "83",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), -cos(α)*sin(β), -sin(α)], [sin(β), cos(β), 0], [sin(α)*cos(β), -sin(α)*sin(β), cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "84",
+        "label": "A2",
+        "answer": "-D*cos(α)*cos(β) - Y*cos(α)*sin(β) + L*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "85",
+        "label": "A2",
+        "answer": "-D*sin(β) + Y*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "86",
+        "label": "A2",
+        "answer": "-D*sin(α)*cos(β) - Y*sin(α)*sin(β) - L*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "87",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "88",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "89",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "不能确定",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "90",
+        "label": "A2",
+        "answer": "[0, 0, -4]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "91",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "一般增大",
+          "一般减小",
+          "相同"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "92",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "额外加入力臂平移",
+          "同一个矩阵 B",
+          "B 的负矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "93",
+        "label": "A2",
+        "answer": "l_a*cos(α)*cos(β) - m_a*cos(α)*sin(β) - n_a*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "94",
+        "label": "A2",
+        "answer": "l_a*sin(β) + m_a*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "95",
+        "label": "A2",
+        "answer": "l_a*sin(α)*cos(β) - m_a*sin(α)*sin(β) + n_a*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "96",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "重合",
+          "相互垂直",
+          "方向无法确定"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "97",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "98",
+        "label": "A2",
+        "answer": "ρ*V^2/2",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "99",
+        "label": "A2",
+        "answer": "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "100",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "使用同一矩阵 B 直接转换",
+          "必须分别乘不同参考长度后才能转换"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "101",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "直接将 B 乘 [C_la, C_ma, C_na]",
+          "先恢复有量纲力矩，旋转后按输出轴参考长度归一化"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "102",
+        "label": "A2",
+        "answer": "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "103",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "G",
+          "N",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "104",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "N",
+          "G",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "105",
+        "label": "A2",
+        "answer": "L_f - L_A",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "106",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "后方",
+          "前方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "107",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "108",
+        "label": "A2",
+        "answer": "X_N - x_Ge",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "109",
+        "label": "A2",
+        "answer": "[X_N - x_Ge, y_Ge, z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "110",
+        "label": "A2",
+        "answer": "[x_Ge - X_N, -y_Ge, -z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "111",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "保持不变",
+          "必须取反",
+          "必须增加一个力臂项"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "112",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "r_AG×F_b",
+          "r_GA×M_A",
+          "r_GA×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "113",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "M_G=F_b-r_AG×M_A",
+          "M_G=M_A-r_AG×F_b",
+          "M_G=M_A+r_AG×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "114",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "115",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "116",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "117",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "118",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "119",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "120",
+        "label": "A2",
+        "answer": "l_A + z*Y_b - y*Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "121",
+        "label": "A2",
+        "answer": "m_A + x*Z - z*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "122",
+        "label": "A2",
+        "answer": "n_A + y*X - x*Y_b",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "123",
+        "label": "A2",
+        "answer": "m_A + (X_N - x_Ge)*Z - z_Ge*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "124",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "抬头方向",
+          "零",
+          "低头方向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "125",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "零",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "126",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "相同",
+          "必定相反",
+          "不能建立关系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "127",
+        "label": "A2",
+        "answer": "C_lA + (z/b)*C_Yb - (y/b)*C_Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "128",
+        "label": "A2",
+        "answer": "C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "129",
+        "label": "A2",
+        "answer": "C_nA + (y/b)*C_X - (x/b)*C_Yb",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "130",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "机体系而不作转换",
+          "任意坐标系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "131",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "一般没有关系",
+          "相同",
+          "互为相反数"
+        ],
+        "format": "无"
+      }
+    ]
+  },
+  {
+    "id": "05",
+    "title": "航迹倾斜取负",
+    "change": "航迹倾斜角改为向地面上方飞时为负。",
+    "domain": "飞行力学",
+    "process": "空间坐标转换",
+    "declaration_products": {
+      "gRb": "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
+      "gRp": "Cz(-φ)*Cy(μ)",
+      "pRa": "Cx(-γ)",
+      "bRg": "Cx(Φ)*Cy(θ)*Cz(ψ)",
+      "bRs": "Cy(α)",
+      "sRa": "Cz(-β)",
+      "bRa": "Cy(α)*Cz(-β)"
+    },
+    "questions": [
+      {
+        "id": "1",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "2",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "3",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左手系",
+          "右手系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "4",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面右方偏转",
+          "地面左方偏转"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "5",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "6",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "轴向",
+          "侧向",
+          "法向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "7",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "主动",
+          "被动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "8",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "动轴内旋",
+          "定轴外旋"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "9",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "最左侧",
+          "最右侧"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "10",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "机体系到地面系",
+          "地面系到机体系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "11",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "本身",
+          "转置"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "12",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
+          "Cx(Φ)*Cy(θ)*Cz(ψ)",
+          "Cz(ψ)*Cy(θ)*Cx(Φ)",
+          "Cy(θ)*Cz(ψ)*Cx(Φ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "13",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "14",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "gRb*[1, 0, 0]",
+          "gRb^T*[1, 0, 0]"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "15",
+        "label": "A2",
+        "answer": "[cos(20°)*cos(30°), sin(30°)*cos(20°), -sin(20°)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "16",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "17",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "三列",
+          "二列",
+          "一列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "18",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "三列",
+          "一列",
+          "二列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "19",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "负矩阵",
+          "行列式",
+          "逆矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "20",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "21",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Xg",
+          "Yg",
+          "Zg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "22",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "23",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Zp",
+          "Xp",
+          "Yp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "24",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "gRp",
+          "pRg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "25",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-φ)*Cy(μ)",
+          "Cz(φ)*Cy(-μ)",
+          "Cy(μ)*Cz(-φ)",
+          "Cz(-φ)*Cy(-μ)",
+          "Cz(-φ)*Cy(μ)*Cx(-γ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "26",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "27",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRp^T",
+          "gRp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "28",
+        "label": "A2",
+        "answer": "C",
+        "options": [
+          "-sin(10°)",
+          "cos(10°)",
+          "sin(10°)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "29",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "30",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "31",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "保持不变",
+          "转动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "32",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "不改变",
+          "改变"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "33",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "气流系 Ya、Za 相对航迹系的方向",
+          "航迹系 Yp、Zp 轴",
+          "空速大小"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "34",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "35",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "机翼展向投影",
+          "对称面内的投影"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "36",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "37",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "38",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "航迹方位角",
+          "迎角",
+          "侧滑角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "39",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "侧滑角",
+          "迎角",
+          "偏航角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "40",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cy(α)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "41",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cz(β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "42",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cz(-β)*Cy(-α)",
+          "Cy(α)*Cz(β)",
+          "Cy(α)*Cz(-β)",
+          "Cy(-α)*Cz(-β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "43",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "44",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "bRa",
+          "bRa^T"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "45",
+        "label": "A2",
+        "answer": "[cos(α)*cos(β), sin(β), sin(α)*cos(β)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "46",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "47",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "48",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vy, sqrt(vx^2+vz^2))",
+          "atan2(-vy, sqrt(vx^2+vz^2))",
+          "atan2(vz, sqrt(vx^2+vy^2))",
+          "atan2(vx, vy)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "49",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "负",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "50",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "51",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vz, vx)",
+          "atan2(-vz, vx)",
+          "atan2(vy, vx)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "52",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "53",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRb*vg",
+          "gRb^T*vg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "54",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "不直接进入机体系空速分量公式",
+          "必须加入"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "55",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "56",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一般不相关",
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "57",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "必定不存在错误",
+          "至少存在一处错误"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "58",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "忽略空速轴向",
+          "只比较滚转角",
+          "只比较空速向量"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "59",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "2",
+          "0",
+          "1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "60",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "气流系向机体系",
+          "机体系向气流系",
+          "气流系向稳定性系后停止"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "61",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "由A变为G",
+          "由G变为A",
+          "始终为A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "62",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Z_b",
+          "X_b",
+          "Y_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "63",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Y_b",
+          "X_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "64",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "X_b",
+          "Y_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "65",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "-Z_a",
+          "-X_a",
+          "+X_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "66",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "-Z_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "67",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "-Y_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "68",
+        "label": "A2",
+        "answer": "[-D, Y, -L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "69",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "+X_a",
+          "+Y_a",
+          "+Z_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "70",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "+X_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "71",
+        "label": "A2",
+        "answer": "[l_a, m_a, n_a]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "72",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "73",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "74",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "75",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "76",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "77",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "78",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←s*T_s←b",
+          "T_s←b*T_a←s"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "79",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "80",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "81",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), sin(β), sin(α)*cos(β)], [-cos(α)*sin(β), cos(β), -sin(α)*sin(β)], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "82",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←b 的转置",
+          "T_a←b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "83",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), -cos(α)*sin(β), -sin(α)], [sin(β), cos(β), 0], [sin(α)*cos(β), -sin(α)*sin(β), cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "84",
+        "label": "A2",
+        "answer": "-D*cos(α)*cos(β) - Y*cos(α)*sin(β) + L*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "85",
+        "label": "A2",
+        "answer": "-D*sin(β) + Y*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "86",
+        "label": "A2",
+        "answer": "-D*sin(α)*cos(β) - Y*sin(α)*sin(β) - L*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "87",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "88",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "89",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "不能确定",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "90",
+        "label": "A2",
+        "answer": "[0, 0, -4]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "91",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "一般增大",
+          "一般减小",
+          "相同"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "92",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "额外加入力臂平移",
+          "同一个矩阵 B",
+          "B 的负矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "93",
+        "label": "A2",
+        "answer": "l_a*cos(α)*cos(β) - m_a*cos(α)*sin(β) - n_a*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "94",
+        "label": "A2",
+        "answer": "l_a*sin(β) + m_a*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "95",
+        "label": "A2",
+        "answer": "l_a*sin(α)*cos(β) - m_a*sin(α)*sin(β) + n_a*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "96",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "重合",
+          "相互垂直",
+          "方向无法确定"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "97",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "98",
+        "label": "A2",
+        "answer": "ρ*V^2/2",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "99",
+        "label": "A2",
+        "answer": "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "100",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "使用同一矩阵 B 直接转换",
+          "必须分别乘不同参考长度后才能转换"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "101",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "直接将 B 乘 [C_la, C_ma, C_na]",
+          "先恢复有量纲力矩，旋转后按输出轴参考长度归一化"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "102",
+        "label": "A2",
+        "answer": "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "103",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "G",
+          "N",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "104",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "N",
+          "G",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "105",
+        "label": "A2",
+        "answer": "L_f - L_A",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "106",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "后方",
+          "前方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "107",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "108",
+        "label": "A2",
+        "answer": "X_N - x_Ge",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "109",
+        "label": "A2",
+        "answer": "[X_N - x_Ge, y_Ge, z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "110",
+        "label": "A2",
+        "answer": "[x_Ge - X_N, -y_Ge, -z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "111",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "保持不变",
+          "必须取反",
+          "必须增加一个力臂项"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "112",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "r_AG×F_b",
+          "r_GA×M_A",
+          "r_GA×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "113",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "M_G=F_b-r_AG×M_A",
+          "M_G=M_A-r_AG×F_b",
+          "M_G=M_A+r_AG×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "114",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "115",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "116",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "117",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "118",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "119",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "120",
+        "label": "A2",
+        "answer": "l_A + z*Y_b - y*Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "121",
+        "label": "A2",
+        "answer": "m_A + x*Z - z*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "122",
+        "label": "A2",
+        "answer": "n_A + y*X - x*Y_b",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "123",
+        "label": "A2",
+        "answer": "m_A + (X_N - x_Ge)*Z - z_Ge*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "124",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "抬头方向",
+          "零",
+          "低头方向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "125",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "零",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "126",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "相同",
+          "必定相反",
+          "不能建立关系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "127",
+        "label": "A2",
+        "answer": "C_lA + (z/b)*C_Yb - (y/b)*C_Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "128",
+        "label": "A2",
+        "answer": "C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "129",
+        "label": "A2",
+        "answer": "C_nA + (y/b)*C_X - (x/b)*C_Yb",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "130",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "机体系而不作转换",
+          "任意坐标系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "131",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "一般没有关系",
+          "相同",
+          "互为相反数"
+        ],
+        "format": "无"
+      }
+    ]
+  },
+  {
+    "id": "06",
+    "title": "迎角取负",
+    "change": "迎角改为空速投影处于机体轴向下方时为负。",
+    "domain": "飞行力学",
+    "process": "空间坐标转换",
+    "declaration_products": {
+      "gRb": "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
+      "gRp": "Cz(-φ)*Cy(-μ)",
+      "pRa": "Cx(-γ)",
+      "bRg": "Cx(Φ)*Cy(θ)*Cz(ψ)",
+      "bRs": "Cy(-α)",
+      "sRa": "Cz(-β)",
+      "bRa": "Cy(-α)*Cz(-β)"
+    },
+    "questions": [
+      {
+        "id": "1",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "2",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "3",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左手系",
+          "右手系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "4",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面右方偏转",
+          "地面左方偏转"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "5",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "6",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "轴向",
+          "侧向",
+          "法向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "7",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "主动",
+          "被动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "8",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "动轴内旋",
+          "定轴外旋"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "9",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "最左侧",
+          "最右侧"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "10",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "机体系到地面系",
+          "地面系到机体系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "11",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "本身",
+          "转置"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "12",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
+          "Cx(Φ)*Cy(θ)*Cz(ψ)",
+          "Cz(ψ)*Cy(θ)*Cx(Φ)",
+          "Cy(θ)*Cz(ψ)*Cx(Φ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "13",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "14",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "gRb*[1, 0, 0]",
+          "gRb^T*[1, 0, 0]"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "15",
+        "label": "A2",
+        "answer": "[cos(20°)*cos(30°), sin(30°)*cos(20°), -sin(20°)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "16",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "17",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "三列",
+          "二列",
+          "一列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "18",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "三列",
+          "一列",
+          "二列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "19",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "负矩阵",
+          "行列式",
+          "逆矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "20",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "21",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Xg",
+          "Yg",
+          "Zg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "22",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "23",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Zp",
+          "Xp",
+          "Yp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "24",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "gRp",
+          "pRg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "25",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-φ)*Cy(-μ)",
+          "Cz(φ)*Cy(μ)",
+          "Cy(-μ)*Cz(-φ)",
+          "Cz(-φ)*Cy(μ)",
+          "Cz(-φ)*Cy(-μ)*Cx(-γ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "26",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "27",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRp^T",
+          "gRp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "28",
+        "label": "A2",
+        "answer": "C",
+        "options": [
+          "sin(10°)",
+          "cos(10°)",
+          "-sin(10°)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "29",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "30",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "31",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "保持不变",
+          "转动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "32",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "不改变",
+          "改变"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "33",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "气流系 Ya、Za 相对航迹系的方向",
+          "航迹系 Yp、Zp 轴",
+          "空速大小"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "34",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "35",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "机翼展向投影",
+          "对称面内的投影"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "36",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "37",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "38",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "航迹方位角",
+          "迎角",
+          "侧滑角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "39",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "侧滑角",
+          "迎角",
+          "偏航角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "40",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cy(α)",
+          "Cz(-β)",
+          "Cy(-α)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "41",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cz(β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "42",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cy(-α)*Cz(-β)",
+          "Cz(-β)*Cy(-α)",
+          "Cy(α)*Cz(β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "43",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "44",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "bRa",
+          "bRa^T"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "45",
+        "label": "A2",
+        "answer": "[cos(α)*cos(β), sin(β), -sin(α)*cos(β)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "46",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "47",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "48",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vy, sqrt(vx^2+vz^2))",
+          "atan2(-vy, sqrt(vx^2+vz^2))",
+          "atan2(vz, sqrt(vx^2+vy^2))",
+          "atan2(vx, vy)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "49",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "负",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "50",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "51",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(-vz, vx)",
+          "atan2(vz, vx)",
+          "atan2(vy, vx)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "52",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "53",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRb*vg",
+          "gRb^T*vg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "54",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "不直接进入机体系空速分量公式",
+          "必须加入"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "55",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "56",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一般不相关",
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "57",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "必定不存在错误",
+          "至少存在一处错误"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "58",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "忽略空速轴向",
+          "只比较滚转角",
+          "只比较空速向量"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "59",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "2",
+          "0",
+          "1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "60",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "气流系向机体系",
+          "机体系向气流系",
+          "气流系向稳定性系后停止"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "61",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "由A变为G",
+          "由G变为A",
+          "始终为A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "62",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Z_b",
+          "X_b",
+          "Y_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "63",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Y_b",
+          "X_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "64",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "X_b",
+          "Y_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "65",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "-Z_a",
+          "-X_a",
+          "+X_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "66",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "-Z_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "67",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "-Y_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "68",
+        "label": "A2",
+        "answer": "[-D, Y, -L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "69",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "+X_a",
+          "+Y_a",
+          "+Z_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "70",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "+X_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "71",
+        "label": "A2",
+        "answer": "[l_a, m_a, n_a]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "72",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "73",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "74",
+        "label": "A2",
+        "answer": "[[cos(α), 0, -sin(α)], [0, 1, 0], [sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "75",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "76",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "77",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "78",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←s*T_s←b",
+          "T_s←b*T_a←s"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "79",
+        "label": "A2",
+        "answer": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "80",
+        "label": "A2",
+        "answer": "[[cos(α), 0, -sin(α)], [0, 1, 0], [sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "81",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), sin(β), -sin(α)*cos(β)], [-cos(α)*sin(β), cos(β), sin(α)*sin(β)], [sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "82",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←b 的转置",
+          "T_a←b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "83",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), -cos(α)*sin(β), sin(α)], [sin(β), cos(β), 0], [-sin(α)*cos(β), sin(α)*sin(β), cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "84",
+        "label": "A2",
+        "answer": "-D*cos(α)*cos(β) - L*sin(α) - Y*sin(β)*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "85",
+        "label": "A2",
+        "answer": "-D*sin(β) + Y*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "86",
+        "label": "A2",
+        "answer": "D*sin(α)*cos(β) - L*cos(α) + Y*sin(α)*sin(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "87",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "88",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "89",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "不能确定",
+          "一定为负",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "90",
+        "label": "A2",
+        "answer": "[-2*sqrt(3), 0, -2]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "91",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "一般增大",
+          "一般减小",
+          "相同"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "92",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "额外加入力臂平移",
+          "同一个矩阵 B",
+          "B 的负矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "93",
+        "label": "A2",
+        "answer": "l_a*cos(α)*cos(β) - m_a*sin(β)*cos(α) + n_a*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "94",
+        "label": "A2",
+        "answer": "l_a*sin(β) + m_a*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "95",
+        "label": "A2",
+        "answer": "-l_a*sin(α)*cos(β) + m_a*sin(α)*sin(β) + n_a*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "96",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "重合",
+          "相互垂直",
+          "方向无法确定"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "97",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "98",
+        "label": "A2",
+        "answer": "ρ*V^2/2",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "99",
+        "label": "A2",
+        "answer": "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "100",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "使用同一矩阵 B 直接转换",
+          "必须分别乘不同参考长度后才能转换"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "101",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "直接将 B 乘 [C_la, C_ma, C_na]",
+          "先恢复有量纲力矩，旋转后按输出轴参考长度归一化"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "102",
+        "label": "A2",
+        "answer": "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "103",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "G",
+          "N",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "104",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "N",
+          "G",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "105",
+        "label": "A2",
+        "answer": "L_f - L_A",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "106",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "后方",
+          "前方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "107",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "108",
+        "label": "A2",
+        "answer": "X_N - x_Ge",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "109",
+        "label": "A2",
+        "answer": "[X_N - x_Ge, y_Ge, z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "110",
+        "label": "A2",
+        "answer": "[x_Ge - X_N, -y_Ge, -z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "111",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "保持不变",
+          "必须取反",
+          "必须增加一个力臂项"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "112",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "r_AG×F_b",
+          "r_GA×M_A",
+          "r_GA×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "113",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "M_G=F_b-r_AG×M_A",
+          "M_G=M_A-r_AG×F_b",
+          "M_G=M_A+r_AG×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "114",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "115",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "116",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "117",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "118",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "119",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "120",
+        "label": "A2",
+        "answer": "l_A + z*Y_b - y*Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "121",
+        "label": "A2",
+        "answer": "m_A + x*Z - z*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "122",
+        "label": "A2",
+        "answer": "n_A + y*X - x*Y_b",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "123",
+        "label": "A2",
+        "answer": "m_A + (X_N - x_Ge)*Z - z_Ge*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "124",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "抬头方向",
+          "零",
+          "低头方向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "125",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "零",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "126",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "相同",
+          "必定相反",
+          "不能建立关系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "127",
+        "label": "A2",
+        "answer": "C_lA + (z/b)*C_Yb - (y/b)*C_Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "128",
+        "label": "A2",
+        "answer": "C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "129",
+        "label": "A2",
+        "answer": "C_nA + (y/b)*C_X - (x/b)*C_Yb",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "130",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "机体系而不作转换",
+          "任意坐标系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "131",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "一般没有关系",
+          "相同",
+          "互为相反数"
+        ],
+        "format": "无"
+      }
+    ]
+  },
+  {
+    "id": "07",
+    "title": "侧滑取负",
+    "change": "侧滑角改为空速处于飞行器右方时为负。",
+    "domain": "飞行力学",
+    "process": "空间坐标转换",
+    "declaration_products": {
+      "gRb": "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
+      "gRp": "Cz(-φ)*Cy(-μ)",
+      "pRa": "Cx(-γ)",
+      "bRg": "Cx(Φ)*Cy(θ)*Cz(ψ)",
+      "bRs": "Cy(α)",
+      "sRa": "Cz(β)",
+      "bRa": "Cy(α)*Cz(β)"
+    },
+    "questions": [
+      {
+        "id": "1",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "2",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "3",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "左手系",
+          "右手系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "4",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面右方偏转",
+          "地面左方偏转"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "5",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "6",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "轴向",
+          "侧向",
+          "法向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "7",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "主动",
+          "被动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "8",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "动轴内旋",
+          "定轴外旋"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "9",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "最左侧",
+          "最右侧"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "10",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "机体系到地面系",
+          "地面系到机体系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "11",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "本身",
+          "转置"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "12",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
+          "Cx(Φ)*Cy(θ)*Cz(ψ)",
+          "Cz(ψ)*Cy(θ)*Cx(Φ)",
+          "Cy(θ)*Cz(ψ)*Cx(Φ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "13",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "14",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "gRb*[1, 0, 0]",
+          "gRb^T*[1, 0, 0]"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "15",
+        "label": "A2",
+        "answer": "[cos(20°)*cos(30°), sin(30°)*cos(20°), -sin(20°)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "16",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "17",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "三列",
+          "二列",
+          "一列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "18",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "三列",
+          "一列",
+          "二列"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "19",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "负矩阵",
+          "行列式",
+          "逆矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "20",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "21",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Xg",
+          "Yg",
+          "Zg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "22",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "23",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Zp",
+          "Xp",
+          "Yp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "24",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "gRp",
+          "pRg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "25",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cz(-φ)*Cy(-μ)",
+          "Cz(φ)*Cy(μ)",
+          "Cy(-μ)*Cz(-φ)",
+          "Cz(-φ)*Cy(μ)",
+          "Cz(-φ)*Cy(-μ)*Cx(-γ)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "26",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "27",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRp^T",
+          "gRp"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "28",
+        "label": "A2",
+        "answer": "C",
+        "options": [
+          "sin(10°)",
+          "cos(10°)",
+          "-sin(10°)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "29",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "30",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "0",
+          "+1",
+          "-1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "31",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "保持不变",
+          "转动"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "32",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "不改变",
+          "改变"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "33",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "气流系 Ya、Za 相对航迹系的方向",
+          "航迹系 Yp、Zp 轴",
+          "空速大小"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "34",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "35",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "机翼展向投影",
+          "对称面内的投影"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "36",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "37",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "38",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "航迹方位角",
+          "迎角",
+          "侧滑角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "39",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "侧滑角",
+          "迎角",
+          "偏航角"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "40",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "Cy(-α)",
+          "Cz(-β)",
+          "Cy(α)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "41",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "Cy(-α)",
+          "Cz(β)",
+          "Cz(-β)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "42",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "Cy(α)*Cz(β)",
+          "Cy(-α)*Cz(-β)",
+          "Cz(-β)*Cy(-α)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "43",
+        "label": "C1",
+        "answer": "[1, 0, 0]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "44",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "bRa",
+          "bRa^T"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "45",
+        "label": "A2",
+        "answer": "[cos(α)*cos(β), -sin(β), sin(α)*cos(β)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "46",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "右方",
+          "左方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "47",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "上方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "48",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(-vy, sqrt(vx^2+vz^2))",
+          "atan2(vy, sqrt(vx^2+vz^2))",
+          "atan2(vz, sqrt(vx^2+vy^2))",
+          "atan2(vx, vy)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "49",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "50",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "51",
+        "label": "A2",
+        "answer": "A",
+        "options": [
+          "atan2(vz, vx)",
+          "atan2(-vz, vx)",
+          "atan2(vy, vx)"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "52",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "地面系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "53",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "gRb*vg",
+          "gRb^T*vg"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "54",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "不直接进入机体系空速分量公式",
+          "必须加入"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "55",
+        "label": "A2",
+        "answer": "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "56",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一般不相关",
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "57",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "必定不存在错误",
+          "至少存在一处错误"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "58",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "忽略空速轴向",
+          "只比较滚转角",
+          "只比较空速向量"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "59",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "2",
+          "0",
+          "1"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "60",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "气流系向机体系",
+          "机体系向气流系",
+          "气流系向稳定性系后停止"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "61",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "由A变为G",
+          "由G变为A",
+          "始终为A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "62",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "Z_b",
+          "X_b",
+          "Y_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "63",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "Y_b",
+          "X_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "64",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "X_b",
+          "Y_b",
+          "Z_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "65",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "-Z_a",
+          "-X_a",
+          "+X_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "66",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "-Z_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "67",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "-Y_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "68",
+        "label": "A2",
+        "answer": "[-D, Y, -L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "69",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "+X_a",
+          "+Y_a",
+          "+Z_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "70",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "+X_a",
+          "+Z_a",
+          "+Y_a"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "71",
+        "label": "A2",
+        "answer": "[l_a, m_a, n_a]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "72",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "下方",
+          "上方",
+          "右方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "73",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "74",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "75",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "左方",
+          "右方",
+          "下方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "76",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "77",
+        "label": "A2",
+        "answer": "[[cos(β), -sin(β), 0], [sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "78",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←s*T_s←b",
+          "T_s←b*T_a←s"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "79",
+        "label": "A2",
+        "answer": "[[cos(β), -sin(β), 0], [sin(β), cos(β), 0], [0, 0, 1]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "80",
+        "label": "A2",
+        "answer": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "81",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), -sin(β), sin(α)*cos(β)], [cos(α)*sin(β), cos(β), sin(α)*sin(β)], [-sin(α), 0, cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "82",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "T_a←b 的转置",
+          "T_a←b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "83",
+        "label": "A2",
+        "answer": "[[cos(α)*cos(β), cos(α)*sin(β), -sin(α)], [-sin(β), cos(β), 0], [sin(α)*cos(β), sin(α)*sin(β), cos(α)]]",
+        "options": [],
+        "format": "矩阵"
+      },
+      {
+        "id": "84",
+        "label": "A2",
+        "answer": "-D*cos(α)*cos(β) + L*sin(α) + Y*sin(β)*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "85",
+        "label": "A2",
+        "answer": "D*sin(β) + Y*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "86",
+        "label": "A2",
+        "answer": "-D*sin(α)*cos(β) - L*cos(α) + Y*sin(α)*sin(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "87",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "正",
+          "负",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "88",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "89",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "不能确定",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "90",
+        "label": "A2",
+        "answer": "[0, 0, -4]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "91",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "一般增大",
+          "一般减小",
+          "相同"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "92",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "额外加入力臂平移",
+          "同一个矩阵 B",
+          "B 的负矩阵"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "93",
+        "label": "A2",
+        "answer": "l_a*cos(α)*cos(β) + m_a*sin(β)*cos(α) - n_a*sin(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "94",
+        "label": "A2",
+        "answer": "-l_a*sin(β) + m_a*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "95",
+        "label": "A2",
+        "answer": "l_a*sin(α)*cos(β) + m_a*sin(α)*sin(β) + n_a*cos(α)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "96",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "重合",
+          "相互垂直",
+          "方向无法确定"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "97",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "98",
+        "label": "A2",
+        "answer": "ρ*V^2/2",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "99",
+        "label": "A2",
+        "answer": "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "100",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "使用同一矩阵 B 直接转换",
+          "必须分别乘不同参考长度后才能转换"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "101",
+        "label": "C2",
+        "answer": "B",
+        "options": [
+          "直接将 B 乘 [C_la, C_ma, C_na]",
+          "先恢复有量纲力矩，旋转后按输出轴参考长度归一化"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "102",
+        "label": "A2",
+        "answer": "-C_la*b*sin(β)/c_bar + C_ma*cos(β)",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "103",
+        "label": "C1",
+        "answer": "C",
+        "options": [
+          "G",
+          "N",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "104",
+        "label": "C1",
+        "answer": "B",
+        "options": [
+          "N",
+          "G",
+          "A"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "105",
+        "label": "A2",
+        "answer": "L_f - L_A",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "106",
+        "label": "C1",
+        "answer": "A",
+        "options": [
+          "后方",
+          "前方"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "107",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "相同",
+          "相反"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "108",
+        "label": "A2",
+        "answer": "X_N - x_Ge",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "109",
+        "label": "A2",
+        "answer": "[X_N - x_Ge, y_Ge, z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "110",
+        "label": "A2",
+        "answer": "[x_Ge - X_N, -y_Ge, -z_Ge]",
+        "options": [],
+        "format": "向量"
+      },
+      {
+        "id": "111",
+        "label": "C2",
+        "answer": "A",
+        "options": [
+          "保持不变",
+          "必须取反",
+          "必须增加一个力臂项"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "112",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "r_AG×F_b",
+          "r_GA×M_A",
+          "r_GA×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "113",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "M_G=F_b-r_AG×M_A",
+          "M_G=M_A-r_AG×F_b",
+          "M_G=M_A+r_AG×F_b"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "114",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "115",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "负",
+          "零",
+          "正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "116",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "117",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "负",
+          "正",
+          "零"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "118",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "正",
+          "零",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "119",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "零",
+          "正",
+          "负"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "120",
+        "label": "A2",
+        "answer": "l_A + z*Y_b - y*Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "121",
+        "label": "A2",
+        "answer": "m_A + x*Z - z*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "122",
+        "label": "A2",
+        "answer": "n_A + y*X - x*Y_b",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "123",
+        "label": "A2",
+        "answer": "m_A + (X_N - x_Ge)*Z - z_Ge*X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "124",
+        "label": "A1",
+        "answer": "C",
+        "options": [
+          "抬头方向",
+          "零",
+          "低头方向"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "125",
+        "label": "A1",
+        "answer": "B",
+        "options": [
+          "一定为负",
+          "零",
+          "一定为正"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "126",
+        "label": "A1",
+        "answer": "A",
+        "options": [
+          "相同",
+          "必定相反",
+          "不能建立关系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "127",
+        "label": "A2",
+        "answer": "C_lA + (z/b)*C_Yb - (y/b)*C_Z",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "128",
+        "label": "A2",
+        "answer": "C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "129",
+        "label": "A2",
+        "answer": "C_nA + (y/b)*C_X - (x/b)*C_Yb",
+        "options": [],
+        "format": "表达式"
+      },
+      {
+        "id": "130",
+        "label": "C2",
+        "answer": "C",
+        "options": [
+          "机体系而不作转换",
+          "任意坐标系",
+          "气流系"
+        ],
+        "format": "无"
+      },
+      {
+        "id": "131",
+        "label": "A2",
+        "answer": "B",
+        "options": [
+          "一般没有关系",
+          "相同",
+          "互为相反数"
+        ],
+        "format": "无"
+      }
+    ]
+  }
+]

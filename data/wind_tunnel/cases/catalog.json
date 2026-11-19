@@ -1,0 +1,247 @@
+{
+  "schema": "case-card-spec/1",
+  "cases": [
+    {
+      "case_id": "C1",
+      "name": "机构滚转方向与旋转矩阵",
+      "question": "在滚转方向已经写进前缀之后，安装滚转矩阵是否仍使用该方向？",
+      "phenomenon": "方向判断与矩阵符号是否断裂",
+      "source": {
+        "records": "results/nothink_pair/roll/B/records.jsonl",
+        "meta": "results/nothink_pair/roll/B/meta.json",
+        "sample_id": "roll-unmarked",
+        "paired_standard_id": "standard-default",
+        "id_scheme": "legacy_pair"
+      },
+      "contract_definition": "γ_M > 0 时绕模型绝对轴向旋转，方向与右手定则相反。",
+      "standard_definition": "γ_M > 0 时绕模型绝对轴向旋转，方向与右手定则相同。",
+      "stem": "天平轴系中的安装角旋转矩阵 R_(γ_M-γ_tp)",
+      "leakage_needles": ["R_(γ_M-γ_tp)"],
+      "leakage_note": "题干写出了角差名称 γ_M-γ_tp。判别只用两个 sin 项的符号，不把角差名称当作模型选择了标准角组合的证据。",
+      "confirm_in_prompt": true,
+      "error_cancellation": "uncertain",
+      "target": "85",
+      "direct_parents": ["84"],
+      "relevant_parents": ["82", "83", "84"],
+      "contrast_sources": ["84"],
+      "standard_answers": {
+        "82": "γ_M - γ_tp",
+        "83": "XTP",
+        "84": "正",
+        "85": "[[1, 0, 0], [0, cos(γ_M - γ_tp), sin(γ_M - γ_tp)], [0, -sin(γ_M - γ_tp), cos(γ_M - γ_tp)]]",
+        "98": "[[1, 0, 0], [0, cos(γ_M - γ_tp), sin(γ_M - γ_tp)], [0, -sin(γ_M - γ_tp), cos(γ_M - γ_tp)]]"
+      },
+      "nodes": [
+        {"id": "82", "content": "滚转角差", "node_type": "expression", "decides_target": "indirect"},
+        {"id": "83", "content": "旋转轴", "node_type": "semantic", "decides_target": "no"},
+        {"id": "84", "content": "旋转方向", "node_type": "sign", "decides_target": "yes"},
+        {"id": "85", "content": "安装滚转矩阵", "node_type": "matrix", "decides_target": "yes"},
+        {"id": "98", "content": "载荷总矩阵", "node_type": "matrix", "decides_target": "indirect"}
+      ],
+      "evidence_elements": {
+        "kind": "matrix_sin",
+        "slots": [
+          {"id": "r23", "row": 2, "col": 3},
+          {"id": "r32", "row": 3, "col": 2}
+        ]
+      },
+      "probe": {
+        "after": "84",
+        "before": "85",
+        "write_back": false,
+        "question": "根据前文已经确定的滚转方向，矩阵中第二行第三列的 sin 项应取正号还是负号？"
+      },
+      "repairs": {
+        "non_ancestor": {
+          "policy": "one_wrong_non_ancestor",
+          "exclude_ancestors_of": "85",
+          "note": "只改一个非祖先空。不改记录里的父节点，探针答案不写回前缀。"
+        }
+      },
+      "narrative_claims": {
+        "direct_parent_edge": "yes",
+        "output_relation": "standard",
+        "parents": {
+          "82": {"model": "γ_M + γ_tp"},
+          "84": {"model": "逆", "relation": "contract"}
+        }
+      }
+    },
+    {
+      "case_id": "C2a",
+      "name": "左手系前置矩阵到侧滑旋转矩阵",
+      "question": "ID8 已经按左手系写出之后，侧滑旋转矩阵是否仍保持这套手性？",
+      "phenomenon": "同一手性契约是否在侧滑矩阵上保持",
+      "selectivity_group": "C2",
+      "handedness_slot": "beta",
+      "source": {
+        "records": "results/session_body/model_low/records.jsonl",
+        "meta": "results/session_body/model_low/meta.json",
+        "sample_id": "body-unmarked",
+        "paired_standard_id": "standard-default",
+        "id_scheme": "current"
+      },
+      "contract_definition": "体轴系为左手系，ZTZ 指向机体左侧。",
+      "standard_definition": "体轴系为右手系，ZTZ 指向机体右侧。",
+      "stem": "旋转矩阵 R_β_M",
+      "leakage_note": "题干只给出矩阵名称，没有给出 sin 项符号。",
+      "error_cancellation": "uncertain",
+      "target": "34",
+      "direct_parents": ["33"],
+      "relevant_parents": ["32", "33"],
+      "contrast_sources": ["8"],
+      "standard_answers": {
+        "8": "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
+        "32": "YTZ",
+        "33": "正",
+        "34": "[[cos(β_M), 0, -sin(β_M)], [0, 1, 0], [sin(β_M), 0, cos(β_M)]]"
+      },
+      "nodes": [
+        {"id": "8", "content": "左手系前置矩阵", "node_type": "matrix", "decides_target": "indirect"},
+        {"id": "32", "content": "侧滑旋转轴", "node_type": "semantic", "decides_target": "indirect"},
+        {"id": "33", "content": "侧滑转向", "node_type": "sign", "decides_target": "yes"},
+        {"id": "34", "content": "侧滑旋转矩阵", "node_type": "matrix", "decides_target": "yes"}
+      ],
+      "evidence_elements": {
+        "kind": "matrix_sin",
+        "slots": [
+          {"id": "r13", "row": 1, "col": 3},
+          {"id": "r31", "row": 3, "col": 1}
+        ]
+      },
+      "probe": {
+        "after": "8",
+        "before": "34",
+        "write_back": false,
+        "question": "在当前左手体轴定义下，R_β 的第一行第三列 sin(β_M) 符号是什么？"
+      },
+      "repairs": {
+        "non_ancestor": {
+          "policy": "one_wrong_non_ancestor",
+          "exclude_ancestors_of": "34",
+          "note": "只改一个非祖先空。不改 ID32 和 ID33，探针答案不写回前缀。"
+        }
+      },
+      "narrative_claims": {
+        "output_relation": "standard",
+        "contrast_source_correct": "yes"
+      }
+    },
+    {
+      "case_id": "C2b",
+      "name": "左手系前置矩阵到滚转旋转矩阵",
+      "question": "同一条左手系链上，滚转旋转矩阵是否和侧滑旋转矩阵保持同一手性？",
+      "phenomenon": "同一手性契约是否在滚转矩阵上保持",
+      "selectivity_group": "C2",
+      "handedness_slot": "gamma",
+      "source": {
+        "records": "results/session_body/model_low/records.jsonl",
+        "meta": "results/session_body/model_low/meta.json",
+        "sample_id": "body-unmarked",
+        "paired_standard_id": "standard-default",
+        "id_scheme": "current"
+      },
+      "contract_definition": "体轴系为左手系，ZTZ 指向机体左侧。",
+      "standard_definition": "体轴系为右手系，ZTZ 指向机体右侧。",
+      "stem": "旋转矩阵 R_γ_M",
+      "leakage_note": "题干只给出矩阵名称，没有给出 sin 项符号。",
+      "error_cancellation": "uncertain",
+      "target": "43",
+      "direct_parents": ["42"],
+      "relevant_parents": ["41", "42"],
+      "contrast_sources": ["8"],
+      "standard_answers": {
+        "8": "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
+        "41": "XTZ",
+        "42": "正",
+        "43": "[[1, 0, 0], [0, cos(γ_M), sin(γ_M)], [0, -sin(γ_M), cos(γ_M)]]"
+      },
+      "nodes": [
+        {"id": "8", "content": "左手系前置矩阵", "node_type": "matrix", "decides_target": "indirect"},
+        {"id": "41", "content": "滚转旋转轴", "node_type": "semantic", "decides_target": "indirect"},
+        {"id": "42", "content": "滚转转向", "node_type": "sign", "decides_target": "yes"},
+        {"id": "43", "content": "滚转旋转矩阵", "node_type": "matrix", "decides_target": "yes"}
+      ],
+      "evidence_elements": {
+        "kind": "matrix_sin",
+        "slots": [
+          {"id": "r23", "row": 2, "col": 3},
+          {"id": "r32", "row": 3, "col": 2}
+        ]
+      },
+      "probe": {
+        "after": "8",
+        "before": "43",
+        "write_back": false,
+        "question": "在当前左手体轴定义下，R_γ 的第二行第三列 sin(γ_M) 符号是什么？"
+      },
+      "repairs": {
+        "non_ancestor": {
+          "policy": "one_wrong_non_ancestor",
+          "exclude_ancestors_of": "43",
+          "note": "只改一个非祖先空。不改 ID41 和 ID42，探针答案不写回前缀。"
+        }
+      },
+      "narrative_claims": {
+        "output_relation": "standard",
+        "same_chain_selective_failure": "yes"
+      }
+    },
+    {
+      "case_id": "C3",
+      "name": "力矩公式的符号执行",
+      "question": "力臂和符号父节点都与契约一致时，MCN_CZ 的完整表达式是否仍保持当前手性？",
+      "phenomenon": "父节点正确时公式整体符号是否发生局部偏移",
+      "source": {
+        "records": "results/session_body/model_low/records.jsonl",
+        "meta": "results/session_body/model_low/meta.json",
+        "sample_id": "body-unmarked",
+        "paired_standard_id": "standard-default",
+        "id_scheme": "current"
+      },
+      "contract_definition": "左手体轴系下，MCN_CZ 写成 CN·(Xr - Xg)/L_RT，负号不进入力臂。",
+      "standard_definition": "右手体轴系下，MCN_CZ 写成 -CN·(Xr - Xg)/L_RT。",
+      "stem": "等效力矩系数 MCN_CZ。负号写在整个式子最外侧，力臂内部必须为正。",
+      "leakage_needles": ["负号写在整个式子最外侧"],
+      "leakage_note": "题面规定负号必须写在式子外侧，没有给出 MCN_CZ 应取正还是负。",
+      "confirm_in_prompt": true,
+      "error_cancellation": "uncertain",
+      "target": "198",
+      "direct_parents": ["184", "192"],
+      "relevant_parents": ["184", "192"],
+      "contrast_sources": ["192"],
+      "standard_answers": {
+        "184": "[Xr - Xg, Yg, Zg]",
+        "192": "负",
+        "198": "-CN·(Xr - Xg)/L_RT"
+      },
+      "nodes": [
+        {"id": "184", "legacy_id": "178", "content": "参考点坐标", "node_type": "vector", "decides_target": "yes"},
+        {"id": "192", "legacy_id": "186", "content": "MCN_CZ 的符号", "node_type": "sign", "decides_target": "yes"},
+        {"id": "198", "legacy_id": "192", "content": "MCN_CZ 的完整表达式", "node_type": "expression", "decides_target": "yes"}
+      ],
+      "evidence_elements": {"kind": "formula"},
+      "probe": {
+        "after": "192",
+        "before": "198",
+        "write_back": false,
+        "question": "在当前已确定的力臂和等效力矩方向下，MCN_CZ 的整体符号是什么？请只回答正或负。"
+      },
+      "repairs": {
+        "non_ancestor": {
+          "policy": "one_wrong_non_ancestor",
+          "exclude_ancestors_of": "198",
+          "note": "只改一个非祖先空。不改 ID184 和 ID192，探针答案不写回前缀。"
+        }
+      },
+      "narrative_claims": {
+        "direct_parent_correct": "yes",
+        "output_relation": "standard",
+        "parents": {
+          "184": {"relation": "both"},
+          "192": {"relation": "contract"}
+        }
+      }
+    }
+  ]
+}

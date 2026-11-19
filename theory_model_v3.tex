@@ -1,0 +1,458 @@
+% !TEX program = xelatex
+\documentclass[11pt]{ctexart}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{geometry}
+\usepackage{enumitem}
+
+\geometry{a4paper, margin=2.5cm}
+\setlength{\parindent}{2em}
+\setlist{itemsep=1pt, parsep=2pt}
+
+% ---- 命名命题/定义的排版 ----
+\newcommand{\named}[1]{%
+  \par\vspace{6pt}\noindent\textbf{#1}\par\nopagebreak\vspace{2pt}%
+}
+\newcommand{\defn}[1]{\named{#1}}
+\newcommand{\propx}[1]{\named{#1}}
+
+\title{\textbf{表示—结构分离：LLM 工程任务推理的条件性理论模型}}
+\date{}
+\author{}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\small 版本 v3（依据审阅意见由 v2 重写）。本文是条件定理、结构性假设与可检验预测组成的框架，\\不宣称对任意 LLM 与任意工程任务的普适定理；所有结论均显式列出其计算模型、任务族与结构假设。
+\end{center}
+
+% ================= 1 =================
+\section{定位与适用范围}
+
+本模型解释两类现象的分离：
+\begin{itemize}
+  \item \textbf{表示扰动}（符号、坐标、单位、正方向等约定改变）可由有界规范化消解，其成本与任务深度无关；
+  \item \textbf{结构扰动}（依赖图、规则系统或适用域改变）的求解成本由检测、规则选择、依赖传播与验证共同决定，预算需求随图深度与分支规模增长。
+\end{itemize}
+
+相对 v2 的三处实质调整：
+\begin{itemize}
+  \item 表示变换空间不默认为有限群作用，改为「有限对称 $\times$ 局部重写 $\times$ 语义保持变换」的分层组合；
+  \item 「表示/结构」改为任务层定义；模型对表示扰动的路径敏感性作为独立响应变量；
+  \item 所有强结论降级为条件命题或待检验假设，上界/下界均标注其成立条件。
+\end{itemize}
+
+% ================= 2 =================
+\section{任务对象}
+
+任务实例 $x=(s,q)$（场景描述 $s$、查询 $q$）。其任务语义对象为
+\[
+  \mathcal{M}(x) = (G_x,\, R_x,\, \theta_x,\, \mathcal{D}_x),
+\]
+\begin{itemize}
+  \item $G_x=(V_x,E_x)$：依赖 DAG（变量、事实、中间状态及其依赖边）；
+  \item $R_x$：适用的规则系统（推理规则、物理定律、工程约束）；
+  \item $\theta_x$：表示约定（坐标轴、正方向、单位、符号命名）；
+  \item $\mathcal{D}_x$：适用域与边界条件（任务成立的论域、初始与边界约束）。
+\end{itemize}
+
+对查询 $q$ 定义结构量：传播深度 $d_q(G)$（答案依赖的最长必要路径）、并行宽度 $w_q(G)$（最大并行依赖规模）、分支规模 $b_q(G)$（候选推导分支数）。
+
+% ================= 3 =================
+\section{扰动分解（任务层定义）}
+
+\subsection{两类扰动}
+
+\defn{定义 3.1（表示等价）。}称 $\tilde{x}$ 与 $x$ 表示等价（$\tilde{x}\sim_{\mathrm{rep}} x$），当且仅当
+\[
+  G_{\tilde{x}}\cong G_x,\qquad R_{\tilde{x}}\cong R_x,\qquad \mathcal{D}_{\tilde{x}}\cong \mathcal{D}_x,\qquad \text{且 } T(\tilde{x})=T(x),
+\]
+即依赖结构、规则系统与适用域同构，仅表示约定 $\theta$ 改变。
+
+\defn{定义 3.2（结构扰动）。}若上述三条件至少一个不成立，即 $(G,R,\mathcal{D})$ 的同构类改变，则 $\tilde{x}$ 是 $x$ 的结构扰动。
+
+\textit{类别是任务层性质：只由任务语义对象决定，与被测模型无关；模型失败不能反过来改变扰动在任务层的类别。}
+
+\subsection{表示变换空间（不假定有限群）}
+
+完整的表示变换空间写为分层组合：
+\[
+  \mathcal{G}_{\mathrm{rep}}
+  =
+  \mathcal{G}_{\mathrm{finite}}
+  \ltimes
+  \mathcal{R}_{\mathrm{local}}
+  \ltimes
+  \mathcal{P}_{\mathrm{semantic}},
+\]
+\begin{itemize}
+  \item $\mathcal{G}_{\mathrm{finite}}$：有限对称变换（轴翻转、轴置换、符号置换）；
+  \item $\mathcal{R}_{\mathrm{local}}$：有限描述的局部重写（定义逐条改写）；
+  \item $\mathcal{P}_{\mathrm{semantic}}$：语义保持的自然语言变换（释义、事实重排、扩展、收缩，见 metamorphic testing 对语义保持关系的分类 \cite{metamorphic}）。
+\end{itemize}
+
+工程记号题（符号/定义异构）对应 $\mathcal{G}_{\mathrm{finite}}$ 与 $\mathcal{R}_{\mathrm{local}}$ 的并集。有限群作用是其中的特例：符号集合可增长、新符号可动态生成、自然语言表述可无限变化，因此一般表示变换空间不是固定有限群。
+
+即使变换候选集有限，$|\mathcal{G}_{\theta}|$ 也只是候选数量，不等于规范化成本——每个候选的检查成本仍可能随输入长度增长，轨道有限不保证常数时间定位。
+
+% ================= 4 =================
+\section{模型层响应与三层安全}
+
+\subsection{任务层与模型层分离}
+
+给定模型 $f$，其响应差异为
+\[
+  \Delta_f(x,\tilde{x}) = d_Y\!\big(f(x),\, f(\tilde{x})\big).
+\]
+任务层 $\tilde{x}\sim_{\mathrm{rep}}x$ 保持语义等价；模型层 $\Delta_f$ 可大可小（敏感性是模型性质）。正确表述：表示扰动在任务语义层仍保持表示等价，但可能诱发模型内部的结构性路径变化——而不是「高灵敏模型下表示扰动变成结构扰动」。
+
+\subsection{三层安全}
+
+\begin{center}
+\begin{tabular}{p{2.6cm}p{8.6cm}p{3.2cm}}
+\toprule
+\textbf{层次} & \textbf{定义} & \textbf{关系} \\
+\midrule
+语义安全 & 任务对象不变：$\mathcal{M}(\tilde{x})\cong_{\theta}\mathcal{M}(x)$ & 任务层性质 \\
+路径安全 & 模型的离散推理路径不变 & 模型层性质 \\
+答案安全 & 最终答案不变：$f(\tilde{x})=f(x)$ & 输出层性质 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\[
+  \text{语义安全}\ \nRightarrow\ \text{路径安全}\ \nRightarrow\ \text{答案安全}.
+\]
+路径安全 $\Rightarrow$ 答案安全，仅在输出完全由该路径决定时成立。
+
+\subsection{节点级敏感性与脆弱性定位}
+
+设决策节点 $v\in V_q$ 的表示为 $h_v(x)$，节点级敏感性取局部 Jacobian 范数（或其有限差分估计）：
+\[
+  \kappa_v(x) = \Big\lVert \frac{\partial h_v}{\partial x} \Big\rVert,
+  \qquad
+  \kappa_{\max}(x) = \max_{v\in V_q}\kappa_v(x).
+\]
+按 $\kappa_v$ 的支撑结构区分两类脆弱性：
+\begin{itemize}
+  \item 局部化脆弱：$\mathcal{S}_{\mathrm{loc}} = \{v : \kappa_v\ \text{显著}\}$；
+  \item 分布式脆弱：$\mathcal{S}_{\mathrm{dist}} = \{v : \kappa_v\ \text{非零且广泛分布}\}$。
+\end{itemize}
+\[
+  \rho_{\mathrm{loc}} = \frac{|\mathcal{S}_{\mathrm{loc}}|}{|V_q|}
+  \qquad\text{（可测量的局部化比率）}.
+\]
+
+\subsection{命题 3（局部表示安全的充分条件）}
+
+\propx{命题 3（局部表示安全的充分条件）。}设节点表示满足局部 Lipschitz 界
+\[
+  \lVert h_v(\tilde{x}) - h_v(x)\rVert \le \kappa_v\, \lVert \tilde{x}-x\rVert,
+\]
+且决策边界距离 $\tau_v = \mathrm{dist}(h_v(x), \partial \mathcal{C}_v)$。若
+\[
+  \max_v \kappa_v\,\varepsilon < \min_v \tau_v,
+\]
+则 $\mathrm{Path}_f(\tilde{x}) = \mathrm{Path}_f(x)$，即扰动不改变模型在这些节点上的离散决策。
+
+\textit{这是充分条件，不是充要条件：即使 $\varepsilon\kappa_v\ge\tau_v$，模型仍可能因决策边界方向、冗余证据或后续纠错而保持原路径。$\kappa$ 必须局部化（$\kappa_v$），全局单个 $\kappa$ 太粗。}
+
+% ================= 5 =================
+\section{规范化成本（条件性定理）}
+
+\subsection{成本分解}
+\[
+  C_{\mathrm{norm}} = C_{\mathrm{parse}} + C_{\mathrm{locate}} + C_{\mathrm{apply}} + C_{\mathrm{check}}
+\]
+（解析变换描述、定位受影响位置、逐处一致替换、一致性验证。）
+
+\subsection{显式变换的线性界}
+
+\propx{命题 4。}当以下条件同时成立：
+\begin{enumerate}[label=(\roman*)]
+  \item 变换 $g$ 已显式给出；
+  \item 变换规则类型已知；
+  \item 受影响位置可线性时间定位；
+  \item 一致替换局部可验证；
+  \item 无需重新证明整体语义等价；
+\end{enumerate}
+则规范化成本近似线性：
+\[
+  C_{\mathrm{norm}} = O\big(|x| + |g| + m\big),
+\]
+其中 $m=m(x,g)$ 为受影响出现数。
+
+「显式给出」与「隐式推断」应视为两种计算问题，而非同一有限群定理的两个情形。
+
+\subsection{隐式变换的假设空间界}
+
+若变换需从上下文推断，则
+\[
+  C_{\mathrm{norm}} = O\big(|\mathcal{H}_g|\cdot C_{\mathrm{check}}\big),
+\]
+其中 $\mathcal{H}_g$ 是候选变换假设空间。工程记号任务中 $\mathcal{H}_g$ 有限（如 $2^d\cdot d!\cdot s!$）只是特例，不是一般结论；$C_{\mathrm{check}}$ 仍可能随输入长度增长。
+
+\subsection{可判定性条件}
+
+规范化可证明有界的前提是等价性检查在受限片段内句法可判定；一般语义等价不可判定（Rice 定理 \cite{symmetries}）。受限正片段（$\mathrm{C}$-$\mathrm{RASP}^+$）有可计算的长度界，完整规则系统的长度界经丢番图方程归约不可计算 \cite{lenbound}。
+
+\subsection{规范化错误（并集界）}
+\[
+  1 - A_F \le \delta_{\mathrm{parse}} + \delta_{\mathrm{apply}} + \varepsilon_I(B),
+  \qquad
+  \delta_{\mathrm{apply}} \le m\,\delta_{\mathrm{local}},
+\]
+其中 $\varepsilon_I(B)$ 为规范任务上的推理错误率。$\delta_{\mathrm{apply}}\le m\,\delta_{\mathrm{local}}$ 仅在并集界意义下成立；错误事件不可简单相加（解析错后不再应用）。
+
+% ================= 6 =================
+\section{结构成本（条件性定理）}
+
+\subsection{成本分解}
+\[
+  C_{\mathrm{struct}} = C_{\mathrm{detect}} + C_{\mathrm{select}} + C_{\mathrm{prop}} + C_{\mathrm{verify}}.
+\]
+
+\subsection{深度下界（在线计算模型假设下）}
+
+\propx{命题 5（串行时间下界）。}对逐步暴露中间状态、每个状态依赖前一状态、且不可预计算、不可并行前缀扫描、不可从训练中直接检索整个映射的在线计算模型，关键依赖链长度 $d_q$ 给出串行时间下界：至少 $d_q$ 个串行步。
+
+\textit{此下界不是一般 DAG 任务的普遍下界：存在长图深度但可用闭式公式、并行扫描或预计算解决的任务。}
+
+\subsection{有效传播深度（定义 + 建模假设）}
+
+单遍链容量界
+\[
+  2^{L-1}-1 \;\le\; S_L^{(\mathcal{T},\Pi)} \;\le\; \frac{3^{L-1}-1}{2},
+\]
+仅在 Tian 等规定的任务族 $\mathcal{T}$ 与信息传播规则 $\Pi$ 下成立 \cite{tian}，不是任意 $L$ 层 Transformer 的普适单遍容量。
+
+CoT 情形下，定义有效传播深度为待估计量（定义而非定理）：
+\[
+  S_{\mathrm{eff}}(B) = \text{预算 $B$ 下经实验证实的有效依赖传播深度},
+\]
+并提出条件性放大假设：
+\[
+  S_{\mathrm{eff}}(t) \le \alpha\, t\, S_L + \beta,
+\]
+其中 $\alpha,\beta$ 由架构、提示格式与状态保留机制决定。已有理论支持 CoT 增强 Transformer 的串行计算能力，但依赖特定架构与复杂度假设 \cite{cotexpressive,cotserial}；递归深度可改善深度外推但过度递归有害 \cite{loopthink}，故「预算增加」$\neq$「有效推理深度增加」。
+
+\subsection{传播误差的幂律模型（待检验假设）}
+\[
+  E_{\mathrm{prop}}(d,w) = \alpha\, d^{\nu}\, w^{-\eta}\, \kappa(G),
+  \qquad
+  \alpha>0,\ \nu\ge 1,\ \eta\ge 0.
+\]
+$\nu=3/2$、$\eta=1/2$ 来自特定聚合传播模型（链式 vs 星/网格的闭式界），作为待检验的特殊假设，不作为一般定理；$\kappa(G)$ 为图条件数。单步误差定义、宽度与并行路径的对应、误差独立性、误差范数与概率错误率的转换均需在实验中明确。
+
+\subsection{规则选择分解（含补偿项）}
+\[
+  A_S(B)
+  =
+  p_D(B)\, p_R(B)\, p_P(B\mid R^*)\, p_V(B\mid \hat R)
+  +
+  P\!\big(\hat y = y^* \mid \hat R \ne R^*\big)\, P\!\big(\hat R \ne R^*\big),
+\]
+$p_D$ 检测偏离默认结构、$p_R$ 选对规则系统、$p_P$ 正确规则下完成传播、$p_V$ 验证通过；补偿项避免低估「错误规则下偶然正确」的概率。
+
+% ================= 7 =================
+\section{验证—搜索成本不对称假设}
+
+（作为假设陈述，不作为普遍定理。）
+
+给定候选解与局部检查规则，验证成本为算法上界：
+\[
+  C_{\mathrm{verify}} = O\big(|E|\cdot c_{\mathrm{local}}\big).
+\]
+搜索成本为逐层分支之和：
+\[
+  C_{\mathrm{search}} = O\Big(\textstyle\sum_{h=0}^{d_q} b_h\Big).
+\]
+仅当 $b_h\ge b>1$（$\forall h$）时才有最坏情况下界 $C_{\mathrm{search}}=\Omega(b^{d_q})$。很多任务可经动态规划、约束传播、剪枝或闭式公式避开指数搜索。
+
+规范化属验证类（检查 $\tilde{x}\to x$ 的逐处一致性），结构求解属搜索类；两类成本的差距因此是条件性的，不是先验事实。
+
+% ================= 8 =================
+\section{预算响应}
+
+\subsection{表示任务（局部错误累积型）}
+\[
+  A_F(B) = p_{\mathrm{parse}}(B)\cdot p_{\mathrm{apply}}(B\mid \mathrm{parse})\cdot p_{\mathrm{solve}}(B\mid \mathrm{normalized}).
+\]
+
+\subsection{结构任务（阶段瓶颈与乘积效应型）}
+\[
+  A_S(B) = p_D(B)\cdot p_R(B)\cdot p_P(B)\cdot p_V(B).
+\]
+
+\subsection{预算指标}
+\begin{itemize}
+  \item 预算利用率：$U(B) = S_{\mathrm{eff}}(B) / d_q(G)$；$U(B)<1$ 表示传播能力不足。
+  \item 预算边际收益：$\Delta_A(B;\Delta) = A(B+\Delta) - A(B)$；平台定义为连续多个预算区间 $\Delta_A(B;\Delta)<\varepsilon$。
+\end{itemize}
+\textit{（删除 v2 的 $G(B)=S(B)-A(B)$：$S(B)$ 是深度/容量、$A(B)$ 是概率，量纲与语义不一致。）}
+
+\subsection{核心预测（条件性）}
+\[
+  \frac{\partial A_F}{\partial B} \;>\; \frac{\partial A_S}{\partial B},
+\]
+仅对「表示扰动主要受规范化限制、结构扰动主要受检测或规则选择限制」的任务族成立；不写成无条件不等式。
+
+% ================= 9 =================
+\section{核心命题（推荐表述）}
+
+\noindent\textbf{对语义保持、局部、显式或可判定的表示扰动，额外计算主要承担规范化与一致性检查，其成本由输入长度、变换描述长度和受影响位置数控制。对改变依赖图、规则系统或适用域的结构扰动，额外计算还必须承担异常检测、规则选择、依赖传播和验证，因此其预算需求由图深度、分支规模、传播条件数和验证结构共同决定。两类扰动在任务语义层面可区分，而模型对表示扰动的路径敏感性应作为独立的响应变量分析。}
+
+% ================= 10 =================
+\section{可检验预测}
+
+\begin{center}
+\begin{tabular}{p{4.4cm}p{4.6cm}p{5.0cm}}
+\toprule
+\textbf{预测} & \textbf{形式} & \textbf{对应实验} \\
+\midrule
+符号异构修复成本不随任务深度增长 & $C_{\mathrm{norm}}=O(|x|+|g|+m)$ & 逐空规范化错误率 vs 题深 \\
+结构任务预算需求随深度增长 & $S_{\mathrm{eff}}(B)<d_q$ 时正确率受限 & 端到端错误率 vs 子过程深度 \\
+路径安全充分条件 & $\max_v\kappa_v\varepsilon<\min_v\tau_v$ & 符号改写越界处错误聚簇 \\
+宽度阻尼 & $E_{\mathrm{prop}}\propto w^{-\eta}$ & 并行子过程 vs 串行链 \\
+验证/搜索不对称 & gold-trunc $\gg$ final-e2e & 前缀增益对比（+87.5pp） \\
+幂律标度 & $\nu\approx1.5$，$\eta\approx0.5$ & 不同深度/宽度图任务拟合 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ================= 11 =================
+\section{假设清单（显式边界）}
+
+\begin{center}
+\begin{tabular}{p{1.0cm}p{7.6cm}p{5.8cm}}
+\toprule
+\textbf{\#} & \textbf{假设/边界} & \textbf{来源与性质} \\
+\midrule
+A1 & 预算 $B$ 为 CoT 步数计算族；无 CoT $\subseteq\mathsf{TC}^0$；$\mathrm{CoT}(t)\subseteq\mathrm{SPACE}(t+\log n)$ & Merrill--Sabharwal \cite{cotexpressive}，能力类 \\
+A2 & 单遍容量界 $S_L^{(\mathcal{T},\Pi)}$ 只适用于 Tian 等的任务族与传播规则 & \cite{tian}，适用范围限定 \\
+A3 & $S_{\mathrm{eff}}(t)\le\alpha tS_L+\beta$ 为建模假设，$\alpha,\beta$ 待估 & 定义 + 假设，非定理 \\
+A4 & $E_{\mathrm{prop}}=\alpha d^{\nu}w^{-\eta}\kappa(G)$ 为幂律模型；$\nu=3/2,\eta=1/2$ 待检验 & 经验模型，非定理 \\
+A5 & 深度下界只在在线计算模型下成立 & 命题 5 的条件 \\
+A6 & 验证/搜索不对称是假设，$C_{\mathrm{verify}}$ 是算法上界 & 假设，非定理 \\
+A7 & 错误合并用并集界与条件概率；$\delta\le14\varepsilon^{KJ}$ 仅在原文概率假设下引用 & 概率工具 \\
+A8 & 一般语义等价不可判定 $\Rightarrow$ 规范化可判定性要求受限片段 & Rice 定理 \cite{symmetries}，C-RASP 分层 \cite{lenbound} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ================= 附录 A =================
+\appendix
+\section{理论依据文献溯源表}
+
+\begin{center}
+\small 说明：「直接引用」为原样采用原文献结论；「条件化引用」为采用原结论并显式限定其适用范围；「建模假设」为借鉴原文献机制但改写为待检验假设；「经验支撑」为使用原文献的实测数字作为证据；「类比迁移」为把原文献在另一设定下的量迁移到本框架。
+\end{center}
+
+\begin{small}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{longtable}{p{4.1cm}p{0.9cm}p{4.7cm}p{1.9cm}p{2.9cm}}
+\caption{理论依据文献溯源表}\\
+\toprule
+\textbf{v3 条目} & \textbf{节} & \textbf{溯源文献} & \textbf{原文献性质} & \textbf{使用方式} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{v3 条目} & \textbf{节} & \textbf{溯源文献} & \textbf{原文献性质} & \textbf{使用方式} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+任务对象 $\mathcal{M}(x)=(G,R,\theta,\mathcal{D})$ & 2 & 本工作（$\mathcal{D}$ 依审阅意见新增） & 建模定义 & 定义 \\
+表示等价 $\tilde{x}\sim_{\mathrm{rep}}x$ 与结构扰动 & 3.1 & 本工作 v1/v2 & 建模定义 & 定义 \\
+$\mathcal{G}_{\mathrm{rep}}=\mathcal{G}_{\mathrm{finite}}\ltimes\mathcal{R}_{\mathrm{local}}\ltimes\mathcal{P}_{\mathrm{semantic}}$ & 3.2 & \cite{metamorphic}；\cite{symmetries} & 经验分类 / 范畴理论 & 修正后的定义 \\
+任务层—模型层分离 $\Delta_f$ & 4.1 & \cite{symmetries} & 理论 & 定义（依审阅意见） \\
+三层安全：语义/路径/答案 & 4.2 & 本工作 + 审阅意见 & 建模定义 & 定义 \\
+$\kappa_v$ 与 $\mathcal{S}_{\mathrm{loc}}/\mathcal{S}_{\mathrm{dist}}$、$\rho_{\mathrm{loc}}$ & 4.3 & \cite{predictivemaps}；\cite{fragile} & 理论 + 机制实验 & 类比迁移 + 经验支撑 \\
+命题 3：$\varepsilon\kappa<\tau\Rightarrow$ 路径保持 & 4.4 & \cite{quiver}；标准 Lipschitz 论证 & 理论 + 实验 & 条件化（充要$\to$充分） \\
+$C_{\mathrm{norm}}=C_{\mathrm{parse}}+C_{\mathrm{locate}}+C_{\mathrm{apply}}+C_{\mathrm{check}}$ & 5.1 & 本工作 + 审阅意见 & 建模定义 & 定义 \\
+命题 4：$C_{\mathrm{norm}}=O(|x|+|g|+m)$ & 5.2 & 本工作定理 1 + 审阅五条件 (i)–(v) & 命题 & 条件性命题 \\
+隐式推断 $O(|\mathcal{H}_g|\cdot C_{\mathrm{check}})$ & 5.3 & \cite{symmetries}（Prop 14） & 定理 & 建模命题 \\
+可判定性分层 & 5.4 & \cite{lenbound}；\cite{symmetries} & 定理 & 直接引用 \\
+并集界 $1-A_F\le\delta_{\mathrm{parse}}+\delta_{\mathrm{apply}}+\varepsilon_I$ & 5.5 & 概率论标准工具 & 定理 & 直接引用 \\
+深度下界（在线计算模型） & 6.2 & 标准 DAG 深度论证 + 审阅条件 & 命题 & 条件性命题 \\
+$S_L^{(\mathcal{T},\Pi)}\in[2^{L-1}-1,(3^{L-1}-1)/2]$ & 6.3 & \cite{tian} & 定理 & 条件化引用（限定 $\mathcal{T},\Pi$） \\
+$S_{\mathrm{eff}}$ 定义；$S_{\mathrm{eff}}(t)\le\alpha tS_L+\beta$ & 6.3 & \cite{cotexpressive}；\cite{cotserial}；\cite{loopthink} & 定理 / 实验 & 建模假设（非定理） \\
+$E_{\mathrm{prop}}=\alpha d^{\nu}w^{-\eta}\kappa(G)$ & 6.4 & \cite{predictivemaps} & 闭式界 & 参数化假设（$\nu,\eta$ 待估） \\
+$A_S$ 四因子分解 + 补偿项 & 6.5 & 本工作 v1 的 $p_Dp_Rp_P$ + 审阅 $p_V$ & 建模分解 & 定义 \\
+验证—搜索成本不对称 & 7 & \cite{graphverif}；\cite{mathrobust} & 方法 + 实验 & 假设（非定理） \\
+$A_F$ / $A_S$ 概率分解 & 8.1–8.2 & 本工作 + 审阅意见 & 建模分解 & 定义 \\
+$U(B)$ 与 $\Delta_A$（删除 $G(B)$） & 8.3 & 本工作 + 审阅意见 & 指标 & 可检验指标 \\
+核心预测 $\partial A_F/\partial B>\partial A_S/\partial B$ & 8.4 & \cite{stmlayer}；\cite{mathrobust} & 理论 + 实验 & 条件化假设 \\
+无 CoT $\subseteq\mathsf{TC}^0$；$\mathrm{CoT}(t)\subseteq\mathrm{SPACE}(t+\log n)$ & A1 & \cite{cotexpressive} & 定理 & 直接引用 \\
+$\delta\le14\varepsilon^{KJ}$（概率等价检验） & A7 & \cite{mathrobust} & 概率界 & 条件化引用 \\
+表示扰动致错（经验证据） & 4.4、10 & \cite{symmetries,geometry,fragile,mathrobust,reorder,semantic} & 实验 & 经验支撑 \\
+结构敏感与图验证（经验证据） & 6.3、7 & \cite{tian,predictivemaps,quiver,graphverif,gnn} & 实验 & 经验支撑 \\
+长度泛化差异（背景动机） & A8 & \cite{lenzhang} & 实验 & 背景动机 \\
+\bottomrule
+\end{longtable}
+\end{small}
+
+% ================= 参考文献 =================
+\begin{thebibliography}{99}
+
+\bibitem{metamorphic}
+J.~De Curt\`o and I.~De Zarz\`a. Metamorphic Testing for Semantic Invariance in Large Language Models. \emph{IEEE Access}, 2025.
+
+\bibitem{symmetries}
+What are the Right Symmetries?（改写范畴、success invariance、语义等价不可判定性见其附录 B.5；书目信息见文献摘要，投稿前核对。）
+
+\bibitem{lenbound}
+A.~Yang, P.~Bergstr\"a\ss er, G.~Zetzsche, D.~Chiang, and A.~Lin. Length Generalization Bounds for Transformers. 2026.
+
+\bibitem{tian}
+Q.~Tian, Y.~Chen, Z.~Wang, and Z.-Q.~J.~Xu. Limit Analysis for Symbolic Multi-Step Reasoning Tasks with Information Propagation Rules Based on Transformers. arXiv:2509.23178, 2025.
+
+\bibitem{cotexpressive}
+W.~Merrill and A.~Sabharwal. The Expressive Power of Transformers with Chain of Thought. \emph{ICLR}, 2024.
+
+\bibitem{cotserial}
+Z.~Feng et al. Chain of Thought Empowers Transformers to Solve Inherently Serial Problems. \emph{ICLR}, 2024.（作者列表投稿前核对。）
+
+\bibitem{loopthink}
+Loop, Think, \& Generalize: Implicit Reasoning in Recurrent-Depth Transformers. 2026.（书目信息待核对。）
+
+\bibitem{lenzhang}
+H.~Zhou et al. What Algorithms Can Transformers Learn? A Study in Length Generalization. arXiv:2310.16028.
+
+\bibitem{predictivemaps}
+Predictive Maps of Multi-Agent Reasoning: A Successor-Representation Spectrum for LLM Communication Topologies.（条件数 $\kappa$ 与 $T^{3/2}/\sqrt{k}$ 误差界来源。）
+
+\bibitem{quiver}
+QUIVER: A Formal Framework for Quantifying Perturbation Propagation and Bifurcation in Compound AI Systems.（阈值分叉证据来源。）
+
+\bibitem{fragile}
+Fragile Reasoning: A Mechanistic Analysis of LLM Sensitivity to Meaning-Preserving Perturbations.（局部化/分布式脆弱性证据。）
+
+\bibitem{mathrobust}
+An Investigation of Robustness of LLMs in Mathematical Reasoning: Benchmarking with Mathematically-Equivalent Transformations.（PutnamGAP；概率等价检验界。）
+
+\bibitem{graphverif}
+Graph of Verification: Structured Verification of LLM Reasoning.（拓扑序归纳验证。）
+
+\bibitem{gnn}
+GNNVerifier: Graph-based Verifier for LLM Task Planning.（结构错误的图感知验证。）
+
+\bibitem{geometry}
+Measuring Representation Robustness in Large Language Models for Geometry.（规范化修复的容量门槛。）
+
+\bibitem{reorder}
+Lost in Reordering: Structural Sensitivity of Multilingual LLMs under Semantics-Preserving Perturbations.
+
+\bibitem{semantic}
+Semantic Invariance in Agentic AI.
+
+\bibitem{stmlayer}
+STM Layer Theory Version 4.0 Technical Note.（表面连贯与结构正确的分离。）
+
+\end{thebibliography}
+
+\end{document}

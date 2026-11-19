@@ -1,0 +1,13 @@
+# Write Python Code to solve the following questions. Store your result as a variable named 'ans'.
+# Python code, return ans
+# 用语义明确的变量名把推理写成可执行语句，符号矩阵使用 sympy。
+# 每一步都写成程序语句，不要只写在注释里。程序由外部 Python 解释器执行，最终答案是变量 ans 的值。
+
+下面是若干示例，格式为「问题 + program of thoughts」。请学习其中的定义和写法。后面的问题会改变其中的部分定义。请根据【新定义】重新推导，不要照抄示例里的结果。
+
+{baseline}
+
+# Question: {question}
+# 新定义:
+{definitions}
+# Python code, return ans

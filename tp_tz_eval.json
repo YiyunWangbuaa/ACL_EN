@@ -1,0 +1,556 @@
+{
+  "task": "balance_frame_to_body_frame",
+  "declaration": {
+    "alpha": {
+      "airspeed_toward": "body_down",
+      "sign": "positive"
+    },
+    "beta": {
+      "airspeed_toward": "body_right",
+      "sign": "positive"
+    },
+    "gamma": {
+      "right_wing_toward": "body_down",
+      "sign": "positive"
+    },
+    "alpha_m": {
+      "airspeed_toward": "body_down",
+      "sign": "positive"
+    },
+    "beta_m": {
+      "airspeed_toward": "body_right",
+      "sign": "positive"
+    },
+    "gamma_m": {
+      "right_wing_toward": "body_down",
+      "sign": "positive"
+    },
+    "placement": "upright",
+    "body_frame": {
+      "chirality": "right",
+      "euler_order": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "XTZ": {
+        "along": "body_axial",
+        "points": "body_forward"
+      },
+      "YTZ": {
+        "along": "body_normal",
+        "points": "body_up"
+      }
+    },
+    "wind_frame": {
+      "chirality": "right",
+      "XFD": {
+        "along": "tunnel_axial",
+        "points": "tunnel_forward"
+      },
+      "YFD": {
+        "along": "tunnel_normal",
+        "points": "tunnel_up"
+      }
+    },
+    "gamma_tp": {
+      "sense": "same"
+    },
+    "balance_frame": {
+      "chirality": "right",
+      "XTP": {
+        "along": "balance_axial",
+        "points": "balance_forward"
+      },
+      "YTP": {
+        "along": "balance_normal",
+        "points": "balance_up"
+      }
+    }
+  },
+  "fixed": {
+    "transform": "passive",
+    "rotation_type": "intrinsic",
+    "product": "[XTZ, YTZ, ZTZ]^T = R1*R2*R3*[XTP, YTP, ZYP]^T",
+    "loads": {
+      "CN": "normal",
+      "CZ": "lateral",
+      "CA": "axial",
+      "MZ": "lateral",
+      "MA": "axial",
+      "MN": "normal"
+    }
+  },
+  "items": [
+    {
+      "id": 1,
+      "manuscript_id": "1",
+      "step": 1,
+      "label": "C2",
+      "prompt": "力和力矩的坐标系转换方向",
+      "options": [
+        "体轴系向体轴系",
+        "体轴系向天平系",
+        "体轴系向风轴系",
+        "天平系向体轴系",
+        "天平系向天平系",
+        "天平系向风轴系",
+        "风轴系向体轴系",
+        "风轴系向天平系",
+        "风轴系向风轴系"
+      ],
+      "answer": "天平系向体轴系"
+    },
+    {
+      "id": 2,
+      "manuscript_id": "2",
+      "step": 2,
+      "label": "C1",
+      "prompt": "天平安装角以天平绝对轴向正方向（前方）的右手定则为",
+      "options": [
+        "正",
+        "负"
+      ],
+      "answer": "正"
+    },
+    {
+      "id": 3,
+      "manuscript_id": "3",
+      "step": 2,
+      "label": "C1",
+      "prompt": "机体滚转角以机体绝对轴向正方向（前方）的右手定则为",
+      "options": [
+        "正",
+        "负"
+      ],
+      "answer": "正"
+    },
+    {
+      "id": 4,
+      "manuscript_id": "4",
+      "step": 2,
+      "label": "A1",
+      "prompt": "天平系与机体系相差的滚转角",
+      "options": null,
+      "answer": "γ_M - γ_tp"
+    },
+    {
+      "id": 5,
+      "manuscript_id": "5",
+      "step": 2,
+      "label": "A1",
+      "prompt": "安装角旋转所绕的天平坐标轴",
+      "options": [
+        "XFD",
+        "YFD",
+        "ZFD",
+        "XTZ",
+        "YTZ",
+        "ZTZ",
+        "XTP",
+        "YTP",
+        "ZYP"
+      ],
+      "answer": "XTP"
+    },
+    {
+      "id": 6,
+      "manuscript_id": "6",
+      "step": 2,
+      "label": "A1",
+      "prompt": "该滚转相对这根坐标轴正方向的转向",
+      "options": [
+        "正",
+        "逆"
+      ],
+      "answer": "正"
+    },
+    {
+      "id": 7,
+      "manuscript_id": "7",
+      "step": 2,
+      "label": "A2",
+      "prompt": "天平轴系中的安装角旋转矩阵 R_(γ_M-γ_tp)",
+      "options": null,
+      "answer": "[[1, 0, 0], [0, cos(γ_M - γ_tp), sin(γ_M - γ_tp)], [0, -sin(γ_M - γ_tp), cos(γ_M - γ_tp)]]"
+    },
+    {
+      "id": 8,
+      "manuscript_id": "8",
+      "step": 3,
+      "label": "C1",
+      "prompt": "天平系绝对法向正方向对应的有向坐标轴",
+      "options": [
+        "XFD",
+        "YFD",
+        "ZFD",
+        "XTZ",
+        "YTZ",
+        "ZTZ",
+        "XTP",
+        "YTP",
+        "ZYP",
+        "-XFD",
+        "-YFD",
+        "-ZFD",
+        "-XTZ",
+        "-YTZ",
+        "-ZTZ",
+        "-XTP",
+        "-YTP",
+        "-ZYP"
+      ],
+      "answer": "YTP"
+    },
+    {
+      "id": 9,
+      "manuscript_id": "9",
+      "step": 3,
+      "label": "C1",
+      "prompt": "天平系绝对轴向正方向对应的有向坐标轴",
+      "options": [
+        "XFD",
+        "YFD",
+        "ZFD",
+        "XTZ",
+        "YTZ",
+        "ZTZ",
+        "XTP",
+        "YTP",
+        "ZYP",
+        "-XFD",
+        "-YFD",
+        "-ZFD",
+        "-XTZ",
+        "-YTZ",
+        "-ZTZ",
+        "-XTP",
+        "-YTP",
+        "-ZYP"
+      ],
+      "answer": "XTP"
+    },
+    {
+      "id": 10,
+      "manuscript_id": "10",
+      "step": 3,
+      "label": "C1",
+      "prompt": "天平系绝对侧向正方向对应的有向坐标轴",
+      "options": [
+        "XFD",
+        "YFD",
+        "ZFD",
+        "XTZ",
+        "YTZ",
+        "ZTZ",
+        "XTP",
+        "YTP",
+        "ZYP",
+        "-XFD",
+        "-YFD",
+        "-ZFD",
+        "-XTZ",
+        "-YTZ",
+        "-ZTZ",
+        "-XTP",
+        "-YTP",
+        "-ZYP"
+      ],
+      "answer": "ZYP"
+    },
+    {
+      "id": 11,
+      "manuscript_id": "11",
+      "step": 3,
+      "label": "C1",
+      "prompt": "机体系绝对法向正方向对应的有向坐标轴",
+      "options": [
+        "XFD",
+        "YFD",
+        "ZFD",
+        "XTZ",
+        "YTZ",
+        "ZTZ",
+        "XTP",
+        "YTP",
+        "ZYP",
+        "-XFD",
+        "-YFD",
+        "-ZFD",
+        "-XTZ",
+        "-YTZ",
+        "-ZTZ",
+        "-XTP",
+        "-YTP",
+        "-ZYP"
+      ],
+      "answer": "YTZ"
+    },
+    {
+      "id": 12,
+      "manuscript_id": "12",
+      "step": 3,
+      "label": "C1",
+      "prompt": "机体系绝对轴向正方向对应的有向坐标轴",
+      "options": [
+        "XFD",
+        "YFD",
+        "ZFD",
+        "XTZ",
+        "YTZ",
+        "ZTZ",
+        "XTP",
+        "YTP",
+        "ZYP",
+        "-XFD",
+        "-YFD",
+        "-ZFD",
+        "-XTZ",
+        "-YTZ",
+        "-ZTZ",
+        "-XTP",
+        "-YTP",
+        "-ZYP"
+      ],
+      "answer": "XTZ"
+    },
+    {
+      "id": 13,
+      "manuscript_id": "13",
+      "step": 3,
+      "label": "C1",
+      "prompt": "机体系绝对侧向正方向对应的有向坐标轴",
+      "options": [
+        "XFD",
+        "YFD",
+        "ZFD",
+        "XTZ",
+        "YTZ",
+        "ZTZ",
+        "XTP",
+        "YTP",
+        "ZYP",
+        "-XFD",
+        "-YFD",
+        "-ZFD",
+        "-XTZ",
+        "-YTZ",
+        "-ZTZ",
+        "-XTP",
+        "-YTP",
+        "-ZYP"
+      ],
+      "answer": "ZTZ"
+    },
+    {
+      "id": 14,
+      "manuscript_id": "14",
+      "step": 3,
+      "label": "A2",
+      "prompt": "坐标轴与绝对方向统一后的前置矩阵 RTP_TZ1",
+      "options": null,
+      "answer": "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"
+    },
+    {
+      "id": 15,
+      "manuscript_id": "15",
+      "step": 4,
+      "label": "C1",
+      "prompt": "模型安装方式",
+      "options": [
+        "正装",
+        "倒装"
+      ],
+      "answer": "正装"
+    },
+    {
+      "id": 16,
+      "manuscript_id": "16",
+      "step": 4,
+      "label": "A2",
+      "prompt": "正装或倒装对应的前置矩阵 RTP_TZ2",
+      "options": null,
+      "answer": "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"
+    },
+    {
+      "id": 17,
+      "manuscript_id": "17",
+      "step": 5,
+      "label": "A2",
+      "prompt": "连乘式中的 R1",
+      "options": [
+        "R_(γ_M-γ_tp)",
+        "RTP_TZ1",
+        "RTP_TZ2"
+      ],
+      "answer": "RTP_TZ2"
+    },
+    {
+      "id": 18,
+      "manuscript_id": "18",
+      "step": 5,
+      "label": "A2",
+      "prompt": "连乘式中的 R2",
+      "options": [
+        "R_(γ_M-γ_tp)",
+        "RTP_TZ1",
+        "RTP_TZ2"
+      ],
+      "answer": "RTP_TZ1"
+    },
+    {
+      "id": 19,
+      "manuscript_id": "19",
+      "step": 5,
+      "label": "A2",
+      "prompt": "连乘式中的 R3",
+      "options": [
+        "R_(γ_M-γ_tp)",
+        "RTP_TZ1",
+        "RTP_TZ2"
+      ],
+      "answer": "R_(γ_M-γ_tp)"
+    },
+    {
+      "id": 20,
+      "manuscript_id": "20",
+      "step": 6,
+      "label": "A2",
+      "prompt": "R1*R2*R3 化简后的总矩阵",
+      "options": null,
+      "answer": "[[1, 0, 0], [0, cos(γ_M - γ_tp), sin(γ_M - γ_tp)], [0, -sin(γ_M - γ_tp), cos(γ_M - γ_tp)]]"
+    },
+    {
+      "id": 21,
+      "manuscript_id": "21",
+      "step": 7,
+      "label": "C1",
+      "prompt": "XTZ 关联的体轴力和力矩",
+      "options": [
+        "CN_TZ,MN_TZ",
+        "CA_TZ,MA_TZ",
+        "CZ_TZ,MZ_TZ"
+      ],
+      "answer": "CA_TZ,MA_TZ"
+    },
+    {
+      "id": 22,
+      "manuscript_id": "22",
+      "step": 7,
+      "label": "C1",
+      "prompt": "YTZ 关联的体轴力和力矩",
+      "options": [
+        "CN_TZ,MN_TZ",
+        "CA_TZ,MA_TZ",
+        "CZ_TZ,MZ_TZ"
+      ],
+      "answer": "CN_TZ,MN_TZ"
+    },
+    {
+      "id": 23,
+      "manuscript_id": "23",
+      "step": 7,
+      "label": "C1",
+      "prompt": "ZTZ 关联的体轴力和力矩",
+      "options": [
+        "CN_TZ,MN_TZ",
+        "CA_TZ,MA_TZ",
+        "CZ_TZ,MZ_TZ"
+      ],
+      "answer": "CZ_TZ,MZ_TZ"
+    },
+    {
+      "id": 24,
+      "manuscript_id": "24",
+      "step": 7,
+      "label": "C1",
+      "prompt": "XTP 关联的天平力和力矩",
+      "options": [
+        "CN_TP,MN_TP",
+        "CA_TP,MA_TP",
+        "CZ_TP,MZ_TP"
+      ],
+      "answer": "CA_TP,MA_TP"
+    },
+    {
+      "id": 25,
+      "manuscript_id": "25",
+      "step": 7,
+      "label": "C1",
+      "prompt": "YTP 关联的天平力和力矩",
+      "options": [
+        "CN_TP,MN_TP",
+        "CA_TP,MA_TP",
+        "CZ_TP,MZ_TP"
+      ],
+      "answer": "CN_TP,MN_TP"
+    },
+    {
+      "id": 26,
+      "manuscript_id": "26",
+      "step": 7,
+      "label": "C1",
+      "prompt": "ZYP 关联的天平力和力矩",
+      "options": [
+        "CN_TP,MN_TP",
+        "CA_TP,MA_TP",
+        "CZ_TP,MZ_TP"
+      ],
+      "answer": "CZ_TP,MZ_TP"
+    },
+    {
+      "id": 27,
+      "manuscript_id": "27",
+      "step": 8,
+      "label": "A2",
+      "prompt": "体轴系 CN_TZ",
+      "options": null,
+      "answer": "CN_TP*cos(γ_M - γ_tp) + CZ_TP*sin(γ_M - γ_tp)"
+    },
+    {
+      "id": 28,
+      "manuscript_id": "28",
+      "step": 8,
+      "label": "A2",
+      "prompt": "体轴系 CA_TZ",
+      "options": null,
+      "answer": "CA_TP"
+    },
+    {
+      "id": 29,
+      "manuscript_id": "29",
+      "step": 8,
+      "label": "A2",
+      "prompt": "体轴系 CZ_TZ",
+      "options": null,
+      "answer": "-CN_TP*sin(γ_M - γ_tp) + CZ_TP*cos(γ_M - γ_tp)"
+    },
+    {
+      "id": 30,
+      "manuscript_id": "30",
+      "step": 8,
+      "label": "A2",
+      "prompt": "体轴系 MN_TZ",
+      "options": null,
+      "answer": "MN_TP*cos(γ_M - γ_tp) + MZ_TP*sin(γ_M - γ_tp)"
+    },
+    {
+      "id": 31,
+      "manuscript_id": "31",
+      "step": 8,
+      "label": "A2",
+      "prompt": "体轴系 MA_TZ",
+      "options": null,
+      "answer": "MA_TP"
+    },
+    {
+      "id": 32,
+      "manuscript_id": "32",
+      "step": 8,
+      "label": "A2",
+      "prompt": "体轴系 MZ_TZ",
+      "options": null,
+      "answer": "-MN_TP*sin(γ_M - γ_tp) + MZ_TP*cos(γ_M - γ_tp)"
+    }
+  ]
+}

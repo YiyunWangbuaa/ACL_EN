@@ -1,0 +1,95 @@
+Length Generalization Bounds for
+Transformers
+Andy Yang1 Pascal Bergstr¨ aßer2 Georg Zetzsche3 David Chiang 1 Anthony Lin 2,3
+June 2, 2026
+1University of Notre Dame
+2RPTU Kaiserslautern-Landau
+3Max Planck Institute for Software Systems
+
+Length generalization
+If we train on length up toN . . .
+a b b a # a b b a <EOS> transformer Accept
+transformera b b a b a b b # a b b a b a b b <EOS> Accept
+Will we succeed on lengths up to 2N . . .?
+And how large do we have to makeN . . .?
+1
+
+Length generalization bounds
+Chen et al. 2025 considered the question, what is the minimum input
+length needed to guarantee length-generalization? In the case of 2-state
+automata:
+q0 q1
+ϵ accept
+a accept
+b reject
+aa accept
+ab reject
+ba reject
+bb accept
+After seeing all strings of up to length 2, we can always recover the
+ground truth 2-state automaton.
+q0 q1
+b
+b
+a a
+2
+
+C-RASP
+A programming language defined by Yang & Chiang 2024 based on
+RASP invented by Weiss et al. 2021.
+Dyck Language
+Ca(i) :=# [j ≤ i] a(j) The number of a up to positioni (1)
+Cb(i) :=# [j ≤ i] b(j) The number of b up to positioni (2)
+V (i) :=Ca(i) < Cb(i) Violation: there are moreb than a (3)
+CV (i) :=# [j ≤ i] V (j) The number of Violations (4)
+M(i) :=CV (i) = 0 Matched i.e. zero Violations (5)
+B(i) :=Ca(i) =Cb(i) Balanced i.e. same number ofa and b (6)
+D(i) :=M(i) ∧ B(i) String is Matched and Balanced (7)
+Yang et al. 2024 showed that transformers can simulate C-RASP
+programs.
+3
+
+Previous bounds
+Chen et al. 2025 showed length complexity bounds for depth-1 and
+depth-2 fragments of C-RASP:
+Class Complexity Measure Length Complexity
+C-RASP1,T precision T O (T 2)
+C-RASP2,K ,T precision T and # of heads K O (T O(K ))
+4
+
+C-RASP: uncomputable bounds
+For any Diophantine system of equations. . .
+D := x 4 + y 4 + z 4 = w 4
+There is a C-RASP program ϕD such that D has a solution . . .
+x = 95800, y = 217519, z = 414560, w = 422481
+whenever ϕD accepts some word. . .
+· · ·σ95800x · · ·σ217519y · · ·σ414560z · · ·σ4224812 · · · |= ϕ
+We show that the undecidability of Diophantine equations implies
+uncomputable length generalization bounds forC-RASP.
+5
+
+C-RASP+: exponential bounds
+For any C-RASP+ program ϕ we obtain a TL[ −♢] program ϕ′ with an
+exponential blowup in size
+↼
+#[ψ] ≥ C 7→ −♢(ψ ∧ −♢(ψ ∧ . . .−♢(ψ ∧ −♢ψ) . . .))| {z }
+C many
+∨
+ψ ∧ −♢(ψ ∧ −♢(ψ ∧ . . .−♢(ψ ∧ −♢ψ) . . .)| {z }
+C − 1 many
+Using the small model property of TL[ −♢] if ϕ′ accepts any string it must
+accept some string of length polyonmial in |ϕ′| (and thus exponential in
+|ϕ|)
+6
+
+Summary
+• We show C-RASP programs (and transformers) have uncomputable
+length complexity via a reduction from Diophantine equations
+• We show the positive fragment C-RASP + (and finite precision
+transformers) have exponential length complexity
+Class Complexity Measure Length Complexity
+C-RASP1,T precision T O (T 2)
+C-RASP2,K ,T precision T and # of heads K O (T O(K ))
+C-RASP program size S uncomputable
+C-RASP+ program size S O (2poly(S))
+7
