@@ -22,7 +22,7 @@ import json
 import random
 from copy import deepcopy
 
-from domain_layout import DOMAINS
+from domain_layout import SETS
 from domains.aerodynamics.body_air_dataset import build_record as build_body_air
 from domains.aerodynamics.body_air_generate import legal_stability_frames
 from domains.aerodynamics.dataset_generate import build_record as build_ground_body
@@ -47,7 +47,7 @@ from flight_frame_model import (
 )
 
 
-OUT_DIR = DOMAINS["aerodynamics"]["pilot"]
+OUT_DIR = SETS["basic.flight"]["pilot"]
 SEED = 20261108
 TIERS = (25, 50, 75, 100)
 TIER_COUNTS = {25: 3, 50: 3, 75: 2, 100: 2}

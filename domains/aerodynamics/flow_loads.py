@@ -57,8 +57,12 @@ def _sign(value) -> str:
     return "正" if number > 0 else "负"
 
 
-def build_loads(body_speed: sp.Matrix, attack, sideslip, show) -> dict:
-    """Return displayed load answers derived from the unit airspeed in body axes."""
+def build_loads(body_speed: sp.Matrix, attack, sideslip, show, lift_z: int = -1, side_y: int = 1) -> dict:
+    """Return displayed load answers derived from the unit airspeed in body axes.
+
+    lift_z is the sign of L along Z_a. side_y is the sign of Y along Y_a.
+    The standard declaration uses lift_z=-1 and side_y=+1.
+    """
     air_x = sp.Matrix([_principal(item, attack, sideslip) for item in body_speed])
     if sp.simplify(air_x.dot(air_x) - 1) != 0:
         raise DefinitionError("The airflow forward axis is not a unit vector.")
@@ -85,7 +89,9 @@ def build_loads(body_speed: sp.Matrix, attack, sideslip, show) -> dict:
             raise DefinitionError(f"The {name} basis is not a right-handed orthonormal frame.")
 
     body_from_air = _apply(to_air.T, attack, sideslip)
-    airflow_force = sp.Matrix([-DRAG, SIDE, -LIFT])
+    if lift_z not in (-1, 1) or side_y not in (-1, 1):
+        raise DefinitionError("Lift and side signs must be -1 or +1.")
+    airflow_force = sp.Matrix([-DRAG, side_y * SIDE, lift_z * LIFT])
     body_force = _apply(body_from_air * airflow_force, attack, sideslip)
     airflow_moment = sp.Matrix([ROLL_A, PITCH_A, YAW_A])
     body_moment = _apply(body_from_air * airflow_moment, attack, sideslip)
@@ -152,12 +158,21 @@ def build_loads(body_speed: sp.Matrix, attack, sideslip, show) -> dict:
     yaw = ROLL_A * sine_a * cosine_b - PITCH_A * sine_a * sine_b + YAW_A * cosine_a
     pitch_coeff = (SPAN / CHORD) * CLA * sine_b + CMA * cosine_b
 
+    lift_symbol = "-L" if lift_z < 0 else "L"
+    side_symbol = "Y" if side_y > 0 else "-Y"
+    coeff_l = "-C_L" if lift_z < 0 else "C_L"
+    coeff_y = "C_Ya" if side_y > 0 else "-C_Ya"
+    dimensional_l = "-q_bar*S*C_L" if lift_z < 0 else "q_bar*S*C_L"
+    dimensional_y = "q_bar*S*C_Ya" if side_y > 0 else "-q_bar*S*C_Ya"
     return {
         "to_stable": _matrix(to_stable, show),
         "stable_to_air": _matrix(stable_to_air, show),
         "to_air": _matrix(to_air, show),
         "body_from_air": _matrix(body_from_air, show),
-        "air_force": "[-D, Y, -L]",
+        "lift_axis": "-Z_a" if lift_z < 0 else "+Z_a",
+        "side_axis": "+Y_a" if side_y > 0 else "-Y_a",
+        "coeff_symbol": f"[-C_D, {coeff_y}, {coeff_l}]",
+        "air_force": f"[-D, {side_symbol}, {lift_symbol}]",
         "air_moment": "[l_a, m_a, n_a]",
         "body_x": component(body_force[0], (axial, "-D*cos(α)*cos(β) - Y*cos(α)*sin(β) + L*sin(α)")),
         "body_y": component(body_force[1], (lateral, "-D*sin(β) + Y*cos(β)")),
@@ -167,7 +182,7 @@ def build_loads(body_speed: sp.Matrix, attack, sideslip, show) -> dict:
         "body_n": component(body_moment[2], (yaw, "l_a*sin(α)*cos(β) - m_a*sin(α)*sin(β) + n_a*cos(α)")),
         "example_force": _matrix_vector(example_force, show),
         "dynamic": "ρ*V^2/2",
-        "coefficient_force": "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
+        "coefficient_force": f"[-q_bar*S*C_D, {dimensional_y}, {dimensional_l}]",
         "pitch_coefficient": component(by_dimension[1], (pitch_coeff, "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)")),
         "stable_side": "下方" if stable_forward[2] > 0 else "上方",
         "stable_z": _sign(stable_forward[2]),

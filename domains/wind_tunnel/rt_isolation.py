@@ -11,7 +11,7 @@ import re
 
 from cloze_eval import prompt_for
 from domains.wind_tunnel.contract_probes import filled_prefix
-from domains.wind_tunnel.dataset_generate import PROCESS_TEXT, SLOT_MARK
+from domains.wind_tunnel.dataset_generate import PROCESS_OFFSET, PROCESS_TEXT, SLOT_MARK
 
 PROCESS = "风轴系到体轴系"
 RT_ID = "55"
@@ -60,7 +60,18 @@ def _question(name: str) -> str:
 
 
 def _template(chain: dict) -> str:
-    template = chain.get("process_text") or PROCESS_TEXT[PROCESS]
+    """The subprocess text this chain was asked from, with mechanism phrases filled in.
+
+    Single-factor rows do not store ``process_text``. The stock template numbers
+    slots inside each subprocess, while probe anchors use the public blank ids.
+    """
+    template = chain.get("process_text")
+    if not template:
+        offset = PROCESS_OFFSET[chain["process"]]
+        template = SLOT_MARK.sub(
+            lambda match: f"@@{int(match.group(1)) + offset}@@",
+            PROCESS_TEXT[chain["process"]],
+        )
     for token, text in (chain.get("phrases") or {}).items():
         template = template.replace(token, text)
     return template

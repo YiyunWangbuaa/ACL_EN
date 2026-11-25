@@ -89,7 +89,9 @@ def extract_payload(text: str) -> str:
     """Keep the span after the last answer keyword and drop wrapping characters."""
     value = _NOISE.sub("", str(text or "")).replace("\r\n", "\n")
     value = re.sub(r"```(?:\w+)?", "", value)
+    value = re.sub(r"\*\*(?=\d|\()", "<<POW>>", value)
     value = value.replace("**", "").replace("__", "")
+    value = value.replace("<<POW>>", "**")
     value = value.strip()
     found = list(_KEYWORD.finditer(value))
     if found:
@@ -363,13 +365,15 @@ def _sympy_modules():
         "arctan": sympy.atan,
         "asin": sympy.asin,
         "atan": sympy.atan,
+        "pi": sympy.pi,
     })
     return sympy, locals_map
 
 
 def _to_sympy_text(text: str) -> str:
     value = normalize(text)
-    value = value.replace("·", "*").replace("×", "*")
+    value = value.replace("·", "*").replace("×", "*").replace("⋅", "*")
+    value = re.sub(r"(\d+(?:\.\d+)?)°", r"(\1*pi/180)", value)
     for source, target in _GREEK:
         value = value.replace(source, target)
     value = re.sub(r"(?<=\d)(?=[A-Za-z(])", "*", value)
@@ -439,12 +443,25 @@ def _is_zero(expr, sympy) -> bool:
     return sympy.simplify(expr) == 0
 
 
+def _numerically_same(left, right, sympy) -> bool:
+    """A fully numeric value matches a closed expression within rounding tolerance."""
+    if getattr(left, "free_symbols", None) or getattr(right, "free_symbols", None):
+        return False
+    difference = sympy.N(left - right)
+    if isinstance(difference, sympy.MatrixBase):
+        return all(abs(complex(cell).real) <= 5e-4 and abs(complex(cell).imag) <= 1e-9 for cell in difference)
+    value = complex(difference)
+    return abs(value.real) <= 5e-4 and abs(value.imag) <= 1e-9
+
+
 def sympy_equal(prediction: str, answer: str) -> bool:
     try:
         sympy, locals_map = _sympy_modules()
         left = _parse_expr(prediction, sympy, locals_map)
         right = _parse_expr(answer, sympy, locals_map)
-        return _is_zero(left - right, sympy)
+        if _is_zero(left - right, sympy):
+            return True
+        return _numerically_same(left, right, sympy)
     except Exception:
         return False
 

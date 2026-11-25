@@ -26,23 +26,22 @@ EXCLUDED_TARGETS = frozenset({"22", "68", "80", "104"})
 PROBES = (
     {
         "probe_id": "roll_cells",
+        "node_role": "probe",
+        "new_label": "A-LOCAL-EXEC",
+        "subtype": "matrix_sign",
+        "context_depth": "target_local",
+        "writes_back": False,
         "case": "机构滚转",
         "group": "roll",
-        "sample_id": "roll-unmarked",
+        "sample_id": "roll-rule",
         "process": "天平系到体轴系",
-        "shallow_after": "82",
-        "deep_after": "87",
+        "after": "87",
         "target": "88",
         "kind": "cells",
         "cells": ((2, 3), (3, 2)),
         "repair_parent": ("85", "86"),
         "repair_other": ("87",),
-        "shallow_question": (
-            "根据当前定义，把已经规定的滚转方向写入绕该轴的旋转矩阵时，"
-            "第2行第3列和第3行第2列的 sin 项应分别取什么符号？"
-            "按 (2,3)=正或负,(3,2)=正或负 回答。不要写出完整矩阵。"
-        ),
-        "deep_question": (
+        "question": (
             "根据前文已经确定的滚转方向，写入该旋转矩阵时，"
             "第2行第3列和第3行第2列的 sin 项应分别取什么符号？"
             "按 (2,3)=正或负,(3,2)=正或负 回答。不要写出完整矩阵。"
@@ -51,22 +50,22 @@ PROBES = (
     },
     {
         "probe_id": "beta_cells",
+        "node_role": "probe",
+        "new_label": "A-LOCAL-EXEC",
+        "subtype": "matrix_sign",
+        "context_depth": "target_local",
+        "writes_back": False,
         "case": "左手系",
         "group": "body",
-        "sample_id": "body-unmarked",
+        "sample_id": "body-rule",
         "process": "风轴系到体轴系",
-        "shallow_after": "8",
-        "deep_after": "33",
+        "after": "33",
         "target": "34",
         "kind": "cells",
         "cells": ((1, 3), (3, 1)),
         "repair_parent": ("32", "33"),
         "repair_other": ("31",),
-        "shallow_question": (
-            "根据前文已经确定的中间体轴系，R_β_M 中第1行第3列和第3行第1列的 sin(β_M) 应分别取什么符号？"
-            "按 (1,3)=正或负,(3,1)=正或负 回答。不要写出完整矩阵。"
-        ),
-        "deep_question": (
+        "question": (
             "根据前文已经确定的中间体轴系和旋转方向，R_β_M 中第1行第3列和第3行第1列的 sin(β_M) 应分别取什么符号？"
             "按 (1,3)=正或负,(3,1)=正或负 回答。不要写出完整矩阵。"
         ),
@@ -74,22 +73,22 @@ PROBES = (
     },
     {
         "probe_id": "gamma_cells",
+        "node_role": "probe",
+        "new_label": "A-LOCAL-EXEC",
+        "subtype": "matrix_sign",
+        "context_depth": "target_local",
+        "writes_back": False,
         "case": "左手系",
         "group": "body",
-        "sample_id": "body-unmarked",
+        "sample_id": "body-rule",
         "process": "风轴系到体轴系",
-        "shallow_after": "8",
-        "deep_after": "42",
+        "after": "42",
         "target": "43",
         "kind": "cells",
         "cells": ((2, 3), (3, 2)),
         "repair_parent": ("41", "42"),
         "repair_other": ("40",),
-        "shallow_question": (
-            "根据前文已经确定的中间体轴系，R_γ_M 中第2行第3列和第3行第2列的 sin(γ_M) 应分别取什么符号？"
-            "按 (2,3)=正或负,(3,2)=正或负 回答。不要写出完整矩阵。"
-        ),
-        "deep_question": (
+        "question": (
             "根据前文已经确定的中间体轴系和旋转方向，R_γ_M 中第2行第3列和第3行第2列的 sin(γ_M) 应分别取什么符号？"
             "按 (2,3)=正或负,(3,2)=正或负 回答。不要写出完整矩阵。"
         ),
@@ -97,22 +96,22 @@ PROBES = (
     },
     {
         "probe_id": "mcn_cz_sign",
+        "node_role": "probe",
+        "new_label": "A-SPATIAL",
+        "subtype": "moment_sign",
+        "context_depth": "target_local",
+        "writes_back": False,
         "case": "力矩公式",
         "group": "body",
-        "sample_id": "body-unmarked",
+        "sample_id": "body-rule",
         "process": "力矩参考点",
-        "shallow_after": "184",
-        "deep_after": "191",
+        "after": "191",
         "target": "198",
         "kind": "sign",
         "source_id": "192",
         "repair_parent": ("184",),
         "repair_other": ("190",),
-        "shallow_question": (
-            "根据前文的体轴系和力臂，等效力矩系数 MCN_CZ 的整体符号应取正号还是负号？"
-            "只回答正或负。不要写出完整公式。"
-        ),
-        "deep_question": (
+        "question": (
             "根据前文已经确定的体轴系和力臂，等效力矩系数 MCN_CZ 的整体符号应取正号还是负号？"
             "只回答正或负。不要写出完整公式。"
         ),
@@ -120,21 +119,21 @@ PROBES = (
     },
     {
         "probe_id": "mcn_cz_place",
+        "node_role": "probe",
+        "new_label": "A-MATH-FORMAT",
+        "subtype": "sign_placement",
+        "context_depth": "target_local",
+        "writes_back": False,
         "case": "力矩公式",
         "group": "body",
-        "sample_id": "body-unmarked",
+        "sample_id": "body-rule",
         "process": "力矩参考点",
-        "shallow_after": "184",
-        "deep_after": "188",
+        "after": "188",
         "target": "198",
         "kind": "placement",
         "repair_parent": ("184",),
         "repair_other": ("185",),
-        "shallow_question": (
-            "若等效力矩系数 MCN_CZ 需要负号，这个负号应写在整个式子最外侧，还是写进力臂内部？"
-            "只回答外侧或内部。不要写出完整公式。"
-        ),
-        "deep_question": (
+        "question": (
             "根据前文已经确定的力臂，若 MCN_CZ 需要负号，这个负号应写在整个式子最外侧，还是写进力臂内部？"
             "只回答外侧或内部。不要写出完整公式。"
         ),
@@ -143,7 +142,6 @@ PROBES = (
 )
 
 CONDITIONS = (
-    "shallow",
     "deep_b",
     "deep_gold",
     "replay",
@@ -156,7 +154,7 @@ DEEP_CONDITIONS = frozenset({"deep_b", "deep_gold", "replay", "matched", "repair
 # ID58 only checks whether an earlier chirality choice reaches the component.
 CONSEQUENCE = {
     "group": "body",
-    "sample_id": "body-unmarked",
+    "sample_id": "body-rule",
     "target": "58",
     "role": "组合后果节点",
 }
@@ -212,7 +210,7 @@ def filled_prefix(chain: dict, through_id: str, memory: dict[str, str]) -> str:
 
 
 def _question(probe: dict, condition: str, phrases: dict[str, str]) -> str:
-    text = probe["shallow_question"] if condition == "shallow" else probe["deep_question"]
+    text = probe["question"]
     if "{" in text or "}" in text:
         raise RuntimeError(f"{probe['probe_id']} 的题干不能填入流程答案。")
     if phrases:
@@ -220,11 +218,48 @@ def _question(probe: dict, condition: str, phrases: dict[str, str]) -> str:
     return text
 
 
+def build_target_prompt(chain: dict, probe: dict, memory: dict[str, str]) -> str:
+    """Ask the real target sentence on a repaired prefix, then stop.
+
+    Earlier blanks use the branch memory. The target sentence stays open.
+    Text after that sentence is omitted, and this answer is not a probe.
+    """
+    from domains.wind_tunnel.dataset_generate import _injection
+
+    target = str(probe["target"])
+    groups = _groups(chain)
+    index = next((i for i, group in enumerate(groups) if target in group), None)
+    if index is None:
+        raise KeyError(f"{chain['process']} 没有目标题号 {target}")
+    needed = [blank_id for group in groups[:index] for blank_id in group]
+    missing = [blank_id for blank_id in needed if blank_id not in memory]
+    if missing:
+        raise KeyError(f"{probe['probe_id']} 的目标分支缺少这些空的答案：{missing}")
+    prompt = _injection(
+        chain["declaration"],
+        chain["process"],
+        chain["by_id"],
+        target,
+        phrases=chain.get("phrases"),
+        memory=memory,
+        keep_suffix=False,
+        template=chain.get("process_text"),
+    )
+    if f"{{ID:{target}," not in prompt:
+        raise RuntimeError(f"{probe['probe_id']} 的目标分支没有留下 ID{target} 的待填槽。")
+    if "【探针】" in prompt:
+        raise RuntimeError(f"{probe['probe_id']} 的目标分支混入了探针题。")
+    process = prompt.split("【过程】", 1)[-1].split("【输出】", 1)[0]
+    if index + 1 < len(groups) and f"{{ID:{groups[index + 1][0]}," in process:
+        raise RuntimeError(f"{probe['probe_id']} 的目标分支没有在目标句结束。")
+    return prompt
+
+
 def build_prompt(chain: dict, probe: dict, condition: str, memory: dict[str, str], phrases: dict[str, str] | None = None) -> str:
     """One isolated probe call. The returned text is the whole model input."""
     if probe["target"] in EXCLUDED_TARGETS:
         raise RuntimeError(f"ID{probe['target']} 不作为这组契约探针的目标。")
-    anchor = probe["shallow_after"] if condition == "shallow" else probe["deep_after"]
+    anchor = probe["after"]
     prefix = filled_prefix(chain, anchor, memory)
     question = _question(probe, condition, phrases or {})
     if question in prefix:
@@ -411,7 +446,6 @@ def execution_class(prediction: str, contract_text: str, standard_text: str) -> 
 def classify(facts: dict) -> list[str]:
     """Labels from the side-probe protocol. A row may carry more than one."""
     labels = []
-    shallow = facts["shallow_hit"]
     deep_b = facts["deep_b_hit"]
     deep_gold = facts["deep_gold_hit"]
     target_b = facts["target_b"]
@@ -422,11 +456,9 @@ def classify(facts: dict) -> list[str]:
     if deep_b and target_b == "standard":
         labels.append("契约识别与执行不一致")
     if deep_b_standard and target_b == "standard":
-        labels.append("深层表现为标准定义一致，尚不能区分契约丢失、模板和普通错误")
+        labels.append("探针表现为标准定义一致，尚不能区分契约丢失、模板和普通错误")
     if deep_b and target_b == "neither":
         labels.append("能识别契约，但执行计算失败")
-    if shallow and not deep_b and deep_gold:
-        labels.append("深层契约判断受到模型自身错误前缀影响")
     if (
         deep_b
         and deep_gold
@@ -448,7 +480,7 @@ def _chains() -> tuple[dict[str, dict], dict[str, dict]]:
     from cloze_eval import contexts_for, load_samples
     from cloze_eval import ROOT as root
 
-    wanted = {item["sample_id"] for item in PROBES} | {"standard-default-unmarked"}
+    wanted = {item["sample_id"] for item in PROBES} | {"standard-default"}
     rows = {row["id"]: row for row in load_samples(root / "data" / "wind_tunnel" / "pair" / "samples.jsonl", wanted)}
     chains = {}
     standard = {}
@@ -458,7 +490,7 @@ def _chains() -> tuple[dict[str, dict], dict[str, dict]]:
             row = rows[probe["sample_id"]]
             chains[key] = next(item for item in contexts_for(row) if item["process"] == probe["process"])
         if probe["process"] not in standard:
-            row = rows["standard-default-unmarked"]
+            row = rows["standard-default"]
             standard[probe["process"]] = next(item for item in contexts_for(row) if item["process"] == probe["process"])
     return chains, standard
 
@@ -489,7 +521,7 @@ def check_probes() -> None:
         blanks = _blank_map(chain)
         standard_blanks = _blank_map(standard_chains[probe["process"]])
         memory = _gold_memory(chain)
-        for condition in ("shallow", "deep_b"):
+        for condition in ("deep_b",):
             question = _question(probe, condition, {})
             for leak in _LEAKS:
                 if leak in question:
@@ -497,6 +529,9 @@ def check_probes() -> None:
             if "不要写出完整" not in question:
                 raise RuntimeError(f"{probe['probe_id']} 没有禁止写出完整目标")
             prompt = build_prompt(chain, probe, condition, memory, {})
+            target_prompt = build_target_prompt(chain, probe, memory)
+            if f"{{ID:{probe['target']}," not in target_prompt:
+                raise RuntimeError(f"{probe['probe_id']} 的目标分支没有待填的目标空")
             if "不会写回原流程" not in prompt:
                 raise RuntimeError(f"{probe['probe_id']} 没有声明答案不写回")
             if prompt.index("【探针】") < prompt.index("【过程】"):
@@ -517,17 +552,16 @@ def check_probes() -> None:
         deep_ids = []
         for group in _groups(chain):
             deep_ids.extend(group)
-            if probe["deep_after"] in group:
+            if probe["after"] in group:
                 break
         for parent in probe["repair_parent"] + probe["repair_other"]:
             if parent not in deep_ids:
-                raise RuntimeError(f"{probe['probe_id']} 的修复点 ID{parent} 不在深层前缀里")
+                raise RuntimeError(f"{probe['probe_id']} 的修复点 ID{parent} 不在探针前缀里")
         if probe["kind"] == "sign" and probe["source_id"] in deep_ids:
-            raise RuntimeError(f"{probe['probe_id']} 的深层前缀已经包含要测量的符号空")
+            raise RuntimeError(f"{probe['probe_id']} 的探针前缀已经包含要测量的符号空")
         if probe["target"] not in blanks or probe["target"] not in standard_blanks:
             raise RuntimeError(f"{probe['probe_id']} 缺少目标空")
     labels = " ".join(classify({
-        "shallow_hit": True,
         "deep_b_hit": True,
         "deep_gold_hit": True,
         "deep_b_standard": False,

@@ -2,8 +2,8 @@
 """Contract atoms on the answer dependency graph.
 
 The evaluation graph has two kinds of nodes only: contract instances C and
-the 194 public answers. Edges are either C→answer direct effects, or the
-existing 388 answer→answer derivation edges. A binding rule records which
+the 207 public answers. Edges are either C→answer direct effects, or the
+existing 389 answer→answer derivation edges. A binding rule records which
 contracts jointly determine which fields of an answer. It is metadata, not a
 node, and it does not enter depends_on, depth, or error propagation.
 
@@ -742,8 +742,8 @@ def _authored() -> tuple[dict[str, dict[str, str]], list[dict]]:
 def _check() -> None:
     answers = _answers()
     edge_count = sum(len(item.depends_on) for item in answers.values())
-    if len(answers) != 194 or edge_count != 388:
-        raise RuntimeError(f"答案图应为 194 空、388 边，现在是 {len(answers)} 空、{edge_count} 边。")
+    if len(answers) != 207 or edge_count != 406:
+        raise RuntimeError(f"答案图应为 207 空、406 边，现在是 {len(answers)} 空、{edge_count} 边。")
     factor_ids = [item["id"] for item in _FACTORS]
     if len(factor_ids) != len(set(factor_ids)):
         raise RuntimeError("契约绑定规则编号重复。")
@@ -1112,7 +1112,7 @@ def contract_layer() -> dict:
         })
     return {
         "meaning": (
-            "正式图只人工标注契约到直接答案，以及原有的 388 条答案推导边。"
+            "正式图只人工标注契约到直接答案，以及原有的 389 条答案推导边。"
             "契约到后续答案的间接关系由答案图的全部简单路径计算，记在答案的 contract_relations 上，不写回 depends_on。"
             "这是潜在依赖，与某次运行无关。actual_error_path 在本文件中为空："
             "只有路径上每个答案都错，才构成实际错误路径；正确的中间节点阻断串联。"
@@ -1121,7 +1121,7 @@ def contract_layer() -> dict:
         "formula": "契约直接作用答案，答案边推出间接路径。潜在依赖和实际错误路径分开存放。",
         "storage": {
             "authored_direct": "direct_edges。只人工标注契约原子对直接受影响答案的作用。",
-            "answer_edges": "答案图的 depends_on。仍是 388 条推导边，不写入契约，也不写入间接路径。",
+            "answer_edges": "答案图的 depends_on。仍是 389 条推导边，不写入契约，也不写入间接路径。",
             "contract_relations": "answer_bindings 上的派生字段。direct 是人工边，indirect 带 via 和贡献类型。同一契约的多条简单路径都保留。",
             "potential_contract_dependency": "contract_relations 中 potential 为 true 的记录。只说明直接作用的答案若变化，标准推导可能影响哪些后续答案。",
             "actual_error_path": "结构文件里恒为 null。合并一次运行时，只有 via 与目标上的每个答案都错，才把该 via 写入；中间有正确节点则为 null。",

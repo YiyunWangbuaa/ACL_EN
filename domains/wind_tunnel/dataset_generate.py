@@ -65,7 +65,7 @@ PROCESS_SIZE = {
     "风轴系到体轴系": 81,
     "天平系到体轴系": 35,
     "天平系到风轴系": 64,
-    "力矩参考点": 20,
+    "力矩参考点": 33,
 }
 # 总矩阵前复写分矩阵的展开式已删除。空号留空，后面的编号不前移。
 REMOVED_SLOTS = {
@@ -281,7 +281,7 @@ PROCESS_TEXT = {
 
 4.从体轴系@@5@@到@@6@@的力矩等效，需要考虑@@7@@处的力对@@8@@处产生的额外力矩。
 
-5.MCA_g=MCA+[MCN_CA]+[MCZ_CA]，MCZ_g=MCZ+[MCA_CZ]+[MCN_CZ]，MCN_g=MCN+[MCA_CN]+[MCZ_CN]。其中MCN_CA是原点处法向力在参考点处轴向产生的等效力矩系数，MCN_CZ是原点处法向力在参考点处侧向产生的等效力矩系数。每一项只允许写成模板C·L_c/L_RT，L_RT是固定参考长度。答案里不能保留字母C和L_c。C必须填入产生该项力矩的力系数，只能是CA、CZ、CN中的一个。L_c必须填入力臂，力臂只能由Xg、Yg、Zg、Xr组成。假设当前Xg、Yg、Zg、Xr都为正。符号放在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。在该假设下，等效力矩系数MCN_CA的符号为@@9@@。等效力矩系数MCZ_CA的符号为@@10@@。等效力矩系数MCA_CZ的符号为@@11@@。等效力矩系数MCN_CZ的符号为@@12@@。等效力矩系数MCA_CN的符号为@@13@@。等效力矩系数MCZ_CN的符号为@@14@@。因此等效力矩系数MCN_CA=@@15@@。等效力矩系数MCZ_CA=@@16@@。等效力矩系数MCA_CZ=@@17@@。等效力矩系数MCN_CZ=@@18@@。等效力矩系数MCA_CN=@@19@@。等效力矩系数MCZ_CN=@@20@@。""",
+5.MCA_g=MCA+[MCN_CA]+[MCZ_CA]，MCZ_g=MCZ+[MCA_CZ]+[MCN_CZ]，MCN_g=MCN+[MCA_CN]+[MCZ_CN]。其中MCN_CA是原点处法向力在参考点处轴向产生的等效力矩系数，MCN_CZ是原点处法向力在参考点处侧向产生的等效力矩系数。每一项只允许写成模板C·L_c/L_RT，L_RT是固定参考长度。答案里不能保留字母C和L_c。C必须填入产生该项力矩的力系数，只能是CA、CZ、CN中的一个。L_c必须填入力臂，力臂只能由Xg、Yg、Zg、Xr组成。假设当前Xg、Yg、Zg、Xr都为正。符号放在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。在该假设下，等效力矩系数MCN_CA的符号为@@9@@。等效力矩系数MCZ_CA的符号为@@10@@。等效力矩系数MCA_CZ的符号为@@11@@。等效力矩系数MCN_CZ的符号为@@12@@。等效力矩系数MCA_CN的符号为@@13@@。等效力矩系数MCZ_CN的符号为@@14@@。等效力矩系数MCN_CA的分子，用的力系数是哪个？@@21@@。等效力矩系数MCZ_CA的分子，用的力系数是哪个？@@22@@。等效力矩系数MCA_CZ的分子，用的力系数是哪个？@@23@@。等效力矩系数MCN_CZ的分子，用的力系数是哪个？@@24@@。等效力矩系数MCA_CN的分子，用的力系数是哪个？@@25@@。等效力矩系数MCZ_CN的分子，用的力系数是哪个？@@26@@。等效力矩系数MCN_CA的分子，用的坐标分量是哪个？@@27@@。等效力矩系数MCZ_CA的分子，用的坐标分量是哪个？@@28@@。等效力矩系数MCA_CZ的分子，用的坐标分量是哪个？@@29@@。等效力矩系数MCN_CZ的分子，用的坐标分量是哪个？@@30@@。等效力矩系数MCA_CN的分子，用的坐标分量是哪个？@@31@@。等效力矩系数MCZ_CN的分子，用的坐标分量是哪个？@@32@@。其中L_RT=L+L_t-L_r。等效力矩系数的分母，用的长度是哪个？@@33@@。因此等效力矩系数MCN_CA=@@15@@。等效力矩系数MCZ_CA=@@16@@。等效力矩系数MCA_CZ=@@17@@。等效力矩系数MCN_CZ=@@18@@。等效力矩系数MCA_CN=@@19@@。等效力矩系数MCZ_CN=@@20@@。""",
 }
 
 bind_reading_order(PROCESS_TEXT, PROCESS_OFFSET)
@@ -1051,7 +1051,7 @@ def _format_document(example: str) -> str:
         "",
         "四个逐句条件共用同一模板、同一句序，并在每个子过程开头重新开始。A：空前写入选项原文，句号后截断。B：空前换成模型上一句的原始输出，不纠正、不归一化；调用失败或空返回也原样放进下一句。C′：空前仍是选项原文，句号后的后续正文保留，其中的空继续待填、不预填答案。C″：空前是模型自己的原始输出，同时保留后续正文。A 与 B 只差前缀来源。A 与 C′ 只差有没有后续正文。",
         "",
-        "空的编号按子过程顺序排列。风轴系到体轴系占用 1–81，其中 52、53、54 三道分矩阵展开式已删除。天平系到体轴系占用 82–116，其中 101、102、103 三道分矩阵展开式已删除。天平系到风轴系 117–180，力矩参考点 181–200。删掉的空号不前移。",
+        "空的编号按子过程顺序排列。风轴系到体轴系占用 1–81，其中 52、53、54 三道分矩阵展开式已删除。天平系到体轴系占用 82–116，其中 101、102、103 三道分矩阵展开式已删除。天平系到风轴系 117–180，力矩参考点 181–213。201–213 是力矩分子分母测点，题面写在符号句之后、公式句之前；195–200 仍是六项力矩公式。删掉的空号不前移。",
         "",
         "D 是端到端。每个子过程单独一次调用，正文从开头保留到结尾，每个空都是待填槽，不预填答案。模型只输出一个 JSON 对象，键使用上面的连续编号。",
         "",
@@ -1099,14 +1099,14 @@ def _check_injection_sentence(sample: dict, record: dict) -> None:
 
     numbers = [item["id"] for item in record["questions"]]
     removed = {str(number) for slots in REMOVED_SLOTS.values() for number in slots}
-    expected_numbers = [str(number) for number in range(1, 201) if str(number) not in removed]
+    expected_numbers = [str(number) for number in range(1, 214) if str(number) not in removed]
     if numbers != expected_numbers:
         raise RuntimeError("四个子过程的编号与保留空号不一致。")
     wind_count = PROCESS_SIZE["风轴系到体轴系"] - len(REMOVED_SLOTS["风轴系到体轴系"])
     if record["questions"][wind_count]["id"] != "82" or record["questions"][wind_count]["process"] != "天平系到体轴系":
         raise RuntimeError("天平系到体轴系没有从 82 接上。")
-    if record["questions"][-1]["id"] != "200" or record["questions"][-1]["process"] != "力矩参考点":
-        raise RuntimeError("力矩参考点没有排到 200。")
+    if record["questions"][-1]["id"] != "213" or record["questions"][-1]["process"] != "力矩参考点":
+        raise RuntimeError("力矩参考点没有排到 213。")
     group = {
         item["local_id"]: item
         for item in record["questions"]

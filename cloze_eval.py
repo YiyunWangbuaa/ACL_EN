@@ -19,19 +19,22 @@ and stops at the period. self-trunc uses the model's own raw earlier outputs.
 gold-keep keeps the gold prefix and the rest of the subprocess. self-keep uses
 the model's raw prefix and keeps the rest. self-trunc and self-keep run one
 sentence at a time inside each subprocess. Old letters A–F still select these
-six names. Blank numbers run from 1 through 194
-across the four subprocesses.
+six names. The default data is each domain's full corpus. Wind tunnel reads
+the batch jsonl. Flight, vision and robotics read their review manuscripts.
 Strict equality is the stripped reply. The normalized column also accepts
 spacing, symbol and LaTeX differences, an exact option after that cleanup,
 and sympy equivalence for expressions and matrices.
 
+Run one domain's full set. --inventory only counts, and does not call the model.
+
+    python cloze_eval.py --domain wind_tunnel --condition session-model --model deepseek-flash --thinking disabled --runs 1 --out results/validate/wind_tunnel
+    python cloze_eval.py --domain flight --condition session-model --model deepseek-flash --thinking disabled --runs 1 --out results/validate/flight
+    python cloze_eval.py --domain cv --condition session-model --model deepseek-flash --thinking disabled --runs 1 --out results/validate/cv
+    python cloze_eval.py --domain robotics --condition session-model --model deepseek-flash --thinking disabled --runs 1 --out results/validate/robotics
+
 Run the formal condition::
 
-    python cloze_eval.py --model deepseek-v4-pro --thinking enabled --runs 3 --out results/pro_thinking
-
-Run the flash, thinking-off control::
-
-    python cloze_eval.py --model deepseek-flash --thinking disabled --runs 1 --out results/flash_nothink
+    python cloze_eval.py --domain wind_tunnel --model deepseek-v4-pro --thinking enabled --runs 3 --out results/pro_thinking
 """
 
 from __future__ import annotations
@@ -50,7 +53,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from body_frame_model import BodyFrameModel
-from domain_layout import SETS
+from domain_layout import EVAL, EVAL_DOMAINS, TIERS
 from domains.wind_tunnel.dataset_generate import _injection, _injection_end_to_end, _local_id, _mechanism_phrases, _sentence_groups
 from semi_auto_eval import call_model, load_env_file, make_client, resolve_api_config
 
@@ -153,15 +156,26 @@ def _dependency_fields(item: dict) -> dict:
     return dependency_fields(item)
 
 
-def load_samples(path: Path, wanted: set[str] | None) -> list[dict]:
-    from domains.wind_tunnel.error_graph import annotate_sample
+def load_samples(path: Path, wanted: set[str] | None, strict_graph: bool = True) -> list[dict]:
+    from domains.wind_tunnel.error_graph import annotate_question, annotate_sample
 
     rows = []
     with path.open(encoding="utf-8") as handle:
         for line in handle:
             row = json.loads(line)
-            if wanted is None or row["id"] in wanted:
+            if wanted is not None and row["id"] not in wanted:
+                continue
+            if strict_graph:
                 rows.append(annotate_sample(row))
+                continue
+            skipped = 0
+            for question in row.get("questions") or []:
+                try:
+                    annotate_question(question)
+                except RuntimeError:
+                    skipped += 1
+            row["graph_label_mismatches"] = skipped
+            rows.append(row)
     if wanted is not None:
         found = {row["id"] for row in rows}
         missing = wanted - found
@@ -244,7 +258,9 @@ def end_to_end_job(
         "stop": stop,
         "standard": standard,
         "prompt": (
-            _cv_end_to_end(chain)
+            _manuscript_end_to_end(chain)
+            if chain.get("domain") == "manuscript"
+            else _cv_end_to_end(chain)
             if chain.get("domain") == "cv"
             else _flight_end_to_end(chain)
             if chain.get("domain") == "flight"
@@ -1085,6 +1101,45 @@ def cv_final_jobs(
     return jobs
 
 
+def _manuscript_end_to_end(chain: dict) -> str:
+    from domains.eval_manuscripts import render_sentence
+
+    body = "\n".join(render_sentence(sentence, fill=False) for sentence in chain["sentences"])
+    return "\n".join([
+        "本次是端到端问答。填写这个子过程里的全部待填槽，只调用这一次。",
+        "只输出一个 JSON 对象，键是空的编号，值是答案。",
+        "选择题的值是字母。矩阵、向量和表达式用英文双引号包成字符串。",
+        "不要输出句子原文，不要解释。",
+        "",
+        "【过程】",
+        body,
+        "【输出】",
+        "一个 JSON 对象。",
+    ])
+
+
+def _manuscript_prompt(
+    chain: dict,
+    blank_ids: list[str],
+    condition: str,
+    memory: dict[str, str] | None,
+) -> str:
+    from domains.eval_manuscripts import process_text
+
+    body = process_text(
+        chain,
+        str(blank_ids[0]),
+        condition in _KEEP_SUFFIX,
+        memory,
+    )
+    return "\n".join([
+        "【过程】",
+        body,
+        "【输出】",
+        "只输出一个 JSON 对象。",
+    ])
+
+
 def prompt_for(
     chain: dict,
     blank_ids: list[str],
@@ -1092,6 +1147,8 @@ def prompt_for(
     memory: dict[str, str] | None,
     local_target: str | None = None,
 ) -> str:
+    if chain.get("domain") == "manuscript":
+        return _manuscript_prompt(chain, blank_ids, condition, memory)
     if chain.get("domain") == "flight":
         module = _flight_modules()[chain["process"]]
         return module._injection(
@@ -1199,7 +1256,9 @@ def _session_question(chain: dict, sentence: dict, previous: dict | None) -> str
 
 def _session_system(chain: dict) -> str:
     prior = ""
-    if chain.get("domain") == "flight":
+    if chain.get("domain") == "manuscript":
+        prior = chain.get("prior") or ""
+    elif chain.get("domain") == "flight":
         prior = _flight_modules()[chain["process"]].PRIOR
     elif chain.get("domain") == "cv":
         prior = _cv_module(chain.get("process")).PRIOR
@@ -1215,6 +1274,9 @@ def _session_system(chain: dict) -> str:
     ]
     if str(prior).strip():
         parts.extend(["", "【物理常识】", str(prior).strip()])
+    format_note = str(chain.get("format_note") or "").strip()
+    if format_note:
+        parts.extend(["", "【输出格式】", format_note])
     parts.extend([
         "",
         "【输出】",
@@ -2148,11 +2210,31 @@ def standard_for(domain: str, data: Path | None = None) -> dict[tuple[str, str],
     posix = "" if data is None else Path(data).as_posix()
     if "flight_ctrl" in posix or "reconstruction/flight" in posix or "flight/reconstruction" in posix:
         return standard_answers_fm_ctrl(data)
+    if domain in {"flight", "cv", "robotics"} and _uses_manuscript(domain, data):
+        from domains.eval_manuscripts import manuscript_standard
+
+        return manuscript_standard(domain)
     if domain == "flight":
         return standard_answers_flight()
     if domain == "cv":
         return standard_answers_cv(data)
+    if domain == "robotics":
+        from domains.eval_manuscripts import manuscript_standard
+
+        return manuscript_standard(domain)
     return standard_answers()
+
+
+def _uses_manuscript(domain: str, data: Path | None) -> bool:
+    """True when this run reads the current full review set, not a legacy jsonl."""
+    if domain == "robotics":
+        return True
+    if data is None:
+        return True
+    path = Path(data)
+    if path.suffix == ".jsonl":
+        return False
+    return True
 
 
 def standard_answers() -> dict[tuple[str, str], str]:
@@ -2474,7 +2556,14 @@ def _execute_session(
             if done.get(probe_key) is not None and not rerun:
                 continue
             before = _chat_snapshot(messages)
-            branch = make_branch(chain, messages, committed, spec)
+            try:
+                branch = make_branch(chain, messages, committed, spec)
+            except (KeyError, RuntimeError) as exc:
+                reason = str(exc)
+                if "还没看见矩阵名称" not in reason and "题面没有" not in reason:
+                    raise
+                print(f"probe skip {spec['probe_id']}: {reason}", flush=True)
+                continue
             if _chat_snapshot(messages) != before:
                 raise RuntimeError(f"{spec['probe_id']} 写回了主会话")
             job = {
@@ -2666,16 +2755,111 @@ def _publish_and_stop(
     raise SystemExit(2)
 
 
+def _load_eval_rows(domain: str, path: Path, wanted: list[str] | None) -> list[dict]:
+    if domain == "wind_tunnel":
+        if path.suffix != ".jsonl":
+            raise SystemExit("风洞全量入口是 batch/samples.jsonl。")
+        rows = load_samples(path, set(wanted) if wanted is not None else None, strict_graph=False)
+        if wanted is not None:
+            order = {item: index for index, item in enumerate(wanted)}
+            rows.sort(key=lambda row: order[row["id"]])
+        return rows
+    from domains.eval_manuscripts import load_rows
+
+    return load_rows(domain, path, wanted)
+
+
+def _row_contexts(domain: str, row: dict) -> list[dict]:
+    if row.get("manuscript"):
+        return row["chains"]
+    if domain == "cv":
+        return contexts_for_cv(row)
+    if domain == "flight":
+        return contexts_for_flight(row)
+    return contexts_for(row)
+
+
+def _check_session_prefix(chain: dict) -> None:
+    previous = None
+    for sentence in chain["sentences"]:
+        current = _process_excerpt(chain, sentence).strip()
+        if not current:
+            raise RuntimeError(f"{chain['sample_id']} {chain['process']} 有一句是空的。")
+        if previous is not None:
+            earlier = _close_slots(_process_excerpt(chain, previous), previous).strip()
+            if not current.startswith(earlier):
+                raise RuntimeError(
+                    f"{chain['sample_id']} {chain['process']} 的会话前缀对不齐。"
+                )
+            if not current[len(earlier):].strip():
+                raise RuntimeError(
+                    f"{chain['sample_id']} {chain['process']} 的下一句没有新正文。"
+                )
+        previous = sentence
+
+
+def _check_eval_rows(domain: str, rows: list[dict]) -> None:
+    if not rows:
+        raise SystemExit("没有可评的样本。")
+    if domain == "wind_tunnel":
+        allowed = (0,) + TIERS
+        bad = [str(row["id"]) for row in rows if int(row.get("tier") or 0) not in allowed]
+        if bad:
+            raise SystemExit("风洞全量里有不在 0/25/50/75/100 的样本：" + "、".join(bad[:8]))
+        return
+    from domains.eval_manuscripts import manuscript_standard
+
+    standard = manuscript_standard(domain)
+    missing = []
+    for row in rows:
+        for chain in row["chains"]:
+            _check_session_prefix(chain)
+            for sentence in chain["sentences"]:
+                for blank_id in sentence["blank_ids"]:
+                    key = (chain["process"], str(blank_id))
+                    if key not in standard:
+                        missing.append(f"{row['id']} {chain['process']} {blank_id}")
+    if missing:
+        raise SystemExit("标准稿没有这些空：" + "、".join(missing[:12]))
+
+
+def _print_inventory(domain: str, path: Path, rows: list[dict]) -> None:
+    spec = EVAL[domain]
+    grouped = [(row, _row_contexts(domain, row)) for row in rows]
+    chains = [chain for _row, items in grouped for chain in items]
+    sentences = sum(len(chain["sentences"]) for chain in chains)
+    blanks = sum(len(sentence["blank_ids"]) for chain in chains for sentence in chain["sentences"])
+    tiers = Counter(int(row.get("tier") or 0) for row in rows)
+    tier_text = "、".join(f"{tier}%×{tiers[tier]}" for tier in sorted(tiers))
+    print(f"{spec['zh']}  {path}", flush=True)
+    print(f"样本 {len(rows)}  子过程 {len(chains)}  句 {sentences}  空 {blanks}", flush=True)
+    print(f"档位 {tier_text}", flush=True)
+    mismatched = sum(int(row.get("graph_label_mismatches") or 0) for row in rows)
+    if mismatched:
+        print(
+            f"依赖图标签与稿面不一致的空 {mismatched} 个。评测使用稿面上的标签和答案。",
+            flush=True,
+        )
+    for row, items in grouped:
+        row_blanks = sum(len(sentence["blank_ids"]) for chain in items for sentence in chain["sentences"])
+        print(
+            f"  {row['id']}  {int(row.get('tier') or 0)}%  子过程 {len(items)}  空 {row_blanks}",
+            flush=True,
+        )
+
+
 def main() -> None:
     from cloze_score import _check_scoring
 
     _check_scoring()
     _check_parse()
     parser = argparse.ArgumentParser(description="Score cloze blanks with DeepSeek.")
-    parser.add_argument("--domain", choices=("wind_tunnel", "flight", "cv"), default="wind_tunnel")
-    parser.add_argument("--data", type=Path, default=SETS["cross.wind_flight"]["batch"] / "samples.jsonl")
-    parser.add_argument("--ids-file", type=Path, default=SETS["cross.wind_flight"]["batch"] / "pilot_10.json")
-    parser.add_argument("--out", type=Path, default=ROOT / "results" / "pilot_100")
+    parser.add_argument("--domain", choices=EVAL_DOMAINS, default="wind_tunnel")
+    parser.add_argument("--data", type=Path, default=None, help="缺省是该领域的全量数据。")
+    parser.add_argument("--ids-file", type=Path, default=None, help="缺省评全部样本。")
+    parser.add_argument("--tier", type=int, choices=TIERS, default=None, help="只评这一档。缺省评全部档。")
+    parser.add_argument("--inventory", action="store_true", help="只清点样本、子过程和空，不调用模型。")
+    parser.add_argument("--out", type=Path, default=ROOT / "results" / "full")
     parser.add_argument("--workers", type=int, default=MAX_WORKERS)
     parser.add_argument("--limit", type=int, default=0, help="Only score the first N sentences. 0 means all.")
     parser.add_argument("--temperature", type=float, default=0.0)
@@ -2708,24 +2892,33 @@ def main() -> None:
     args = parser.parse_args()
     if args.runs < 1:
         raise SystemExit("--runs 至少为 1。")
-    wind_batch = SETS["cross.wind_flight"]["batch"]
-    if args.domain == "flight":
-        flight_root = SETS["basic.flight"]["pilot"]
-        if args.data == wind_batch / "samples.jsonl":
-            args.data = flight_root / "samples.jsonl"
-        if args.ids_file == wind_batch / "pilot_10.json":
-            args.ids_file = flight_root / "pilot_10.json"
-    elif args.domain == "cv":
-        vision = SETS["cross.wind_vision"]
-        basic_vision = SETS["basic.vision"]
-        if args.data == wind_batch / "samples.jsonl":
-            args.data = vision["samples"]
-        if args.ids_file == wind_batch / "pilot_10.json":
-            args.ids_file = vision["pilot"]
-        if _basic_vision_data(args.data) and args.ids_file in {
-            wind_batch / "pilot_10.json", vision["pilot"],
-        }:
-            args.ids_file = basic_vision["pilot"]
+    spec = EVAL[args.domain]
+    if args.data is None:
+        args.data = spec["data"]
+    if not Path(args.data).exists():
+        raise SystemExit(f"找不到全量数据：{args.data}")
+    wanted = None
+    if args.ids_file is not None:
+        picked = json.loads(args.ids_file.read_text(encoding="utf-8"))
+        ids = picked["ids"] if isinstance(picked, dict) else picked
+        wanted = [str(item) for item in ids]
+    rows: list[dict] = []
+    if args.rescore is None:
+        try:
+            rows = _load_eval_rows(args.domain, args.data, wanted)
+        except RuntimeError as exc:
+            raise SystemExit(str(exc)) from exc
+        if args.tier is not None:
+            rows = [row for row in rows if int(row.get("tier") or -1) == args.tier]
+            if not rows:
+                raise SystemExit(f"{spec['zh']} 的全量数据里没有 {args.tier}% 这一档。")
+        try:
+            _check_eval_rows(args.domain, rows)
+        except RuntimeError as exc:
+            raise SystemExit(str(exc)) from exc
+        if args.inventory:
+            _print_inventory(args.domain, args.data, rows)
+            return
 
     load_env_file(ROOT / ".env")
     _key, base_url, env_model = resolve_api_config()
@@ -2786,18 +2979,12 @@ def main() -> None:
             print(report.split("## 按定义变更档")[0])
         return
 
-    picked = json.loads(args.ids_file.read_text(encoding="utf-8"))
-    ids = picked["ids"] if isinstance(picked, dict) else picked
-    rows = load_samples(args.data, set(ids))
-    order = {sample_id: index for index, sample_id in enumerate(ids)}
-    rows.sort(key=lambda row: order[row["id"]])
+    print(
+        f"数据：{spec['zh']} {args.data} 样本 {len(rows)}",
+        flush=True,
+    )
     print("生成统一默认答案，用于判断定义未用。", flush=True)
     standard = standard_for(args.domain, args.data)
-    build_contexts = (
-        contexts_for_cv if args.domain == "cv"
-        else contexts_for_flight if args.domain == "flight"
-        else contexts_for
-    )
 
     condition = canonical_condition(args.condition)
     if repair_ids and condition not in _SEQUENTIAL:
@@ -2811,8 +2998,10 @@ def main() -> None:
             "session-gold 和 session-model 在一个会话里逐题提问，定义只写在系统消息。"
             "旧代号 A、B、C、D、E、F 仍可用。旧拼写 C'、C'' 分别等价于 gold-keep、self-keep。"
         )
+    if condition == FINAL_E2E and any(row.get("manuscript") for row in rows):
+        raise SystemExit("全量审阅稿按子过程逐句评测，请用 session-model、逐句条件或 proc-e2e。")
     if condition == FINAL_E2E and args.domain not in {"flight", "wind_tunnel", "cv"}:
-        raise SystemExit("条件 final-e2e 用于飞行力学、风洞和机器视觉。")
+        raise SystemExit("条件 final-e2e 用于飞行力学、风洞和机器视觉的旧题单。")
     if condition in _END_TO_END:
         stop = None
     if condition == PROC_E2E:
@@ -2867,7 +3056,7 @@ def main() -> None:
     else:
         for run in range(args.runs):
             for row in rows:
-                for chain in build_contexts(row):
+                for chain in _row_contexts(args.domain, row):
                     chain = dict(chain)
                     chain["run"] = run
                     chains.append(chain)

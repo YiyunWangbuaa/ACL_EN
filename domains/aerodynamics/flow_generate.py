@@ -265,8 +265,8 @@ def _load_questions(loads: dict) -> list[dict]:
         _choice(63, "C1", "机体系绝对侧向正方向对应", "Y_b", ["X_b", "Z_b"]),
         _choice(64, "C1", "机体系绝对法向正方向对应", "Z_b", ["X_b", "Y_b"]),
         _choice(65, "C1", "气流系中的阻力方向为", "-X_a", ["+X_a", "-Z_a"]),
-        _choice(66, "C1", "气流系中的正升力方向为", "-Z_a", ["+Z_a", "+Y_a"]),
-        _choice(67, "C1", "气流系中的正侧力方向为", "+Y_a", ["-Y_a", "+Z_a"]),
+        _choice(66, "C1", "气流系中的正升力方向为", loads["lift_axis"], [item for item in ("-Z_a", "+Z_a", "+Y_a") if item != loads["lift_axis"]]),
+        _choice(67, "C1", "气流系中的正侧力方向为", loads["side_axis"], [item for item in ("+Y_a", "-Y_a", "+Z_a") if item != loads["side_axis"]]),
         _open(68, "A2", "按照 X_a、Y_a、Z_a 的顺序，气流系气动力向量为", loads["air_force"]),
         _choice(69, "C1", "气流系滚转力矩 l_a 的正方向绕", "+X_a", ["+Y_a", "+Z_a"]),
         _choice(70, "C1", "气流系俯仰力矩 m_a 的正方向绕", "+Y_a", ["+X_a", "+Z_a"]),
@@ -299,7 +299,7 @@ def _load_questions(loads: dict) -> list[dict]:
         _choice(97, "A1", "当 α=0、0°<β<90°、l_a>0 且 m_a=n_a=0 时，机体系俯仰力矩 m_A 为", loads["roll_to_pitch"], ["正", "负", "零"]),
         _open(98, "A2", "由 ρ 和 V 计算动压 q_bar 得到", loads["dynamic"], "表达式"),
         _open(99, "A2", "将气动力系数换成气流系有量纲力向量，结果为", loads["coefficient_force"]),
-        _choice(100, "C2", "三个力分量采用相同归一化尺度，因此有符号分量系数向量 [-C_D, C_Ya, -C_L] 可以", "使用同一矩阵 B 直接转换", ["必须分别乘不同参考长度后才能转换"]),
+        _choice(100, "C2", f"三个力分量采用相同归一化尺度，因此有符号分量系数向量 {loads['coeff_symbol']} 可以", "使用同一矩阵 B 直接转换", ["必须分别乘不同参考长度后才能转换"]),
         _choice(101, "C2", "三个力矩系数采用 b、c_bar、b 三个参考长度，当 b 不等于 c_bar 时，应当", "先恢复有量纲力矩，旋转后按输出轴参考长度归一化", ["直接将 B 乘 [C_la, C_ma, C_na]"]),
         _open(102, "A2", "按照当前归一化定义，机体系俯仰力矩系数 C_mA 为", loads["pitch_coefficient"], "表达式"),
         _choice(103, "C1", "换算前的力矩参考点是", "A", ["G", "N"]),
@@ -335,7 +335,7 @@ def _load_questions(loads: dict) -> list[dict]:
     return rows
 
 
-def build(spec: dict) -> dict:
+def build(spec: dict, lift_z: int = -1, side_y: int = 1) -> dict:
     model = FlightFrameModel().declare(spec)
     for parent, child in (
         ("ground", "body"),
@@ -391,7 +391,7 @@ def build(spec: dict) -> dict:
     _check_rotation(ground_body)
     _check_rotation(ground_track)
     _check_rotation(body_air)
-    loads = build_loads(body_speed, ATTACK, SIDESLIP, _show)
+    loads = build_loads(body_speed, ATTACK, SIDESLIP, _show, lift_z=lift_z, side_y=side_y)
 
     yaw_side = _sign_word(model, PSI, {"ground_right": "地面右方", "ground_left": "地面左方"})
     pitch_side = _sign_word(model, THETA, {"ground_up": "上方", "ground_down": "下方"})
@@ -441,6 +441,8 @@ def build(spec: dict) -> dict:
         "body_air": body_air_text,
         "track_speed": _vector(track_speed),
         "body_speed": _vector(body_speed),
+        "lift_axis": loads["lift_axis"],
+        "side_axis": loads["side_axis"],
         "questions": questions,
     }
 
@@ -476,9 +478,12 @@ def _check_closure(ground_body: sp.Matrix, body_air: sp.Matrix, ground_track: sp
             continue
         relative = pose.T * target
         bank = sp.atan2(relative[2, 1], relative[1, 1])
-        combined = sp.N((ground_track * track_air).subs({AZIMUTH: solution[0], INCLINE: solution[1], BANK: bank}))
-        if max(abs(combined[index, column] - target[index, column]) for index in range(3) for column in range(3)) <= sp.Float("1e-8"):
-            return
+        for signed in (bank, -bank):
+            combined = sp.N((ground_track * track_air).subs({
+                AZIMUTH: solution[0], INCLINE: solution[1], BANK: signed,
+            }))
+            if max(abs(combined[index, column] - target[index, column]) for index in range(3) for column in range(3)) <= sp.Float("1e-8"):
+                return
     raise DefinitionError("The track path and the body path do not describe the same airflow attitude.")
 
 
@@ -580,7 +585,7 @@ def _line(item: dict) -> str:
     return line
 
 
-def _load_definition(angles: dict) -> list[str]:
+def _load_definition(angles: dict, lift_axis: str = "-Z_a", side_axis: str = "+Y_a") -> list[str]:
     return [
         "## 气动力与参考点定义",
         "",
@@ -608,7 +613,7 @@ def _load_definition(angles: dict) -> list[str]:
         "- 只分析迎角时令 β=0。只分析侧滑时令 α=0。",
         "",
         "气动力与力矩",
-        "- D 是阻力大小，D≥0，方向沿 -X_a。Y 是侧力的有符号大小，正方向沿 +Y_a。L 是升力的有符号大小，正方向沿 -Z_a。",
+        f"- D 是阻力大小，D≥0，方向沿 -X_a。Y 是侧力的有符号大小，正方向沿 {side_axis}。L 是升力的有符号大小，正方向沿 {lift_axis}。",
         "- l_a、m_a、n_a 分别绕 +X_a、+Y_a、+Z_a 按右手定则为正。",
         "- X、Y_b、Z 分别沿 +X_b、+Y_b、+Z_b 为正。Y 是气流系侧力，Y_b 是机体系侧向力。",
         "- l_A、m_A、n_A 是关于 A 的力矩，分别绕 +X_b、+Y_b、+Z_b 按右手定则为正。",
@@ -674,7 +679,7 @@ def render(sample: dict, record: dict) -> str:
     body = []
     for key, heading, numbers in blocks:
         if key == "五":
-            body.extend(_load_definition(angles))
+            body.extend(_load_definition(angles, record["lift_axis"], record["side_axis"]))
         body.append(f"### 子过程{key}：{heading}")
         body.append("")
         for number in numbers:
@@ -689,6 +694,7 @@ def render(sample: dict, record: dict) -> str:
         "本文件是飞行力学领域审阅稿。编号 1 到 131。前四个子过程做地面、航迹、机体和气流之间的坐标转换。后两个子过程做气动力六分量转换和力矩参考点换算。气动力子过程与参考点子过程单独注入：参考点子过程直接给出机体系中的力和力矩，不使用气动力子过程的回答。这里不做飞行包线判断，不做误差补偿。",
         "",
         f"本条定义：{sample['change']}",
+        f"单定义扰动：{sample['factor']}",
         "",
         "审阅说明、标签、答案和生成注记不送入模型。输出格式规范送入。前四个子过程使用前面的定义声明和物理常识。后两个子过程使用气动力与参考点定义，不携带前四个子过程的正文。送入模型的还有当前子过程名，以及从该子过程开头直到当前句号的正文。当前句之前的空写成答案原文。每句只有一个待填槽。",
         "",
@@ -782,15 +788,22 @@ def samples() -> list[dict]:
         spec[angle] = {"sign": NEGATIVE}
         return spec
 
-    return [
-        {"id": "01", "title": "统一默认", "change": "五个坐标系和八个角度都取标准定义。", "spec": deepcopy(STANDARD_SPEC)},
-        {"id": "02", "title": "偏航取负", "change": "偏航角改为机头向地面右方偏时为负。", "spec": flipped(PSI)},
-        {"id": "03", "title": "俯仰取负", "change": "俯仰角改为机头向地面上方偏时为负。", "spec": flipped(THETA)},
-        {"id": "04", "title": "滚转取负", "change": "滚转角改为向机体右侧滚转时为负。", "spec": flipped(PHI)},
-        {"id": "05", "title": "航迹倾斜取负", "change": "航迹倾斜角改为向地面上方飞时为负。", "spec": flipped(MU)},
-        {"id": "06", "title": "迎角取负", "change": "迎角改为空速投影处于机体轴向下方时为负。", "spec": flipped(ALPHA)},
-        {"id": "07", "title": "侧滑取负", "change": "侧滑角改为空速处于飞行器右方时为负。", "spec": flipped(BETA)},
+    rows = [
+        {"id": "01", "factor": "无", "title": "统一默认", "change": "五个坐标系和八个角度都取标准定义。", "spec": deepcopy(STANDARD_SPEC)},
+        {"id": "02", "factor": "偏航角", "title": "偏航取负", "change": "偏航角改为机头向地面右方偏时为负。", "spec": flipped(PSI)},
+        {"id": "03", "factor": "俯仰角", "title": "俯仰取负", "change": "俯仰角改为机头向地面上方偏时为负。", "spec": flipped(THETA)},
+        {"id": "04", "factor": "滚转角", "title": "滚转取负", "change": "滚转角改为向机体右侧滚转时为负。", "spec": flipped(PHI)},
+        {"id": "05", "factor": "航迹倾斜角", "title": "航迹倾斜取负", "change": "航迹倾斜角改为向地面上方飞时为负。", "spec": flipped(MU)},
+        {"id": "06", "factor": "迎角", "title": "迎角取负", "change": "迎角改为空速投影处于机体轴向下方时为负。", "spec": flipped(ALPHA)},
+        {"id": "07", "factor": "侧滑角", "title": "侧滑取负", "change": "侧滑角改为空速处于飞行器右方时为负。", "spec": flipped(BETA)},
+        {"id": "08", "factor": "航迹方位角", "title": "航迹方位取负", "change": "航迹方位角改为空速水平投影在地面坐标轴 Xg 右侧时为负。", "spec": flipped(VARPHI)},
+        {"id": "09", "factor": "侧力正方向", "title": "侧力沿左侧为正", "change": "侧力的正方向改为沿气流系 -Y_a。", "spec": deepcopy(STANDARD_SPEC), "side_y": -1},
+        {"id": "10", "factor": "升力正方向", "title": "升力沿下方为正", "change": "升力的正方向改为沿气流系 +Z_a。", "spec": deepcopy(STANDARD_SPEC), "lift_z": 1},
     ]
+    factors = [row["factor"] for row in rows]
+    if factors[0] != "无" or len(factors) != 10 or len(set(factors)) != 10:
+        raise RuntimeError("飞行力学主实验必须是 1 条标准定义和 9 条互不相同的单定义扰动。")
+    return rows
 
 
 def _check_standard(record: dict) -> None:
@@ -854,11 +867,14 @@ def _index(rows: list[dict]) -> str:
     lines = [
         "# 飞行力学空间坐标转换",
         "",
-        "每条 131 个空，编号 1 到 131。前四个子过程做坐标转换。后两个子过程做气动力六分量和力矩参考点换算，并且单独注入。",
+        "主实验是 1 条标准定义和 9 条单定义扰动，每条 131 个空，编号 1 到 131。单定义扰动只改一项。前四个子过程做坐标转换。后两个子过程做气动力六分量和力矩参考点换算，并且单独注入。",
         "",
     ]
     for row in rows:
-        lines.append(f"- [数据 {row['id']} {row['title']}](sample_{row['id']}.md)：{row['change']}")
+        lines.append(
+            f"- [数据 {row['id']} {row['title']}](sample_{row['id']}.md)："
+            f"单定义扰动：{row['factor']}。{row['change']}"
+        )
     lines.append("")
     return "\n".join(lines)
 
@@ -868,13 +884,14 @@ def main() -> None:
     payload = []
     index_rows = []
     for sample in samples():
-        record = build(sample["spec"])
+        record = build(sample["spec"], lift_z=sample.get("lift_z", -1), side_y=sample.get("side_y", 1))
         if sample["id"] == "01":
             _check_standard(record)
         document = render(sample, record)
         (OUT_DIR / f"sample_{sample['id']}.md").write_text(document, encoding="utf-8")
         payload.append({
             "id": sample["id"],
+            "factor": sample["factor"],
             "title": sample["title"],
             "change": sample["change"],
             "domain": "飞行力学",

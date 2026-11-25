@@ -1,0 +1,644 @@
+[
+ {
+  "label": "天平系绝对侧向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_BALANCE_HANDEDNESS",
+  "blanks": [
+   "91",
+   "124",
+   "138"
+  ],
+  "processes": [
+   "balance_to_body",
+   "balance_to_wind:axes"
+  ],
+  "prompt": "天平系绝对侧向正方向对应的有向坐标轴",
+  "dup_groups": 1,
+  "rows_merged": 2
+ },
+ {
+  "label": "天平系绝对轴向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_BALANCE_X",
+  "blanks": [
+   "90",
+   "91",
+   "119",
+   "124",
+   "125"
+  ],
+  "processes": [
+   "balance_to_body",
+   "balance_to_wind:axes",
+   "balance_to_wind:forward"
+  ],
+  "prompt": "天平系绝对轴向正方向对应的有向坐标轴",
+  "dup_groups": 2,
+  "rows_merged": 3
+ },
+ {
+  "label": "天平系绝对法向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_BALANCE_Y",
+  "blanks": [
+   "89",
+   "91",
+   "123",
+   "124"
+  ],
+  "processes": [
+   "balance_to_body",
+   "balance_to_wind:axes"
+  ],
+  "prompt": "天平系绝对法向正方向对应的有向坐标轴",
+  "dup_groups": 2,
+  "rows_merged": 2
+ },
+ {
+  "label": "机体系绝对侧向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_BODY_HANDEDNESS",
+  "blanks": [
+   "7",
+   "94"
+  ],
+  "processes": [
+   "balance_to_body",
+   "wind_to_body"
+  ],
+  "prompt": "机体系绝对侧向正方向对应的有向坐标轴",
+  "dup_groups": 1,
+  "rows_merged": 2
+ },
+ {
+  "label": "机体系绝对轴向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_BODY_X",
+  "blanks": [
+   "6",
+   "7",
+   "93",
+   "94"
+  ],
+  "processes": [
+   "balance_to_body",
+   "wind_to_body"
+  ],
+  "prompt": "机体系绝对轴向正方向对应的有向坐标轴",
+  "dup_groups": 2,
+  "rows_merged": 2
+ },
+ {
+  "label": "机体系绝对法向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_BODY_Y",
+  "blanks": [
+   "5",
+   "7",
+   "92",
+   "94"
+  ],
+  "processes": [
+   "balance_to_body",
+   "wind_to_body"
+  ],
+  "prompt": "机体系绝对法向正方向对应的有向坐标轴",
+  "dup_groups": 2,
+  "rows_merged": 2
+ },
+ {
+  "label": "弹性迎角的旋转轴契约识别失败",
+  "contract": "C_AXIS_ELASTIC_ALPHA",
+  "blanks": [
+   "139"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "弹性迎角的旋转轴",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "弹性侧滑角的旋转轴契约识别失败",
+  "contract": "C_AXIS_ELASTIC_BETA",
+  "blanks": [
+   "140"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "弹性侧滑角的旋转轴",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "弹性滚转角的旋转轴契约识别失败",
+  "contract": "C_AXIS_ELASTIC_GAMMA",
+  "blanks": [
+   "141"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "弹性滚转角的旋转轴",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "风轴系绝对侧向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_WIND_HANDEDNESS",
+  "blanks": [
+   "4",
+   "121"
+  ],
+  "processes": [
+   "balance_to_wind:axes",
+   "wind_to_body"
+  ],
+  "prompt": "风轴系绝对侧向正方向对应的有向坐标轴",
+  "dup_groups": 1,
+  "rows_merged": 2
+ },
+ {
+  "label": "风轴系绝对轴向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_WIND_X",
+  "blanks": [
+   "3",
+   "4",
+   "118",
+   "121",
+   "122"
+  ],
+  "processes": [
+   "balance_to_wind:axes",
+   "balance_to_wind:forward",
+   "wind_to_body"
+  ],
+  "prompt": "风轴系绝对轴向正方向对应的有向坐标轴",
+  "dup_groups": 2,
+  "rows_merged": 3
+ },
+ {
+  "label": "风轴系绝对法向正方向对应的有向坐标轴契约识别失败",
+  "contract": "C_AXIS_WIND_Y",
+  "blanks": [
+   "2",
+   "4",
+   "120",
+   "121"
+  ],
+  "processes": [
+   "balance_to_wind:axes",
+   "wind_to_body"
+  ],
+  "prompt": "风轴系绝对法向正方向对应的有向坐标轴",
+  "dup_groups": 2,
+  "rows_merged": 2
+ },
+ {
+  "label": "力和力矩的坐标系转换方向契约识别失败",
+  "contract": "C_CONV_BALANCE_TO_BODY",
+  "blanks": [
+   "82"
+  ],
+  "processes": [
+   "balance_to_body"
+  ],
+  "prompt": "力和力矩的坐标系转换方向",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "弹性角增量的坐标系转换方向契约识别失败",
+  "contract": "C_CONV_BALANCE_TO_WIND",
+  "blanks": [
+   "117"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "弹性角增量的坐标系转换方向",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "动轴体轴系采用的旋转方式契约识别失败",
+  "contract": "C_CONV_INTRINSIC",
+  "blanks": [
+   "46"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "动轴体轴系采用的旋转方式",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "体轴系的坐标系类型契约识别失败",
+  "contract": "C_CONV_MOVING_FRAME",
+  "blanks": [
+   "45"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "体轴系的坐标系类型",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "坐标系转换采用的变换契约识别失败",
+  "contract": "C_CONV_PASSIVE",
+  "blanks": [
+   "44"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "坐标系转换采用的变换",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "坐标系转换方向契约识别失败",
+  "contract": "C_CONV_WIND_TO_BODY",
+  "blanks": [
+   "1"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "为计算机构角对补偿前的 α_t、β_t 和滚转角的影响，坐标系转换方向",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "产生额外力矩的力所在位置契约识别失败",
+  "contract": "C_FORCE_APPLICATION",
+  "blanks": [
+   "187"
+  ],
+  "processes": [
+   "reference_point"
+  ],
+  "prompt": "产生额外力矩的力所在位置",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "体轴系原点所在位置契约识别失败",
+  "contract": "C_GEOM_ORIGIN",
+  "blanks": [
+   "181"
+  ],
+  "processes": [
+   "reference_point"
+  ],
+  "prompt": "体轴系原点所在位置",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "模型安装方式契约识别失败",
+  "contract": "C_INSTALL_MODEL",
+  "blanks": [
+   "11",
+   "12",
+   "19",
+   "20",
+   "27",
+   "28",
+   "96",
+   "151"
+  ],
+  "processes": [
+   "balance_to_body",
+   "balance_to_wind",
+   "wind_to_body:alpha",
+   "wind_to_body:beta",
+   "wind_to_body:mount"
+  ],
+  "prompt": "模型安装方式",
+  "dup_groups": 1,
+  "rows_merged": 5
+ },
+ {
+  "label": "α_t 公式的反三角函数。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面契约识别失败",
+  "contract": "C_METHOD_ALPHA_INVERSE",
+  "blanks": [
+   "69"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "α_t 公式的反三角函数。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "β_t 公式的反三角函数。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面契约识别失败",
+  "contract": "C_METHOD_BETA_INVERSE",
+  "blanks": [
+   "75"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "β_t 公式的反三角函数。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "分母的符号。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面契约识别失败",
+  "contract": "C_METHOD_BETA_UNIT_DENOMINATOR",
+  "blanks": [
+   "78",
+   "79"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "分母的符号。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "内旋顺序的第 1 项契约识别失败",
+  "contract": "C_METHOD_EULER_ORDER",
+  "blanks": [
+   "16",
+   "17",
+   "18"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "内旋顺序的第 1 项",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "RP1 对照的、坐标轴与自身绝对方向相对应的坐标系契约识别失败",
+  "contract": "C_SCOPE_ALIGNMENT_SOURCE",
+  "blanks": [
+   "10",
+   "15",
+   "128"
+  ],
+  "processes": [
+   "balance_to_wind:rp",
+   "wind_to_body:rp1",
+   "wind_to_body:rp2"
+  ],
+  "prompt": "RP1 对照的、坐标轴与自身绝对方向相对应的坐标系",
+  "dup_groups": 0,
+  "rows_merged": 3
+ },
+ {
+  "label": "RP1 所对齐的、坐标轴与自身绝对方向相对应的坐标系契约识别失败",
+  "contract": "C_SCOPE_ALIGNMENT_TARGET",
+  "blanks": [
+   "9",
+   "14",
+   "127"
+  ],
+  "processes": [
+   "balance_to_wind:rp",
+   "wind_to_body:rp1",
+   "wind_to_body:rp2"
+  ],
+  "prompt": "RP1 所对齐的、坐标轴与自身绝对方向相对应的坐标系",
+  "dup_groups": 0,
+  "rows_merged": 3
+ },
+ {
+  "label": "后续只需研究的坐标系契约识别失败",
+  "contract": "C_SCOPE_LEVEL_FRAME",
+  "blanks": [
+   "57"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "后续只需研究的坐标系",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "旋转 α_M 所在的坐标系契约识别失败",
+  "contract": "C_SCOPE_ROTATION_FRAME",
+  "blanks": [
+   "23",
+   "31",
+   "40"
+  ],
+  "processes": [
+   "wind_to_body:alpha",
+   "wind_to_body:beta",
+   "wind_to_body:gamma"
+  ],
+  "prompt": "旋转 α_M 所在的坐标系",
+  "dup_groups": 0,
+  "rows_merged": 3
+ },
+ {
+  "label": "理论迎角 > 0 时空速偏向的机体方向契约识别失败",
+  "contract": "C_SIGN_ALPHA",
+  "blanks": [
+   "21",
+   "155"
+  ],
+  "processes": [
+   "balance_to_wind",
+   "wind_to_body"
+  ],
+  "prompt": "理论迎角 > 0 时空速偏向的机体方向",
+  "dup_groups": 0,
+  "rows_merged": 2
+ },
+ {
+  "label": "α_M > 0 时空速偏向的机体方向契约识别失败",
+  "contract": "C_SIGN_ALPHA_M",
+  "blanks": [
+   "20"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "α_M > 0 时空速偏向的机体方向",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "理论侧滑角 > 0 时空速偏向的机体方向契约识别失败",
+  "contract": "C_SIGN_BETA",
+  "blanks": [
+   "29",
+   "156"
+  ],
+  "processes": [
+   "balance_to_wind",
+   "wind_to_body"
+  ],
+  "prompt": "理论侧滑角 > 0 时空速偏向的机体方向",
+  "dup_groups": 0,
+  "rows_merged": 2
+ },
+ {
+  "label": "β_M > 0 时空速偏向的机体方向契约识别失败",
+  "contract": "C_SIGN_BETA_M",
+  "blanks": [
+   "28"
+  ],
+  "processes": [
+   "wind_to_body"
+  ],
+  "prompt": "β_M > 0 时空速偏向的机体方向",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "正弹性迎角使天平轴向弯向契约识别失败",
+  "contract": "C_SIGN_ELASTIC_ALPHA",
+  "blanks": [
+   "136"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "正弹性迎角使天平轴向弯向",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "正弹性侧滑角使天平轴向弯向契约识别失败",
+  "contract": "C_SIGN_ELASTIC_BETA",
+  "blanks": [
+   "137"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "正弹性侧滑角使天平轴向弯向",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "沿天平绝对轴向正方向（前方）看去，正弹性滚转的扭转方向契约识别失败",
+  "contract": "C_SIGN_ELASTIC_GAMMA",
+  "blanks": [
+   "138",
+   "154"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "沿天平绝对轴向正方向（前方）看去，正弹性滚转的扭转方向",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "气流偏心使实际迎角增大时 Δα_V 的符号契约识别失败",
+  "contract": "C_SIGN_FLOW_ALPHA",
+  "blanks": [
+   "179"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "气流偏心使实际迎角增大时 Δα_V 的符号",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "气流偏心使实际侧滑角增大时 Δβ_V 的符号契约识别失败",
+  "contract": "C_SIGN_FLOW_BETA",
+  "blanks": [
+   "180"
+  ],
+  "processes": [
+   "balance_to_wind"
+  ],
+  "prompt": "气流偏心使实际侧滑角增大时 Δβ_V 的符号",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "理论滚转角 > 0 时，以机体绝对轴向正方向（前方）为旋转轴，与右手定则的关系契约识别失败",
+  "contract": "C_SIGN_GAMMA",
+  "blanks": [
+   "37",
+   "157"
+  ],
+  "processes": [
+   "balance_to_wind",
+   "wind_to_body"
+  ],
+  "prompt": "理论滚转角 > 0 时，以机体绝对轴向正方向（前方）为旋转轴，与右手定则的关系",
+  "dup_groups": 0,
+  "rows_merged": 2
+ },
+ {
+  "label": "γ_M > 0 时，以模型绝对轴向正方向（前方）为旋转轴，与右手定则的关系契约识别失败",
+  "contract": "C_SIGN_GAMMA_M",
+  "blanks": [
+   "35",
+   "84"
+  ],
+  "processes": [
+   "balance_to_body",
+   "wind_to_body"
+  ],
+  "prompt": "γ_M > 0 时，以模型绝对轴向正方向（前方）为旋转轴，与右手定则的关系",
+  "dup_groups": 0,
+  "rows_merged": 2
+ },
+ {
+  "label": "天平安装角以天平绝对轴向正方向（前方）的右手定则为契约识别失败",
+  "contract": "C_SIGN_GAMMA_TP",
+  "blanks": [
+   "83"
+  ],
+  "processes": [
+   "balance_to_body"
+  ],
+  "prompt": "天平安装角以天平绝对轴向正方向（前方）的右手定则为",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "额外力矩的作用位置契约识别失败",
+  "contract": "C_TORQUE_EFFECT",
+  "blanks": [
+   "188"
+  ],
+  "processes": [
+   "reference_point"
+  ],
+  "prompt": "额外力矩的作用位置",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "力矩等效的起点契约识别失败",
+  "contract": "C_TORQUE_SOURCE",
+  "blanks": [
+   "185"
+  ],
+  "processes": [
+   "reference_point"
+  ],
+  "prompt": "力矩等效的起点",
+  "dup_groups": 0,
+  "rows_merged": 1
+ },
+ {
+  "label": "力矩等效的终点契约识别失败",
+  "contract": "C_TORQUE_TARGET",
+  "blanks": [
+   "186"
+  ],
+  "processes": [
+   "reference_point"
+  ],
+  "prompt": "力矩等效的终点",
+  "dup_groups": 0,
+  "rows_merged": 1
+ }
+]

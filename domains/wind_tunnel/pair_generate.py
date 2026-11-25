@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Single-factor contract pairs for the wind-tunnel and flight-mechanics set.
+"""Single-factor contract pairs.
 
-Five abnormal definitions. Each one is written three ways:
-
-- unmarked: the abnormal rule stays in the declaration, once, with no extra warning,
-  and the rule questions of every definition are left out;
-- marked: the same text as unmarked, plus one warning in front of the changed rule;
-- rule: the unmarked declaration, with every definition's rule questions put back.
-
-Unmarked and marked are the contrast. Both drop every definition's rule question,
-including on the standard-definition manuscripts. Rule-first puts those questions back.
+Five abnormal definitions, each written once: the declaration states the
+contract, and every definition's rule question stays on the page. Two
+standards use the same full question set. Manuscripts that drop those
+questions, or that add an extra warning in front of a changed rule, are not
+generated.
 
 The spherical-wrist order is the standard side of the order pair. The current
-angle-rod description is the abnormal side. The other four abnormal definitions
-are paired with the unified default.
+angle-rod description is the abnormal side. The other four abnormal
+definitions are paired with the unified default.
 
 Run::
 
@@ -23,18 +19,14 @@ Run::
 from __future__ import annotations
 
 import json
-import re
 from copy import deepcopy
 
 from body_frame_model import BodyFrameModel
 from domain_layout import DOMAINS
 from domains.wind_tunnel.dataset_generate import (
     PRIOR,
-    PROCESS_OFFSET,
     PROCESSES,
-    ROD_ORDER_PARAGRAPH,
     SLOT_MARK,
-    WRIST_ORDER_PARAGRAPH,
     _check_declaration,
     _declaration,
     _mechanism_phrases,
@@ -50,10 +42,16 @@ from domains.wind_tunnel.tz_fd_generate import STANDARD_SPEC
 
 OUT_DIR = DOMAINS["wind_tunnel"]["pair"]
 TZ = "风轴系到体轴系"
-BODY = "天平系到体轴系"
-WIND = "天平系到风轴系"
-HEADING = re.compile(r"(?m)^(\d+)\.")
 _CACHE: dict[str, dict[str, list[dict]]] = {}
+RULE_IDS = (
+    "standard-default",
+    "standard-order",
+    "alpha-rule",
+    "roll-rule",
+    "order-rule",
+    "mount-rule",
+    "body-rule",
+)
 
 
 def _alpha(spec: dict) -> None:
@@ -83,109 +81,6 @@ def _wrist(spec: dict) -> None:
     spec["body_frame"] = frame
 
 
-def _close_order_gap(template: str) -> str:
-    """After deleting section 3, number the later sections 3, 4, 5, ..."""
-    def repl(match: re.Match) -> str:
-        number = int(match.group(1))
-        if number < 4:
-            return match.group(0)
-        return f"{number - 1}."
-
-    return HEADING.sub(repl, template)
-
-
-MARK_ALPHA = (
-    "本题特别约定：以下理论迎角的正负方向可能不同于常见约定。"
-    "后续所有步骤必须严格按照本题给出的定义执行，不得使用默认约定替代。"
-)
-MARK_ROLL = (
-    "本题特别约定：以下机构滚转角正方向可能不同于常见右手定则。"
-    "后续所有步骤必须严格按照本题给出的定义执行，不得使用默认约定替代。"
-)
-MARK_ORDER = (
-    "本题特别约定：以下机构姿态角的执行顺序由本题的机构结构决定，可能不同于常见的偏航、俯仰、滚转顺序。"
-    "后续所有步骤必须严格按照本题给出的机构描述执行，不得使用默认顺序替代。"
-)
-MARK_MOUNT = (
-    "本题特别约定：以下模型安装方式可能不同于常见正装。"
-    "后续所有步骤必须严格按照本题给出的安装方式执行，不得使用默认安装替代。"
-)
-MARK_BODY = (
-    "本题特别约定：以下体轴系可能不同于常见右手体轴系。"
-    "后续所有步骤必须严格按照本题给出的体轴系定义执行，不得使用默认约定替代。"
-)
-MARK_ALL = (
-    "本题每一条定义都以此处声明为准。"
-    "后续所有步骤必须严格按照本题给出的全部定义执行，不得使用默认约定替代。"
-)
-
-# Each edit is (process, old, new). old must occur once in that process template.
-_ALPHA_EDITS = (
-    (TZ, "理论迎角>0时，空速偏机体的@@21@@。", ""),
-    (
-        WIND,
-        "正理论迎角时，空速指向机体的@@39@@。"
-        "在该空速方向和风轴系轴向、法向、侧向都已确定后，Δα_e应使用的风轴分量为@@33@@。",
-        "Δα_e应使用的风轴分量为@@33@@。",
-    ),
-)
-_ROLL_EDITS = (
-    (
-        TZ,
-        "当γ_M>0时，以模型绝对轴向正方向（前方）为旋转轴，与右手定则@@35@@。此时右翼偏机体的@@36@@。",
-        "当γ_M>0时，右翼偏机体的@@36@@。",
-    ),
-    (
-        BODY,
-        "天平安装角以天平绝对轴向正方向（前方）的右手定则@@2@@为正。"
-        "机体滚转角以机体绝对轴向正方向（前方）的右手定则@@3@@为正。"
-        "此时天平绝对轴向与机体绝对轴向的指向可能相同，也可能相反。"
-        "机体滚转角γ_M的绝对值远大于天平安装角γ_tp。"
-        "在天平绝对轴向、机体绝对轴向和两个正方向都已确定的条件下，天平系与机体系相差的滚转角度为@@4@@。",
-        "天平安装角以天平绝对轴向正方向（前方）的右手定则@@2@@为正。"
-        "此时天平绝对轴向与机体绝对轴向的指向可能相同，也可能相反。"
-        "机体滚转角γ_M的绝对值远大于天平安装角γ_tp。"
-        "在天平绝对轴向、机体绝对轴向和两个正方向都已确定的条件下，根据定义声明，天平系与机体系相差的滚转角度为@@4@@。",
-    ),
-)
-_ORDER_EDITS = (
-    (TZ, ROD_ORDER_PARAGRAPH, ""),
-)
-_MOUNT_EDITS = (
-    (
-        TZ,
-        "此外，模型安装方式为@@11@@。"
-        "此时模型的绝对法向正方向（上方）和绝对侧向正方向（右侧）与风洞的绝对法向正方向和绝对侧向正方向@@12@@，对应的前置变换矩阵为RP2。",
-        "模型的绝对法向正方向（上方）和绝对侧向正方向（右侧）与风洞的绝对法向正方向和绝对侧向正方向@@12@@，对应的前置变换矩阵为RP2。",
-    ),
-    (TZ, "模型采用@@19@@。", ""),
-    (TZ, "模型采用@@27@@。", ""),
-    (
-        BODY,
-        "在该定义下，模型是@@15@@的。因此该定义下的前置矩阵为RTP_TZ2。前置矩阵RTP_TZ2是@@16@@。",
-        "因此前置矩阵为RTP_TZ2。前置矩阵RTP_TZ2是@@16@@。",
-    ),
-    (
-        WIND,
-        "当产生形变α_e、β_e、γ_e时，模型是@@35@@的。产生这些形变后，空速位于模型的@@36@@。",
-        "当产生α_e、β_e、γ_e形变后，空速位于模型的@@36@@。",
-    ),
-)
-_BODY_EDITS = (
-    (
-        TZ,
-        "机体系的绝对法向正方向（上方）、绝对轴向正方向（前方）、绝对侧向正方向（右侧）分别对应@@5@@、@@6@@、@@7@@。"
-        "所以有风轴系向体轴系平正位置处的前置变换矩阵为RP1。前置变换矩阵RP1为@@8@@。",
-        "按定义声明把机体系坐标轴与风轴系统一后，风轴系向体轴系平正位置处的前置变换矩阵为RP1。前置变换矩阵RP1为@@8@@。",
-    ),
-    (
-        BODY,
-        "机体系的绝对法向正方向（上方）、绝对轴向正方向（前方）、绝对侧向正方向（右侧）分别对应@@11@@、@@12@@、@@13@@。"
-        "所以有天平系向体轴系的前置矩阵为RTP_TZ1。前置矩阵RTP_TZ1是@@14@@。",
-        "按定义声明把机体系坐标轴与天平系统一后，天平系向体轴系的前置矩阵为RTP_TZ1。前置矩阵RTP_TZ1是@@14@@。",
-    ),
-)
-
 FACTORS = (
     {
         "key": "alpha",
@@ -193,11 +88,6 @@ FACTORS = (
         "change": "只把理论迎角改为空速投影在机体轴向上方时为正。机构迎角、坐标轴、安装和旋转顺序都不动。",
         "apply": _alpha,
         "standard_id": "standard-default",
-        "anchor": "理论迎角 α：",
-        "marker": MARK_ALPHA,
-        "edits": _ALPHA_EDITS,
-        "removed": {TZ: {"21"}, WIND: {"39"}},
-        "kept_rule": ("35", "11"),
     },
     {
         "key": "roll",
@@ -205,25 +95,13 @@ FACTORS = (
         "change": "只把机构滚转角 γ_M 改为与绕模型绝对轴向正方向（前方）的右手定则相反。理论滚转角仍与右手定则相同。",
         "apply": _roll,
         "standard_id": "standard-default",
-        "anchor": "机构滚转角 γ_M：",
-        "marker": MARK_ROLL,
-        "edits": _ROLL_EDITS,
-        "removed": {TZ: {"35"}, BODY: {"3"}},
-        "kept_rule": ("21", "37"),
     },
     {
         "key": "order",
         "title": "机构角顺序",
         "change": "反常侧沿用当前功角机构：顺序由支撑杆结构决定，为迎角、侧滑、滚转。标准侧改为三自由度动轴球腕，顺序规定为偏航、俯仰、滚转。",
         "apply": None,
-        "standard_apply": _wrist,
         "standard_id": "standard-order",
-        "anchor": "机构迎角 α_M：",
-        "marker": MARK_ORDER,
-        "edits": _ORDER_EDITS,
-        "after": _close_order_gap,
-        "removed": {TZ: {"16", "17", "18"}},
-        "kept_rule": ("11", "35"),
     },
     {
         "key": "mount",
@@ -231,11 +109,6 @@ FACTORS = (
         "change": "只把模型安装改为反装。坐标系手性、角度正方向和旋转顺序都不动。",
         "apply": _mount,
         "standard_id": "standard-default",
-        "anchor": "- 模型安装：",
-        "marker": MARK_MOUNT,
-        "edits": _MOUNT_EDITS,
-        "removed": {TZ: {"11", "19", "27"}, BODY: {"15"}, WIND: {"35"}},
-        "kept_rule": ("21", "35"),
     },
     {
         "key": "body",
@@ -243,27 +116,8 @@ FACTORS = (
         "change": "只把体轴系改为左手系。XTZ 仍沿机体轴向指向前方，YTZ 仍沿机体法向指向上方，ZTZ 由手性推断。",
         "apply": _body,
         "standard_id": "standard-default",
-        "anchor": "体轴系（",
-        "marker": MARK_BODY,
-        "edits": _BODY_EDITS,
-        "removed": {TZ: {"5", "6", "7"}, BODY: {"11", "12", "13"}},
-        "kept_rule": ("2", "11", "35"),
     },
 )
-
-
-def _merge_removed(*parts: dict[str, set[str]]) -> dict[str, set[str]]:
-    merged: dict[str, set[str]] = {}
-    for part in parts:
-        for process, ids in part.items():
-            merged.setdefault(process, set()).update(ids)
-    return merged
-
-
-# Unmarked and marked drop this set on every definition, including both standards.
-# It is the union of the five definitions' rule questions.
-EMPHASIS_EDITS = _ALPHA_EDITS + _ROLL_EDITS + _MOUNT_EDITS + _BODY_EDITS
-EMPHASIS_REMOVED = _merge_removed(*(factor["removed"] for factor in FACTORS))
 
 
 def _payloads(spec: dict) -> dict[str, list[dict]]:
@@ -283,37 +137,9 @@ def _raw(spec: dict, process: str, local_id: str) -> str:
     raise KeyError(f"{process} 没有原稿编号 {local_id}")
 
 
-def _emphasis_public_ids() -> set[str]:
-    found = set()
-    for process, local_ids in EMPHASIS_REMOVED.items():
-        offset = PROCESS_OFFSET[process]
-        found.update(str(int(local_id) + offset) for local_id in local_ids)
-    return found
-
-
-def _strip_order_paragraph(template: str) -> str:
-    """Delete the angle-order questions, whichever mechanism paragraph is present."""
-    for paragraph in (ROD_ORDER_PARAGRAPH, WRIST_ORDER_PARAGRAPH):
-        if paragraph not in template:
-            continue
-        if template.count(paragraph) != 1:
-            raise RuntimeError("机构顺序段出现多次。")
-        return template.replace(paragraph, "", 1)
-    raise RuntimeError("没有可删除的机构顺序段。")
-
-
-def _apply_edits(template: str, edits: tuple, process: str) -> str:
-    for owner, old, new in edits:
-        if owner != process:
-            continue
-        found = template.count(old)
-        if found != 1:
-            raise RuntimeError(f"{process} 中替换目标出现 {found} 次：{old[:48]}")
-        template = template.replace(old, new, 1)
-    return template
-
-
 def _public_template(process: str, template: str) -> str:
+    from domains.wind_tunnel.dataset_generate import PROCESS_OFFSET
+
     offset = PROCESS_OFFSET[process]
     return SLOT_MARK.sub(lambda match: f"@@{int(match.group(1)) + offset}@@", template)
 
@@ -328,28 +154,18 @@ def _check_sentences(process: str, template: str, phrases: dict[str, str], by_lo
             raise RuntimeError(f"{process} 的 A 类空没有单独成句：{list(zip(sentence, kinds))}")
 
 
-def _insert_marker(declaration: str, anchor: str, marker: str) -> str:
-    if declaration.count(anchor) != 1:
-        raise RuntimeError(f"标记锚点出现 {declaration.count(anchor)} 次：{anchor}")
-    return declaration.replace(anchor, marker + "\n" + anchor, 1)
-
-
-def _note(title: str, condition: str, excluded: list[str]) -> str:
+def _note(title: str, condition: str) -> str:
     if condition == "standard":
         return (
             f"审阅说明：{title}。这一句和文件标题不进入模型输入。"
             "模型只看到下面的定义声明、物理常识和过程。本条是配对的标准侧，规则询问全部保留。"
         )
-    names = {"unmarked": "无标记", "marked": "有标记", "rule": "先问规则"}
-    text = (
-        f"审阅说明：{title}，条件为{names[condition]}。这一句和文件标题不进入模型输入。"
-        "模型只看到下面的定义声明、物理常识和过程。"
+    if condition != "rule":
+        raise RuntimeError(f"只生成测点完备的正常契约稿，不能写 {condition}。")
+    return (
+        f"审阅说明：{title}，条件为先问规则。这一句和文件标题不进入模型输入。"
+        "模型只看到下面的定义声明、物理常识和过程。本条保留全部定义的规则询问，定义声明没有额外提醒。"
     )
-    if condition == "rule":
-        return text + "本条保留全部定义的规则询问，定义声明与无标记稿相同，没有额外提醒。"
-    if excluded:
-        return text + "本条去掉全部定义的规则询问：" + "、".join(excluded) + "。"
-    return text
 
 
 def _make(
@@ -360,53 +176,27 @@ def _make(
     factor: str,
     condition: str,
     standard_id: str,
-    edits: tuple,
-    removed: dict[str, set[str]],
-    marker: str | None,
-    anchor: str | None,
-    after,
 ) -> dict:
     model = BodyFrameModel().declare(deepcopy(spec))
     phrases = _mechanism_phrases(model)
     declaration = _declaration(model)
-    if marker:
-        if not anchor:
-            raise RuntimeError(f"{sample_id} 有标记但没有锚点。")
-        declaration = _insert_marker(declaration, anchor, marker)
+    if "本题特别约定" in declaration:
+        raise RuntimeError(f"{sample_id} 的定义声明带了额外提醒。")
     _check_declaration(declaration)
     questions = []
     processes = {}
     process_text = {}
-    excluded: list[str] = []
     for process, _generate in PROCESSES:
         template = _process_template(model, process)
-        before = SLOT_MARK.findall(template)
-        template = _apply_edits(template, edits, process)
-        if "16" in removed.get(TZ, ()) and process == TZ:
-            template = _strip_order_paragraph(template)
-            template = _close_order_gap(template)
-            found = HEADING.findall(template)
-            if found != [str(number) for number in range(1, 15)]:
-                raise RuntimeError(f"{sample_id} 删节后的小节编号是 {found}，应为 1 到 14。")
-        if after is not None and any(owner == process for owner, _old, _new in edits):
-            template = after(template)
-        after_slots = SLOT_MARK.findall(template)
-        expected = removed.get(process, set())
-        dropped = set(before) - set(after_slots)
-        if dropped != expected:
-            raise RuntimeError(f"{sample_id} {process} 去掉的空是 {sorted(dropped)}，应为 {sorted(expected)}。")
-        if after_slots != [local_id for local_id in before if local_id not in expected]:
-            raise RuntimeError(f"{sample_id} {process} 去掉规则问句后打乱了其余空的顺序。")
         items = [_question(process, item) for item in _payloads(spec)[process]]
-        kept = [item for item in items if item["local_id"] not in expected]
-        if sorted((item["local_id"] for item in kept), key=int) != sorted(after_slots, key=int):
+        slots = SLOT_MARK.findall(template)
+        if sorted((item["local_id"] for item in items), key=int) != sorted(slots, key=int):
             raise RuntimeError(f"{sample_id} {process} 的题目和模板槽不一致。")
-        by_local = {item["local_id"]: item for item in kept}
+        by_local = {item["local_id"]: item for item in items}
         _check_sentences(process, template, phrases, by_local)
         processes[process] = _render_process(process, by_local, phrases=phrases, template=template)
         process_text[process] = _public_template(process, template)
-        questions.extend(kept)
-        excluded.extend(item["id"] for item in items if item["local_id"] in expected)
+        questions.extend(items)
     record = {
         "id": sample_id,
         "title": title,
@@ -419,12 +209,12 @@ def _make(
         "prior": PRIOR,
         "process_text": process_text,
         "questions": questions,
-        "excluded_ids": excluded,
+        "excluded_ids": [],
         "tier": 0,
         "group": "pair",
     }
     record["processes"] = processes
-    record["review_note"] = _note(title, condition, excluded)
+    record["review_note"] = _note(title, condition)
     return record
 
 
@@ -499,46 +289,18 @@ def _check_physics(default: dict, specs: dict[str, dict]) -> None:
         raise RuntimeError("球腕顺序改动了安装、迎角符号或滚转方向。")
 
 
-def _check_factor(factor: dict, rule: dict, unmarked: dict, marked: dict, standard: dict) -> tuple[list[str], list[str]]:
-    if rule["spec"] != unmarked["spec"] or rule["spec"] != marked["spec"]:
-        raise RuntimeError(f"{factor['key']} 三种条件的定义规格不一致。")
-    if rule["declaration"] != unmarked["declaration"]:
-        raise RuntimeError(f"{factor['key']} 的先问规则稿带上了标记，或定义声明与无标记稿不同。")
-    if marked["declaration"] != _insert_marker(unmarked["declaration"], factor["anchor"], factor["marker"]):
-        raise RuntimeError(f"{factor['key']} 的有标记稿除提醒外还有别的差异。")
-    if factor["marker"] in unmarked["declaration"] or factor["marker"] in rule["declaration"]:
-        raise RuntimeError(f"{factor['key']} 的无标记稿或先问规则稿含有提醒。")
-    if unmarked["process_text"] != marked["process_text"] or unmarked["processes"] != marked["processes"]:
-        raise RuntimeError(f"{factor['key']} 的无标记稿和有标记稿过程不同。")
-    if unmarked["questions"] != marked["questions"]:
-        raise RuntimeError(f"{factor['key']} 的无标记稿和有标记稿答案不同。")
+def _check_factor(factor: dict, rule: dict, standard: dict) -> list[str]:
+    if rule["excluded_ids"] or standard["excluded_ids"]:
+        raise RuntimeError(f"{factor['key']} 去掉了规则询问。")
+    if "本题特别约定" in rule["declaration"] or "本题特别约定" in standard["declaration"]:
+        raise RuntimeError(f"{factor['key']} 的定义声明带了额外提醒。")
     rule_ids = {item["id"] for item in rule["questions"]}
-    hidden_ids = {item["id"] for item in unmarked["questions"]}
-    excluded = set(unmarked["excluded_ids"])
-    if not excluded:
-        raise RuntimeError(f"{factor['key']} 没有去掉任何规则询问。")
-    if excluded & hidden_ids:
-        raise RuntimeError(f"{factor['key']} 的无标记稿仍含目标规则询问。")
-    if not excluded <= rule_ids:
-        raise RuntimeError(f"{factor['key']} 的先问规则稿缺少应保留的规则询问。")
-    if hidden_ids != rule_ids - excluded:
-        raise RuntimeError(f"{factor['key']} 的无标记稿除规则询问外还有增减。")
-    if excluded != _emphasis_public_ids():
-        missing = sorted(_emphasis_public_ids() - excluded, key=int)
-        extra = sorted(excluded - _emphasis_public_ids(), key=int)
-        raise RuntimeError(f"{factor['key']} 的无标记稿没有去掉全部定义的规则询问，缺 {missing}，多 {extra}。")
-    for item_id in excluded:
-        token = f"{{ID:{item_id},"
-        blob_u = "\n".join(unmarked["processes"].values())
-        blob_r = "\n".join(rule["processes"].values())
-        if token in blob_u or token not in blob_r:
-            raise RuntimeError(f"{factor['key']} 的规则询问 {item_id} 没有按条件出现。")
-    kept_diff = _diff_ids(_answers(unmarked), _answers(standard))
-    rule_diff = _diff_ids(_answers(rule), _answers(standard))
-    if not kept_diff:
-        raise RuntimeError(f"{factor['key']} 去掉规则询问后，剩余答案与标准完全相同。")
-    if not (set(rule_diff) & excluded):
-        raise RuntimeError(f"{factor['key']} 的规则询问答案没有离开标准。")
+    standard_ids = {item["id"] for item in standard["questions"]}
+    if rule_ids != standard_ids:
+        raise RuntimeError(f"{factor['key']} 的测点和标准稿不一致。")
+    diff = _diff_ids(_answers(rule), _answers(standard))
+    if not diff:
+        raise RuntimeError(f"{factor['key']} 的答案与标准完全相同。")
     changed = _spec_keys(rule["spec"], standard["spec"])
     if factor["key"] == "order":
         if changed != ["body_frame"]:
@@ -562,53 +324,42 @@ def _check_factor(factor: dict, rule: dict, unmarked: dict, marked: dict, standa
         expected = {"alpha": ["alpha"], "roll": ["gamma_m"], "mount": ["placement"]}[factor["key"]]
         if changed != expected:
             raise RuntimeError(f"{factor['key']} 改动了 {changed}，应为 {expected}。")
-    return kept_diff, rule_diff
+    return diff
 
 
-def _index(rows: list[dict], diffs: dict[str, tuple[list[str], list[str]]]) -> str:
+def _index(rows: list[dict], diffs: dict[str, list[str]]) -> str:
+    by_id = {row["id"]: row for row in rows}
     lines = [
         "# 单因素工程契约配对",
         "",
-        "五组反常定义，每组三条：无标记、有标记、先问规则。",
-        "标准定义也各有无标记和有标记：统一默认是 standard-default-unmarked、standard-default-marked；",
-        "球腕顺序是 standard-order-unmarked、standard-order-marked。",
-        "standard-default 与 standard-order 仍是完整对照稿，规则询问全部保留，供答案对照和先问规则使用。",
+        "五组反常定义，每组一份测点完备的稿面：定义写在声明里，规则询问全部保留，没有额外提醒。",
+        "标准侧同样保留全部规则询问。统一默认是 standard-default，球腕顺序是 standard-order。",
         "理论迎角、机构滚转、正装反装、体轴系手性这四组的标准侧是统一默认。",
         "机构角顺序的标准侧是三自由度动轴球腕，执行顺序为偏航、俯仰、滚转；反常侧沿用当前功角机构。",
         "",
-        "无标记：定义仍写在定义声明里，不额外提醒，并去掉全部定义的规则询问，不是只去掉正在改的那一条。",
-        "有标记：与无标记的过程和答案相同，只在被改定义前加一句“必须按本题定义执行”。",
-        "标准定义的有标记没有单独被改的定义，提醒放在定义声明最前，要求后续步骤按全部定义执行。",
-        "先问规则：定义声明与无标记相同，没有提醒，规则询问全部保留。",
-        "空的编号不重排，便于和完整标准稿对照。",
-        "",
         "模型输入不要带上文件标题和审阅说明。评测用 samples.jsonl 里的定义声明和 process_text。",
         "",
-        "| 配对 | 标准 | 无标记 | 有标记 | 先问规则 | 去掉的规则询问 | 无标记中与标准不同的空 |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| 配对 | 标准 | 稿面 | 题数 | 与标准不同的空 |",
+        "| --- | --- | --- | ---: | ---: |",
     ]
     for factor in FACTORS:
-        kept, _rule = diffs[factor["key"]]
-        unmarked = next(row for row in rows if row["id"] == f"{factor['key']}-unmarked")
+        rule = by_id[f"{factor['key']}-rule"]
         lines.append(
-            "| {title} | {standard} | {key}-unmarked | {key}-marked | {key}-rule | {excluded} | {count} 个 |".format(
+            "| {title} | {standard} | {key}-rule | {count} | {diff} 个 |".format(
                 title=factor["title"],
                 standard=factor["standard_id"],
                 key=factor["key"],
-                excluded="、".join(unmarked["excluded_ids"]),
-                count=len(kept),
+                count=len(rule["questions"]),
+                diff=len(diffs[factor["key"]]),
             )
         )
     lines.extend(["", "## 与标准答案不同的空", ""])
     for factor in FACTORS:
-        kept, rule = diffs[factor["key"]]
         lines.append(f"### {factor['title']}")
         lines.append("")
         lines.append(factor["change"])
         lines.append("")
-        lines.append("无标记、有标记中与标准不同：" + "、".join(kept))
-        lines.append("")
-        lines.append("先问规则中与标准不同：" + "、".join(rule))
+        lines.append("与标准不同：" + "、".join(diffs[factor["key"]]))
         lines.append("")
     return "\n".join(lines)
 
@@ -673,131 +424,52 @@ def main() -> None:
         "standard-default": _make(
             default_spec, "standard-default", "统一默认",
             "全部取统一默认定义。理论迎角、机构滚转、正装反装、体轴系手性四组以此为标准侧。",
-            "default", "standard", "standard-default", (), {}, None, None, None,
+            "default", "standard", "standard-default",
         ),
         "standard-order": _make(
             wrist_spec, "standard-order", "常规机构角顺序",
             "攻角机构改为三自由度动轴球腕，执行顺序规定为偏航、俯仰、滚转。其余定义保持统一默认。",
-            "order", "standard", "standard-order", (), {}, None, None, None,
+            "order", "standard", "standard-order",
         ),
     }
     _check_standards(standards["standard-default"], standards["standard-order"])
 
     rows = [standards["standard-default"], standards["standard-order"]]
-    for spec, stem, title, change, factor_name, standard_id in (
-        (
-            default_spec, "standard-default", "统一默认",
-            "全部取统一默认定义。过程和有标记稿相同，只是没有“必须按定义执行”的提醒。",
-            "default", "standard-default",
-        ),
-        (
-            wrist_spec, "standard-order", "常规机构角顺序",
-            "攻角机构改为三自由度动轴球腕，执行顺序规定为偏航、俯仰、滚转。其余定义保持统一默认。",
-            "order", "standard-order",
-        ),
-    ):
-        shared_standard = {
-            "spec": spec,
-            "factor": factor_name,
-            "change": change,
-            "standard_id": standard_id,
-            "anchor": "固定约定",
-            "edits": EMPHASIS_EDITS,
-            "removed": EMPHASIS_REMOVED,
-            "after": None,
-        }
-        rows.append(_make(
-            sample_id=f"{stem}-unmarked",
-            title=f"{title}·无标记",
-            condition="unmarked",
-            marker=None,
-            **shared_standard,
-        ))
-        rows.append(_make(
-            sample_id=f"{stem}-marked",
-            title=f"{title}·有标记",
-            condition="marked",
-            marker=MARK_ALL,
-            **shared_standard,
-        ))
     diffs = {}
     for factor in FACTORS:
         spec = specs[factor["key"]]
         standard = standards[factor["standard_id"]]
-        shared = {
-            "spec": spec,
-            "factor": factor["key"],
-            "change": factor["change"],
-            "standard_id": factor["standard_id"],
-            "anchor": factor["anchor"],
-        }
         rule = _make(
-            sample_id=f"{factor['key']}-rule",
-            title=f"{factor['title']}·先问规则",
-            condition="rule",
-            edits=(),
-            removed={},
-            marker=None,
-            after=None,
-            **shared,
-        )
-        unmarked = _make(
-            sample_id=f"{factor['key']}-unmarked",
-            title=f"{factor['title']}·无标记",
-            condition="unmarked",
-            edits=EMPHASIS_EDITS,
-            removed=EMPHASIS_REMOVED,
-            marker=None,
-            after=None,
-            **shared,
-        )
-        marked = _make(
-            sample_id=f"{factor['key']}-marked",
-            title=f"{factor['title']}·有标记",
-            condition="marked",
-            edits=EMPHASIS_EDITS,
-            removed=EMPHASIS_REMOVED,
-            marker=factor["marker"],
-            after=None,
-            **shared,
+            spec,
+            f"{factor['key']}-rule",
+            f"{factor['title']}·先问规则",
+            factor["change"],
+            factor["key"],
+            "rule",
+            factor["standard_id"],
         )
         if factor["key"] != "order" and rule["process_text"] != standards["standard-default"]["process_text"]:
-            raise RuntimeError(f"{factor['key']} 的先问规则稿改写了与目标定义无关的过程句。")
+            raise RuntimeError(f"{factor['key']} 的稿面改写了与目标定义无关的过程句。")
         if factor["key"] == "order" and rule["process_text"] != standards["standard-default"]["process_text"]:
             raise RuntimeError("顺序反常稿没有沿用当前机构描述。")
-        diffs[factor["key"]] = _check_factor(factor, rule, unmarked, marked, standard)
-        rows.extend([unmarked, marked, rule])
+        diffs[factor["key"]] = _check_factor(factor, rule, standard)
+        rows.append(rule)
 
-    reference = next(row for row in rows if row["id"] == "standard-default-unmarked")
-    for row in rows:
-        if row["condition"] not in {"unmarked", "marked"}:
-            continue
-        if row["process_text"] != reference["process_text"]:
-            raise RuntimeError(f"{row['id']} 的过程文本和标准无标记稿不同。")
-        if set(row["excluded_ids"]) != _emphasis_public_ids():
-            raise RuntimeError(f"{row['id']} 没有去掉全部定义的规则询问。")
-    for stem in ("standard-default", "standard-order"):
-        plain = next(row for row in rows if row["id"] == f"{stem}-unmarked")
-        warned = next(row for row in rows if row["id"] == f"{stem}-marked")
-        if MARK_ALL not in warned["declaration"] or MARK_ALL in plain["declaration"]:
-            raise RuntimeError(f"{stem} 的有标记提醒没有只出现在有标记稿。")
-        if plain["questions"] != warned["questions"]:
-            raise RuntimeError(f"{stem} 的无标记和有标记答案不同。")
-
-    conditions = [row for row in rows if row["condition"] != "standard"]
-    if len(conditions) != 19:
-        raise RuntimeError(f"无强调、有强调和先问规则共 {len(conditions)} 条，应为 19 条。")
+    if [row["id"] for row in rows] != list(RULE_IDS):
+        raise RuntimeError(f"稿面应为 {RULE_IDS}，实际是 {[row['id'] for row in rows]}。")
+    if any(row["condition"] not in {"standard", "rule"} for row in rows):
+        raise RuntimeError("生成结果含有非 rule 稿面。")
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    keep = {f"{row['id']}.md" for row in rows} | {"00_索引.md"}
+    for path in OUT_DIR.glob("*.md"):
+        if path.name not in keep:
+            path.unlink()
     stored = []
     for row in rows:
         (OUT_DIR / f"{row['id']}.md").write_text(_markdown(row), encoding="utf-8")
         stored.append({key: value for key, value in row.items() if key not in {"processes", "review_note"}})
-        print(
-            f"{row['id']}: {len(row['questions'])} questions, "
-            f"excluded {len(row['excluded_ids'])}",
-            flush=True,
-        )
+        print(f"{row['id']}: {len(row['questions'])} questions", flush=True)
     (OUT_DIR / "samples.jsonl").write_text(
         "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in stored),
         encoding="utf-8",

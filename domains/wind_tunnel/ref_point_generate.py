@@ -50,6 +50,13 @@ SLOTS = ["Xg", "Yg", "Zg"]
 PLACES = ["原点", "力矩参考点"]
 SIGNS = ["正", "负"]
 MOMENT_KEYS = ("MCN_CA", "MCZ_CA", "MCA_CZ", "MCN_CZ", "MCA_CN", "MCZ_CN")
+FORCE_OPTIONS = ("CN", "CA", "CZ")
+ARM_OPTIONS = ("Yg", "Zg", "(Xr - Xg)")
+DENOM_OPTIONS = ("L", "L_t", "L_r", "L_RT")
+# Local manuscript ids. Public ids are these plus the 力矩参考点 offset 180.
+FORCE_LOCAL = tuple(str(21 + index) for index in range(6))
+ARM_LOCAL = tuple(str(27 + index) for index in range(6))
+DENOM_LOCAL = "33"
 
 XG_SYM, YG_SYM, ZG_SYM, L_RT_SYM = sp.symbols("Xg Yg Zg L_RT", real=True)
 ARM = sp.symbols("arm")
@@ -125,10 +132,11 @@ def generate(spec: dict) -> dict:
 
     items: list[dict] = []
 
-    def add(step: int, label: str, prompt: str, answer, options=None) -> None:
+    def add(step: int, label: str, prompt: str, answer, options=None, manuscript_id: str | None = None) -> None:
+        number = manuscript_id or str(len(items) + 1)
         items.append({
-            "id": len(items) + 1,
-            "manuscript_id": str(len(items) + 1),
+            "id": int(number),
+            "manuscript_id": number,
             "step": step,
             "label": label,
             "prompt": prompt,
@@ -165,6 +173,38 @@ def generate(spec: dict) -> dict:
             "不要保留字母 C 或 L_c",
             rendered[key],
         )
+    parts = {key: _split_formula(rendered[key]) for key in MOMENT_KEYS}
+    # The rule sheet offers Yg, Zg and (Xr - Xg). A rotated body frame can also
+    # put the arm on Xg, (Xr - Yg) or (Xr - Zg). Those letters are appended
+    # only for the sample that uses them, so the original three keep A/B/C.
+    arm_options = list(ARM_OPTIONS)
+    for arm in ("Xg", "(Xr - Yg)", "(Xr - Zg)"):
+        if any(parts[key][2] == arm for key in MOMENT_KEYS):
+            arm_options.append(arm)
+    for key in MOMENT_KEYS:
+        _sign, force, arm, denom = parts[key]
+        named = key.split("_", 1)[0][1:]
+        if force != named or force not in FORCE_OPTIONS or arm not in arm_options or denom != "L_RT":
+            raise DefinitionError(f"{key} 的公式 {rendered[key]} 拆不出测点选项。")
+    for index, key in enumerate(MOMENT_KEYS):
+        _sign, force, arm, denom = parts[key]
+        add(
+            5, "A1",
+            f"等效力矩系数 {key} 的分子，用的力系数是哪个",
+            force, list(FORCE_OPTIONS), FORCE_LOCAL[index],
+        )
+    for index, key in enumerate(MOMENT_KEYS):
+        _sign, _force, arm, _denom = parts[key]
+        add(
+            5, "A1",
+            f"等效力矩系数 {key} 的分子，用的坐标分量是哪个",
+            arm, arm_options, ARM_LOCAL[index],
+        )
+    add(
+        5, "A1",
+        "等效力矩系数的分母，用的长度是哪个",
+        "L_RT", list(DENOM_OPTIONS), DENOM_LOCAL,
+    )
 
     return {
         "task": "body_frame_moment_reference_point",
@@ -198,6 +238,15 @@ def _positive_arm(arm_expr):
     if leading < 0:
         return "-", sp.expand(-expanded)
     return "", expanded
+
+
+def _split_formula(formula: str) -> tuple[str, str, str, str]:
+    """符号、力系数、坐标分量、分母。式子由 _template 写成 ±C·L_c/L_RT。"""
+    sign = "负" if formula.startswith("-") else "正"
+    body = formula[1:] if formula.startswith("-") else formula
+    force, rest = body.split("·", 1)
+    arm, denom = rest.rsplit("/", 1)
+    return sign, force, arm, denom
 
 
 def _template(expr, axial_name: str) -> str:
@@ -251,7 +300,7 @@ def _render(payload: dict) -> str:
 def _check_standard() -> None:
     payload = generate(STANDARD_SPEC)
     by_id = {item["manuscript_id"]: item["answer"] for item in payload["items"]}
-    assert len(payload["items"]) == 20
+    assert len(payload["items"]) == 33
     assert by_id["1"] == "天平校心"
     assert by_id["2"] == "L + L_t - L_r"
     assert by_id["3"] == "Xg"
@@ -277,6 +326,15 @@ def _check_standard() -> None:
         formula = by_id[str(15 + offset)]
         if (sign == "负") != formula.startswith("-"):
             raise AssertionError(f"{key} 的符号 {sign} 与式子 {formula} 不一致。")
+        part_sign, force, arm, denom = _split_formula(formula)
+        if part_sign != sign:
+            raise AssertionError(f"{key} 拆出的符号 {part_sign} 与符号题 {sign} 不一致。")
+        if by_id[FORCE_LOCAL[offset]] != force:
+            raise AssertionError(f"{key} 的力系数测点应为 {force}。")
+        if by_id[ARM_LOCAL[offset]] != arm:
+            raise AssertionError(f"{key} 的坐标分量测点应为 {arm}。")
+        if denom != "L_RT" or by_id[DENOM_LOCAL] != "L_RT":
+            raise AssertionError(f"{key} 的分母应为 L_RT。")
 
     rearward = json.loads(json.dumps(STANDARD_SPEC))
     rearward["body_frame"]["XTZ"] = {"along": "body_axial", "points": "body_rearward"}
@@ -288,6 +346,22 @@ def _check_standard() -> None:
         formula = turned[str(15 + offset)]
         if sign not in SIGNS or (sign == "负") != formula.startswith("-"):
             raise AssertionError(f"轴向朝后时 {key} 的符号 {sign} 与式子 {formula} 不一致。")
+        _part_sign, force, arm, denom = _split_formula(formula)
+        if turned[FORCE_LOCAL[offset]] != force or turned[ARM_LOCAL[offset]] != arm or denom != "L_RT":
+            raise AssertionError(f"轴向朝后时 {key} 的分子测点与式子 {formula} 不一致。")
+
+    left = json.loads(json.dumps(STANDARD_SPEC))
+    left["body_frame"]["chirality"] = "left"
+    flipped = {item["manuscript_id"]: item["answer"] for item in generate(left)["items"]}
+    for offset, key in enumerate(MOMENT_KEYS):
+        formula = flipped[str(15 + offset)]
+        sign, force, arm, denom = _split_formula(formula)
+        if flipped[str(9 + offset)] != sign:
+            raise AssertionError(f"左手系 {key} 的符号题与式子不一致。")
+        if flipped[FORCE_LOCAL[offset]] != force or flipped[ARM_LOCAL[offset]] != arm:
+            raise AssertionError(f"左手系 {key} 的分子测点与式子 {formula} 不一致。")
+        if arm not in ARM_OPTIONS or denom != "L_RT" or flipped[DENOM_LOCAL] != "L_RT":
+            raise AssertionError(f"左手系 {key} 的坐标或分母不在选项里：{formula}")
 
 
 def main() -> None:

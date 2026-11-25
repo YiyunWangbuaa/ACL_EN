@@ -1,0 +1,1115 @@
+[
+ {
+  "label": "风轴到体轴的前置矩阵RP1执行故障",
+  "blanks": [
+   "8"
+  ],
+  "answer_type": "matrix",
+  "process": "风轴系到体轴系",
+  "role": "风轴到体轴的前置矩阵RP1",
+  "prompt": "平正位置处风轴坐标到体轴坐标的前置矩阵 RP1",
+  "target_definition": "rp1"
+ },
+ {
+  "label": "安装前置矩阵RP2执行故障",
+  "blanks": [
+   "13"
+  ],
+  "answer_type": "matrix",
+  "process": "风轴系到体轴系",
+  "role": "安装前置矩阵RP2",
+  "prompt": "安装引起的前置矩阵 RP2",
+  "target_definition": "rp2"
+ },
+ {
+  "label": "正机构迎角下理论迎角的符号判断故障",
+  "blanks": [
+   "22"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "正机构迎角下理论迎角的符号",
+  "prompt": "α_M > 0 时理论迎角的符号",
+  "target_definition": "alpha_m_sign"
+ },
+ {
+  "label": "迎角绕过的机体坐标轴选择故障",
+  "blanks": [
+   "24"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "迎角绕过的机体坐标轴",
+  "prompt": "α_M 绕过的机体坐标轴",
+  "target_definition": "alpha_axis"
+ },
+ {
+  "label": "迎角旋转矩阵执行故障",
+  "blanks": [
+   "26"
+  ],
+  "answer_type": "matrix",
+  "process": "风轴系到体轴系",
+  "role": "迎角旋转矩阵",
+  "prompt": "旋转矩阵 R_α_M",
+  "target_definition": "r_alpha"
+ },
+ {
+  "label": "正机构侧滑下理论侧滑的符号判断故障",
+  "blanks": [
+   "30"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "正机构侧滑下理论侧滑的符号",
+  "prompt": "β_M > 0 时理论侧滑角的符号",
+  "target_definition": "beta_m_sign"
+ },
+ {
+  "label": "侧滑绕过的机体坐标轴选择故障",
+  "blanks": [
+   "32"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "侧滑绕过的机体坐标轴",
+  "prompt": "β_M 绕过的机体坐标轴",
+  "target_definition": "beta_axis"
+ },
+ {
+  "label": "侧滑旋转矩阵执行故障",
+  "blanks": [
+   "34"
+  ],
+  "answer_type": "matrix",
+  "process": "风轴系到体轴系",
+  "role": "侧滑旋转矩阵",
+  "prompt": "旋转矩阵 R_β_M",
+  "target_definition": "r_beta"
+ },
+ {
+  "label": "正机构滚转时右翼偏向选择故障",
+  "blanks": [
+   "36"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "正机构滚转时右翼偏向",
+  "prompt": "γ_M > 0 时右翼偏向的机体方向",
+  "target_definition": "gamma_m_wing"
+ },
+ {
+  "label": "正理论滚转时右翼偏向选择故障",
+  "blanks": [
+   "38"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "正理论滚转时右翼偏向",
+  "prompt": "理论滚转角 > 0 时右翼偏向的机体方向",
+  "target_definition": "gamma_wing"
+ },
+ {
+  "label": "正机构滚转下理论滚转的符号判断故障",
+  "blanks": [
+   "39"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "正机构滚转下理论滚转的符号",
+  "prompt": "γ_M > 0 时理论滚转角的符号",
+  "target_definition": "gamma_sign"
+ },
+ {
+  "label": "滚转绕过的机体坐标轴选择故障",
+  "blanks": [
+   "41"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "滚转绕过的机体坐标轴",
+  "prompt": "γ_M 绕过的机体坐标轴",
+  "target_definition": "gamma_axis"
+ },
+ {
+  "label": "滚转旋转矩阵执行故障",
+  "blanks": [
+   "43"
+  ],
+  "answer_type": "matrix",
+  "process": "风轴系到体轴系",
+  "role": "滚转旋转矩阵",
+  "prompt": "旋转矩阵 R_γ_M",
+  "target_definition": "r_gamma"
+ },
+ {
+  "label": "姿态连乘式中的R1选择故障",
+  "blanks": [
+   "47"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "姿态连乘式中的R1",
+  "prompt": "内旋连乘式中的 R1",
+  "target_definition": "product_r1"
+ },
+ {
+  "label": "姿态连乘式中的R2选择故障",
+  "blanks": [
+   "48"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "姿态连乘式中的R2",
+  "prompt": "内旋连乘式中的 R2",
+  "target_definition": "product_r2"
+ },
+ {
+  "label": "姿态连乘式中的R3选择故障",
+  "blanks": [
+   "49"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "姿态连乘式中的R3",
+  "prompt": "内旋连乘式中的 R3",
+  "target_definition": "product_r3"
+ },
+ {
+  "label": "姿态连乘式中的R4选择故障",
+  "blanks": [
+   "50"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "姿态连乘式中的R4",
+  "prompt": "连乘式中的 R4",
+  "target_definition": "product_r4"
+ },
+ {
+  "label": "姿态连乘式中的R5选择故障",
+  "blanks": [
+   "51"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "姿态连乘式中的R5",
+  "prompt": "连乘式中的 R5",
+  "target_definition": "product_r5"
+ },
+ {
+  "label": "三次姿态旋转的总矩阵执行故障",
+  "blanks": [
+   "55"
+  ],
+  "answer_type": "matrix",
+  "process": "风轴系到体轴系",
+  "role": "三次姿态旋转的总矩阵",
+  "prompt": "R_t = R1*R2*R3 化简后的矩阵",
+  "target_definition": "r_t"
+ },
+ {
+  "label": "平置机体系中的空速坐标执行故障",
+  "blanks": [
+   "56"
+  ],
+  "answer_type": "vector",
+  "process": "风轴系到体轴系",
+  "role": "平置机体系中的空速坐标",
+  "prompt": "RP2*RP1 乘风轴系中的空速单位向量后，平置机体系中的空速坐标",
+  "target_definition": "level_airspeed"
+ },
+ {
+  "label": "代入用的平置空速单位向量执行故障",
+  "blanks": [
+   "58"
+  ],
+  "answer_type": "vector",
+  "process": "风轴系到体轴系",
+  "role": "代入用的平置空速单位向量",
+  "prompt": "平置机体系中的空速单位向量 [X_V, Y_V, Z_V]",
+  "target_definition": "level_airspeed_vector"
+ },
+ {
+  "label": "空速在体轴的XTZ分量执行故障",
+  "blanks": [
+   "59"
+  ],
+  "answer_type": "expression",
+  "process": "风轴系到体轴系",
+  "role": "空速在体轴的XTZ分量",
+  "prompt": "R_t*[X_V, Y_V, Z_V] 的 XTZ",
+  "target_definition": "xtz_component"
+ },
+ {
+  "label": "空速在体轴的YTZ分量执行故障",
+  "blanks": [
+   "60"
+  ],
+  "answer_type": "expression",
+  "process": "风轴系到体轴系",
+  "role": "空速在体轴的YTZ分量",
+  "prompt": "R_t*[X_V, Y_V, Z_V] 的 YTZ",
+  "target_definition": "ytz_component"
+ },
+ {
+  "label": "空速在体轴的ZTZ分量执行故障",
+  "blanks": [
+   "61"
+  ],
+  "answer_type": "expression",
+  "process": "风轴系到体轴系",
+  "role": "空速在体轴的ZTZ分量",
+  "prompt": "R_t*[X_V, Y_V, Z_V] 的 ZTZ",
+  "target_definition": "ztz_component"
+ },
+ {
+  "label": "仅正迎角时XTZ的符号判断故障",
+  "blanks": [
+   "62"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "仅正迎角时XTZ的符号",
+  "prompt": "仅 α_M > 0 时 XTZ 的符号",
+  "target_definition": "xtz_sign_alpha"
+ },
+ {
+  "label": "仅正迎角时YTZ的符号判断故障",
+  "blanks": [
+   "63"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "仅正迎角时YTZ的符号",
+  "prompt": "仅 α_M > 0 时 YTZ 的符号",
+  "target_definition": "ytz_sign_alpha"
+ },
+ {
+  "label": "仅正迎角时ZTZ的符号判断故障",
+  "blanks": [
+   "64"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "仅正迎角时ZTZ的符号",
+  "prompt": "仅 α_M > 0 时 ZTZ 的符号",
+  "target_definition": "ztz_sign_alpha"
+ },
+ {
+  "label": "仅正侧滑时XTZ的符号判断故障",
+  "blanks": [
+   "65"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "仅正侧滑时XTZ的符号",
+  "prompt": "仅 β_M > 0 时 XTZ 的符号",
+  "target_definition": "xtz_sign_beta"
+ },
+ {
+  "label": "仅正侧滑时YTZ的符号判断故障",
+  "blanks": [
+   "66"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "仅正侧滑时YTZ的符号",
+  "prompt": "仅 β_M > 0 时 YTZ 的符号",
+  "target_definition": "ytz_sign_beta"
+ },
+ {
+  "label": "仅正侧滑时ZTZ的符号判断故障",
+  "blanks": [
+   "67"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "仅正侧滑时ZTZ的符号",
+  "prompt": "仅 β_M > 0 时 ZTZ 的符号",
+  "target_definition": "ztz_sign_beta"
+ },
+ {
+  "label": "理论迎角公式的外层符号判断故障",
+  "blanks": [
+   "68"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "理论迎角公式的外层符号",
+  "prompt": "写在 arctan 外面的 α_t 符号。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "target_definition": "alpha_t_sign"
+ },
+ {
+  "label": "理论迎角分子的符号判断故障",
+  "blanks": [
+   "70"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "理论迎角分子的符号",
+  "prompt": "根据所选体轴分量在仅α_M>0时的符号，α_t 分子的符号。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "target_definition": "alpha_num_sign"
+ },
+ {
+  "label": "理论迎角的分子分量选择故障",
+  "blanks": [
+   "71"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "理论迎角的分子分量",
+  "prompt": "α_t 的分子应使用的体轴分量。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "target_definition": "alpha_num_axis"
+ },
+ {
+  "label": "理论迎角分母的符号判断故障",
+  "blanks": [
+   "72"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "理论迎角分母的符号",
+  "prompt": "根据所选体轴分量在仅α_M>0时的符号，α_t 分母的符号。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "target_definition": "alpha_den_sign"
+ },
+ {
+  "label": "理论迎角的分母分量选择故障",
+  "blanks": [
+   "73"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "理论迎角的分母分量",
+  "prompt": "α_t 的分母应使用的体轴分量。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "target_definition": "alpha_den_axis"
+ },
+ {
+  "label": "理论侧滑公式的外层符号判断故障",
+  "blanks": [
+   "74"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "理论侧滑公式的外层符号",
+  "prompt": "写在 arcsin 外面的 β_t 符号。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "target_definition": "beta_t_sign"
+ },
+ {
+  "label": "理论侧滑分子的符号判断故障",
+  "blanks": [
+   "76"
+  ],
+  "answer_type": "sign",
+  "process": "风轴系到体轴系",
+  "role": "理论侧滑分子的符号",
+  "prompt": "根据所选体轴分量在仅β_M>0时的符号，β_t 分子的符号。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "target_definition": "beta_num_sign"
+ },
+ {
+  "label": "理论侧滑的分子分量选择故障",
+  "blanks": [
+   "77"
+  ],
+  "answer_type": "choice",
+  "process": "风轴系到体轴系",
+  "role": "理论侧滑的分子分量",
+  "prompt": "β_t 的分子应使用的体轴分量。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面",
+  "target_definition": "beta_num_axis"
+ },
+ {
+  "label": "理论迎角公式执行故障",
+  "blanks": [
+   "80"
+  ],
+  "answer_type": "expression",
+  "process": "风轴系到体轴系",
+  "role": "理论迎角公式",
+  "prompt": "代入分量表达式后的 α_t。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面，负号写在整个 arctan 之前",
+  "target_definition": "alpha_t"
+ },
+ {
+  "label": "理论侧滑公式执行故障",
+  "blanks": [
+   "81"
+  ],
+  "answer_type": "expression",
+  "process": "风轴系到体轴系",
+  "role": "理论侧滑公式",
+  "prompt": "代入分量表达式后的 β_t。要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面，负号写在整个 arcsin 之前",
+  "target_definition": "beta_t"
+ },
+ {
+  "label": "天平系与机体系的滚转角差执行故障",
+  "blanks": [
+   "85"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到体轴系",
+  "role": "天平系与机体系的滚转角差",
+  "prompt": "天平绝对轴向、机体绝对轴向和两个正方向都已确定后，天平系与机体系相差的滚转角",
+  "target_definition": "roll_difference"
+ },
+ {
+  "label": "安装滚转矩阵执行故障",
+  "blanks": [
+   "88"
+  ],
+  "answer_type": "matrix",
+  "process": "天平系到体轴系",
+  "role": "安装滚转矩阵",
+  "prompt": "天平轴系中的安装角旋转矩阵 R_(γ_M-γ_tp)",
+  "target_definition": "balance_roll_matrix"
+ },
+ {
+  "label": "坐标轴与绝对方向的对齐矩阵执行故障",
+  "blanks": [
+   "95"
+  ],
+  "answer_type": "matrix",
+  "process": "天平系到体轴系",
+  "role": "坐标轴与绝对方向的对齐矩阵",
+  "prompt": "坐标轴与绝对方向统一后的前置矩阵 RTP_TZ1",
+  "target_definition": "rtp_tz1"
+ },
+ {
+  "label": "正装或倒装的前置矩阵执行故障",
+  "blanks": [
+   "97"
+  ],
+  "answer_type": "matrix",
+  "process": "天平系到体轴系",
+  "role": "正装或倒装的前置矩阵",
+  "prompt": "正装或倒装对应的前置矩阵 RTP_TZ2",
+  "target_definition": "rtp_tz2"
+ },
+ {
+  "label": "载荷连乘式中的R1选择故障",
+  "blanks": [
+   "98",
+   "133"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到体轴系",
+  "role": "载荷连乘式中的R1",
+  "prompt": "连乘式中的 R1",
+  "target_definition": "load_r1"
+ },
+ {
+  "label": "载荷连乘式中的R2选择故障",
+  "blanks": [
+   "99",
+   "134"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到体轴系",
+  "role": "载荷连乘式中的R2",
+  "prompt": "连乘式中的 R2",
+  "target_definition": "load_r2"
+ },
+ {
+  "label": "载荷连乘式中的R3选择故障",
+  "blanks": [
+   "100"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到体轴系",
+  "role": "载荷连乘式中的R3",
+  "prompt": "连乘式中的 R3",
+  "target_definition": "load_r3"
+ },
+ {
+  "label": "载荷变换总矩阵执行故障",
+  "blanks": [
+   "104"
+  ],
+  "answer_type": "matrix",
+  "process": "天平系到体轴系",
+  "role": "载荷变换总矩阵",
+  "prompt": "R1*R2*R3 化简后的总矩阵",
+  "target_definition": "load_matrix"
+ },
+ {
+  "label": "体轴法向力执行故障",
+  "blanks": [
+   "111"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到体轴系",
+  "role": "体轴法向力",
+  "prompt": "体轴系 CN_TZ",
+  "target_definition": "cn_tz"
+ },
+ {
+  "label": "体轴轴向力执行故障",
+  "blanks": [
+   "112"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到体轴系",
+  "role": "体轴轴向力",
+  "prompt": "体轴系 CA_TZ",
+  "target_definition": "ca_tz"
+ },
+ {
+  "label": "体轴侧向力执行故障",
+  "blanks": [
+   "113"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到体轴系",
+  "role": "体轴侧向力",
+  "prompt": "体轴系 CZ_TZ",
+  "target_definition": "cz_tz"
+ },
+ {
+  "label": "体轴法向力矩执行故障",
+  "blanks": [
+   "114"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到体轴系",
+  "role": "体轴法向力矩",
+  "prompt": "体轴系 MN_TZ",
+  "target_definition": "mn_tz"
+ },
+ {
+  "label": "体轴轴向力矩执行故障",
+  "blanks": [
+   "115"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到体轴系",
+  "role": "体轴轴向力矩",
+  "prompt": "体轴系 MA_TZ",
+  "target_definition": "ma_tz"
+ },
+ {
+  "label": "体轴侧向力矩执行故障",
+  "blanks": [
+   "116"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到体轴系",
+  "role": "体轴侧向力矩",
+  "prompt": "体轴系 MZ_TZ",
+  "target_definition": "mz_tz"
+ },
+ {
+  "label": "天平坐标到风轴坐标的对齐矩阵执行故障",
+  "blanks": [
+   "126"
+  ],
+  "answer_type": "matrix",
+  "process": "天平系到风轴系",
+  "role": "天平坐标到风轴坐标的对齐矩阵",
+  "prompt": "平置后天平坐标到风轴坐标的矩阵 RP_TP_FD",
+  "target_definition": "rp_tp_fd"
+ },
+ {
+  "label": "安装角旋转矩阵执行故障",
+  "blanks": [
+   "132"
+  ],
+  "answer_type": "matrix",
+  "process": "天平系到风轴系",
+  "role": "安装角旋转矩阵",
+  "prompt": "旋转矩阵 R_γ_tp",
+  "target_definition": "r_gamma_tp"
+ },
+ {
+  "label": "未变形的天平轴向单位向量执行故障",
+  "blanks": [
+   "135"
+  ],
+  "answer_type": "vector",
+  "process": "天平系到风轴系",
+  "role": "未变形的天平轴向单位向量",
+  "prompt": "未变形时沿天平绝对轴向正方向（前方）的单位向量",
+  "target_definition": "balance_forward_vector"
+ },
+ {
+  "label": "变形后XTP分量的符号判断故障",
+  "blanks": [
+   "142"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "变形后XTP分量的符号",
+  "prompt": "正弹性角下 XTP_e 的符号",
+  "target_definition": "xtp_e_sign"
+ },
+ {
+  "label": "变形后YTP分量的符号判断故障",
+  "blanks": [
+   "143"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "变形后YTP分量的符号",
+  "prompt": "正弹性角下 YTP_e 的符号",
+  "target_definition": "ytp_e_sign"
+ },
+ {
+  "label": "变形后ZTP分量的符号判断故障",
+  "blanks": [
+   "144"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "变形后ZTP分量的符号",
+  "prompt": "正弹性角下 ZTP_e 的符号",
+  "target_definition": "ztp_e_sign"
+ },
+ {
+  "label": "小角度近似后的天平轴向向量执行故障",
+  "blanks": [
+   "145"
+  ],
+  "answer_type": "vector",
+  "process": "天平系到风轴系",
+  "role": "小角度近似后的天平轴向向量",
+  "prompt": "小角度近似后的天平轴向单位向量",
+  "target_definition": "deformed_axis"
+ },
+ {
+  "label": "变形轴向在风轴的XFD执行故障",
+  "blanks": [
+   "146"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到风轴系",
+  "role": "变形轴向在风轴的XFD",
+  "prompt": "变形后天平轴向在风轴系的 XFD",
+  "target_definition": "xfd_elastic"
+ },
+ {
+  "label": "变形轴向在风轴的YFD执行故障",
+  "blanks": [
+   "147"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到风轴系",
+  "role": "变形轴向在风轴的YFD",
+  "prompt": "变形后天平轴向在风轴系的 YFD",
+  "target_definition": "yfd_elastic"
+ },
+ {
+  "label": "变形轴向在风轴的ZFD执行故障",
+  "blanks": [
+   "148"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到风轴系",
+  "role": "变形轴向在风轴的ZFD",
+  "prompt": "变形后天平轴向在风轴系的 ZFD",
+  "target_definition": "zfd_elastic"
+ },
+ {
+  "label": "正弹性迎角使空速位于机体的上下选择故障",
+  "blanks": [
+   "152"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到风轴系",
+  "role": "正弹性迎角使空速位于机体的上下",
+  "prompt": "正弹性迎角使空速位于模型的",
+  "target_definition": "alpha_e_airspeed"
+ },
+ {
+  "label": "正弹性侧滑使空速位于机体的左右选择故障",
+  "blanks": [
+   "153"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到风轴系",
+  "role": "正弹性侧滑使空速位于机体的左右",
+  "prompt": "正弹性侧滑角使空速位于模型的",
+  "target_definition": "beta_e_airspeed"
+ },
+ {
+  "label": "弹性迎角增量的符号判断故障",
+  "blanks": [
+   "158"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性迎角增量的符号",
+  "prompt": "天平弹性角产生的 Δα_e",
+  "target_definition": "delta_alpha_sign"
+ },
+ {
+  "label": "弹性侧滑增量的符号判断故障",
+  "blanks": [
+   "159"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性侧滑增量的符号",
+  "prompt": "天平弹性角产生的 Δβ_e",
+  "target_definition": "delta_beta_sign"
+ },
+ {
+  "label": "弹性滚转增量的符号判断故障",
+  "blanks": [
+   "160"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性滚转增量的符号",
+  "prompt": "天平弹性角产生的 Δγ_e",
+  "target_definition": "delta_gamma_sign"
+ },
+ {
+  "label": "安装角为零时XFD的符号判断故障",
+  "blanks": [
+   "161"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "安装角为零时XFD的符号",
+  "prompt": "γ_tp = 0 且弹性角为正时 XFD 的符号",
+  "target_definition": "xfd_sign"
+ },
+ {
+  "label": "安装角为零时YFD的符号判断故障",
+  "blanks": [
+   "162"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "安装角为零时YFD的符号",
+  "prompt": "γ_tp = 0 且弹性角为正时 YFD 的符号",
+  "target_definition": "yfd_sign"
+ },
+ {
+  "label": "安装角为零时ZFD的符号判断故障",
+  "blanks": [
+   "163"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "安装角为零时ZFD的符号",
+  "prompt": "γ_tp = 0 且弹性角为正时 ZFD 的符号",
+  "target_definition": "zfd_sign"
+ },
+ {
+  "label": "弹性迎角增量公式的外层符号判断故障",
+  "blanks": [
+   "164"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性迎角增量公式的外层符号",
+  "prompt": "写在分式外面的 Δα_e 符号。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_alpha_outer"
+ },
+ {
+  "label": "弹性迎角增量的分子符号判断故障",
+  "blanks": [
+   "165"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性迎角增量的分子符号",
+  "prompt": "根据所选风轴分量的符号，Δα_e 分子的符号。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_alpha_num_sign"
+ },
+ {
+  "label": "弹性迎角增量的分子分量选择故障",
+  "blanks": [
+   "166"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到风轴系",
+  "role": "弹性迎角增量的分子分量",
+  "prompt": "Δα_e 的分子应使用的风轴分量。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_alpha_num_axis"
+ },
+ {
+  "label": "弹性迎角增量的分母符号判断故障",
+  "blanks": [
+   "167"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性迎角增量的分母符号",
+  "prompt": "根据所选风轴分量的符号，Δα_e 分母的符号。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_alpha_den_sign"
+ },
+ {
+  "label": "弹性迎角增量的分母分量选择故障",
+  "blanks": [
+   "168"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到风轴系",
+  "role": "弹性迎角增量的分母分量",
+  "prompt": "Δα_e 的分母应使用的风轴分量。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_alpha_den_axis"
+ },
+ {
+  "label": "弹性侧滑增量公式的外层符号判断故障",
+  "blanks": [
+   "169"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性侧滑增量公式的外层符号",
+  "prompt": "写在分式外面的 Δβ_e 符号。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_beta_outer"
+ },
+ {
+  "label": "弹性侧滑增量的分子符号判断故障",
+  "blanks": [
+   "170"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性侧滑增量的分子符号",
+  "prompt": "根据所选风轴分量的符号，Δβ_e 分子的符号。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_beta_num_sign"
+ },
+ {
+  "label": "弹性侧滑增量的分子分量选择故障",
+  "blanks": [
+   "171"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到风轴系",
+  "role": "弹性侧滑增量的分子分量",
+  "prompt": "Δβ_e 的分子应使用的风轴分量。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_beta_num_axis"
+ },
+ {
+  "label": "弹性侧滑增量的分母符号判断故障",
+  "blanks": [
+   "172"
+  ],
+  "answer_type": "sign",
+  "process": "天平系到风轴系",
+  "role": "弹性侧滑增量的分母符号",
+  "prompt": "根据所选风轴分量的符号，Δβ_e 分母的符号。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_beta_den_sign"
+ },
+ {
+  "label": "弹性侧滑增量的分母分量选择故障",
+  "blanks": [
+   "173"
+  ],
+  "answer_type": "choice",
+  "process": "天平系到风轴系",
+  "role": "弹性侧滑增量的分母分量",
+  "prompt": "Δβ_e 的分母应使用的风轴分量。要求分子和分母都必须为正，角度正负只能写在分式外面",
+  "target_definition": "delta_beta_den_axis"
+ },
+ {
+  "label": "用风轴分量写成的弹性迎角增量执行故障",
+  "blanks": [
+   "174"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到风轴系",
+  "role": "用风轴分量写成的弹性迎角增量",
+  "prompt": "代入后的 Δα_e。分子和分母都为正，负号写在整个分式之前。这个空只能填风轴分量 XFD、YFD、ZFD 的分式，不能直接写含 α_e、β_e 或 γ_e 的弹性角式",
+  "target_definition": "delta_alpha_formula"
+ },
+ {
+  "label": "用风轴分量写成的弹性侧滑增量执行故障",
+  "blanks": [
+   "175"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到风轴系",
+  "role": "用风轴分量写成的弹性侧滑增量",
+  "prompt": "代入后的 Δβ_e。分子和分母都为正，负号写在整个分式之前",
+  "target_definition": "delta_beta_formula"
+ },
+ {
+  "label": "用弹性角写成的弹性迎角增量执行故障",
+  "blanks": [
+   "176"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到风轴系",
+  "role": "用弹性角写成的弹性迎角增量",
+  "prompt": "用弹性角表示的 Δα_e",
+  "target_definition": "delta_alpha_elastic"
+ },
+ {
+  "label": "用弹性角写成的弹性侧滑增量执行故障",
+  "blanks": [
+   "177"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到风轴系",
+  "role": "用弹性角写成的弹性侧滑增量",
+  "prompt": "用弹性角表示的 Δβ_e",
+  "target_definition": "delta_beta_elastic"
+ },
+ {
+  "label": "弹性滚转增量执行故障",
+  "blanks": [
+   "178"
+  ],
+  "answer_type": "expression",
+  "process": "天平系到风轴系",
+  "role": "弹性滚转增量",
+  "prompt": "弹性滚转产生的 Δγ_e。不随安装角变化，符号由弹性滚转与理论滚转绕绝对轴向正方向（前方）是否同向决定",
+  "target_definition": "delta_gamma"
+ },
+ {
+  "label": "校心到模型顶点的距离执行故障",
+  "blanks": [
+   "182"
+  ],
+  "answer_type": "expression",
+  "process": "力矩参考点",
+  "role": "校心到模型顶点的距离",
+  "prompt": "天平校心到模型顶点的距离 Xr",
+  "target_definition": "xr"
+ },
+ {
+  "label": "力矩参考点的体轴数学坐标执行故障",
+  "blanks": [
+   "184"
+  ],
+  "answer_type": "vector",
+  "process": "力矩参考点",
+  "role": "力矩参考点的体轴数学坐标",
+  "prompt": "力矩参考点的体轴数学坐标",
+  "target_definition": "reference_coordinate"
+ },
+ {
+  "label": "等效力矩MCN_CA的符号判断故障",
+  "blanks": [
+   "189"
+  ],
+  "answer_type": "sign",
+  "process": "力矩参考点",
+  "role": "等效力矩MCN_CA的符号",
+  "prompt": "等效力矩系数 MCN_CA 的符号。假设 Xg、Yg、Zg、Xr 都为正",
+  "target_definition": "sign_mcn_ca"
+ },
+ {
+  "label": "等效力矩MCZ_CA的符号判断故障",
+  "blanks": [
+   "190"
+  ],
+  "answer_type": "sign",
+  "process": "力矩参考点",
+  "role": "等效力矩MCZ_CA的符号",
+  "prompt": "等效力矩系数 MCZ_CA 的符号。假设 Xg、Yg、Zg、Xr 都为正",
+  "target_definition": "sign_mcz_ca"
+ },
+ {
+  "label": "等效力矩MCA_CZ的符号判断故障",
+  "blanks": [
+   "191"
+  ],
+  "answer_type": "sign",
+  "process": "力矩参考点",
+  "role": "等效力矩MCA_CZ的符号",
+  "prompt": "等效力矩系数 MCA_CZ 的符号。假设 Xg、Yg、Zg、Xr 都为正",
+  "target_definition": "sign_mca_cz"
+ },
+ {
+  "label": "等效力矩MCN_CZ的符号判断故障",
+  "blanks": [
+   "192"
+  ],
+  "answer_type": "sign",
+  "process": "力矩参考点",
+  "role": "等效力矩MCN_CZ的符号",
+  "prompt": "等效力矩系数 MCN_CZ 的符号。假设 Xg、Yg、Zg、Xr 都为正",
+  "target_definition": "sign_mcn_cz"
+ },
+ {
+  "label": "等效力矩MCA_CN的符号判断故障",
+  "blanks": [
+   "193"
+  ],
+  "answer_type": "sign",
+  "process": "力矩参考点",
+  "role": "等效力矩MCA_CN的符号",
+  "prompt": "等效力矩系数 MCA_CN 的符号。假设 Xg、Yg、Zg、Xr 都为正",
+  "target_definition": "sign_mca_cn"
+ },
+ {
+  "label": "等效力矩MCZ_CN的符号判断故障",
+  "blanks": [
+   "194"
+  ],
+  "answer_type": "sign",
+  "process": "力矩参考点",
+  "role": "等效力矩MCZ_CN的符号",
+  "prompt": "等效力矩系数 MCZ_CN 的符号。假设 Xg、Yg、Zg、Xr 都为正",
+  "target_definition": "sign_mcz_cn"
+ },
+ {
+  "label": "等效力矩MCN_CA执行故障",
+  "blanks": [
+   "195"
+  ],
+  "answer_type": "expression",
+  "process": "力矩参考点",
+  "role": "等效力矩MCN_CA",
+  "prompt": "等效力矩系数 MCN_CA。只允许使用模板 C·L_c/L_RT：C 填入 CA、CZ、CN 中对应该力的系数，L_c 填入由 Xg、Yg、Zg、Xr 组成的力臂。假设 Xg、Yg、Zg、Xr 都为正。负号写在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。不要保留字母 C 或 L_c",
+  "target_definition": "mcn_ca"
+ },
+ {
+  "label": "等效力矩MCZ_CA执行故障",
+  "blanks": [
+   "196"
+  ],
+  "answer_type": "expression",
+  "process": "力矩参考点",
+  "role": "等效力矩MCZ_CA",
+  "prompt": "等效力矩系数 MCZ_CA。只允许使用模板 C·L_c/L_RT：C 填入 CA、CZ、CN 中对应该力的系数，L_c 填入由 Xg、Yg、Zg、Xr 组成的力臂。假设 Xg、Yg、Zg、Xr 都为正。负号写在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。不要保留字母 C 或 L_c",
+  "target_definition": "mcz_ca"
+ },
+ {
+  "label": "等效力矩MCA_CZ执行故障",
+  "blanks": [
+   "197"
+  ],
+  "answer_type": "expression",
+  "process": "力矩参考点",
+  "role": "等效力矩MCA_CZ",
+  "prompt": "等效力矩系数 MCA_CZ。只允许使用模板 C·L_c/L_RT：C 填入 CA、CZ、CN 中对应该力的系数，L_c 填入由 Xg、Yg、Zg、Xr 组成的力臂。假设 Xg、Yg、Zg、Xr 都为正。负号写在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。不要保留字母 C 或 L_c",
+  "target_definition": "mca_cz"
+ },
+ {
+  "label": "等效力矩MCN_CZ执行故障",
+  "blanks": [
+   "198"
+  ],
+  "answer_type": "expression",
+  "process": "力矩参考点",
+  "role": "等效力矩MCN_CZ",
+  "prompt": "等效力矩系数 MCN_CZ。只允许使用模板 C·L_c/L_RT：C 填入 CA、CZ、CN 中对应该力的系数，L_c 填入由 Xg、Yg、Zg、Xr 组成的力臂。假设 Xg、Yg、Zg、Xr 都为正。负号写在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。不要保留字母 C 或 L_c",
+  "target_definition": "mcn_cz"
+ },
+ {
+  "label": "等效力矩MCA_CN执行故障",
+  "blanks": [
+   "199"
+  ],
+  "answer_type": "expression",
+  "process": "力矩参考点",
+  "role": "等效力矩MCA_CN",
+  "prompt": "等效力矩系数 MCA_CN。只允许使用模板 C·L_c/L_RT：C 填入 CA、CZ、CN 中对应该力的系数，L_c 填入由 Xg、Yg、Zg、Xr 组成的力臂。假设 Xg、Yg、Zg、Xr 都为正。负号写在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。不要保留字母 C 或 L_c",
+  "target_definition": "mca_cn"
+ },
+ {
+  "label": "等效力矩MCZ_CN执行故障",
+  "blanks": [
+   "200"
+  ],
+  "answer_type": "expression",
+  "process": "力矩参考点",
+  "role": "等效力矩MCZ_CN",
+  "prompt": "等效力矩系数 MCZ_CN。只允许使用模板 C·L_c/L_RT：C 填入 CA、CZ、CN 中对应该力的系数，L_c 填入由 Xg、Yg、Zg、Xr 组成的力臂。假设 Xg、Yg、Zg、Xr 都为正。负号写在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。不要保留字母 C 或 L_c",
+  "target_definition": "mcz_cn"
+ }
+]

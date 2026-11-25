@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""100 declaration samples in four change tiers: 25%, 50%, 75%, 100%.
+"""One standard sample plus 100 declaration samples in tiers 25%, 50%, 75%, 100%.
 
 A definition is one of 16 factors: 13 binary declarations that enter the cloze,
 plus the body, wind, and balance frames. gamma_model is declared but no blank
@@ -23,13 +23,21 @@ import random
 from copy import deepcopy
 
 from domain_layout import DOMAINS
-from domains.wind_tunnel.dataset_generate import AXIS_ZH, DIRECTION_ZH, HAND_ZH, build_record
+from domains.wind_tunnel.dataset_generate import (
+    AXIS_ZH,
+    DIRECTION_ZH,
+    HAND_ZH,
+    PROCESS_SIZE,
+    REMOVED_SLOTS,
+    build_record,
+)
 from domains.wind_tunnel.tz_fd_generate import STANDARD_SPEC
 
 OUT_DIR = DOMAINS["wind_tunnel"]["batch"]
 SEED = 20261102
 PER_TIER = 25
 TIERS = (25, 50, 75, 100)
+BLANK_COUNT = sum(PROCESS_SIZE.values()) - sum(len(slots) for slots in REMOVED_SLOTS.values())
 PILOT_COUNTS = {25: 3, 50: 3, 75: 2, 100: 2}
 PILOT_SEED = 20261103
 
@@ -216,43 +224,82 @@ def _pilot(samples: list[dict]) -> list[str]:
     return picked
 
 
-def main() -> None:
-    OUT_DIR.mkdir(exist_ok=True)
-    samples = _samples()
-    path = OUT_DIR / "samples.jsonl"
-    with path.open("w", encoding="utf-8") as handle:
-        for index, sample in enumerate(samples, start=1):
-            record = build_record(sample)
-            if len(record["questions"]) != 200:
-                raise RuntimeError(f"{sample['id']} has {len(record['questions'])} questions.")
-            handle.write(json.dumps(_slim(sample, record), ensure_ascii=False) + "\n")
-            if index == 1 or index % 50 == 0:
-                print(f"wrote {index}/{len(samples)}", flush=True)
-    pilot = _pilot(samples)
-    (OUT_DIR / "pilot_10.json").write_text(
-        json.dumps({"ids": pilot, "counts": PILOT_COUNTS, "seed": PILOT_SEED}, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+def _standard_sample() -> dict:
+    return {
+        "id": "000-001",
+        "tier": 0,
+        "changed_count": 0,
+        "changed": [],
+        "title": "统一默认",
+        "change": "统一默认。16 项可变定义都不改。",
+        "spec": deepcopy(STANDARD_SPEC),
+    }
+
+
+def _index(pilot: list[str]) -> str:
     lines = [
-        "# 100条定义变更数据",
+        "# 1条统一默认和100条定义变更数据",
         "",
-        "相对统一默认，按变更项数分成四档，每档 25 条。16 项可变定义是：理论迎角、理论侧滑、理论滚转、机构迎角、机构侧滑、机构滚转、安装方式、弹性迎角、弹性侧滑、弹性滚转、气流偏角 α_V、气流偏角 β_V、天平安装角，以及体轴系、风轴系、天平系。",
+        "000-001 是统一默认，档位 0。相对它，按变更项数分成四档，每档 25 条。16 项可变定义是：理论迎角、理论侧滑、理论滚转、机构迎角、机构侧滑、机构滚转、安装方式、弹性迎角、弹性侧滑、弹性滚转、气流偏角 α_V、气流偏角 β_V、天平安装角，以及体轴系、风轴系、天平系。",
         "",
         "一项坐标系算作已变更，是指它不是统一默认的那一套合法坐标轴。每套坐标系有 48 种合法声明，变更时从其余 47 种里抽取。模型安装角 γ_model 不进入任何一个空，四档都保持默认。欧拉顺序由功角机构固定，不是可变定义。",
         "",
         "| 档 | 变更项 | 条数 | 编号 |",
         "| --- | --- | --- | --- |",
+        "| 0% | 0/16 | 1 | 000-001 |",
         "| 25% | 4/16 | 25 | 025-001 至 025-025 |",
         "| 50% | 8/16 | 25 | 050-001 至 050-025 |",
         "| 75% | 12/16 | 25 | 075-001 至 075-025 |",
         "| 100% | 16/16 | 25 | 100-001 至 100-025 |",
         "",
-        "抽样种子 20261102。25%、50%、75% 三档的变更组合互不重复；100% 只有一种组合，25 条靠三套坐标系的不同声明区分。被变更的坐标系从 47 种非默认声明里抽取。数据在 samples.jsonl，每行一条，含定义声明和 200 个空的标准答案。",
+        "抽样种子 20261102。25%、50%、75% 三档的变更组合互不重复；100% 只有一种组合，25 条靠三套坐标系的不同声明区分。被变更的坐标系从 47 种非默认声明里抽取。数据在 samples.jsonl，每行一条，含定义声明和 "
+        + str(BLANK_COUNT)
+        + " 个空的标准答案。删掉的空号不前移。cloze_eval 默认读这一整份，包含 000-001。",
         "",
-        "本地试跑的分层样本在 pilot_10.json。四档按 3、3、2、2 抽取，共 10 条：" + "、".join(pilot) + "。",
+        "pilot_10.json 只是可选的 10 条名单，不是入口。四档按 3、3、2、2 抽取：" + "、".join(pilot) + "。",
         "",
     ]
-    (OUT_DIR / "00_索引.md").write_text("\n".join(lines), encoding="utf-8")
+    return "\n".join(lines)
+
+
+def write_standard_only() -> None:
+    """Insert 000-001 without rebuilding the 100 perturbed rows."""
+    sample = _standard_sample()
+    record = build_record(sample)
+    if len(record["questions"]) != BLANK_COUNT:
+        raise RuntimeError(f"000-001 has {len(record['questions'])} questions, expected {BLANK_COUNT}.")
+    path = OUT_DIR / "samples.jsonl"
+    existing = path.read_text(encoding="utf-8")
+    first = existing.split("\n", 1)[0]
+    row = json.dumps(_slim(sample, record), ensure_ascii=False)
+    if '"id": "000-001"' not in first:
+        path.write_text(row + "\n" + existing, encoding="utf-8")
+    (OUT_DIR / "00_索引.md").write_text(_index(_pilot(_samples())), encoding="utf-8")
+    print(f"standard {sample['id']} questions {len(record['questions'])}")
+
+
+def main() -> None:
+    OUT_DIR.mkdir(exist_ok=True)
+    samples = [_standard_sample()] + _samples()
+    path = OUT_DIR / "samples.jsonl"
+    partial = OUT_DIR / "samples.jsonl.partial"
+    with partial.open("w", encoding="utf-8") as handle:
+        for index, sample in enumerate(samples, start=1):
+            record = build_record(sample)
+            if len(record["questions"]) != BLANK_COUNT:
+                raise RuntimeError(
+                    f"{sample['id']} has {len(record['questions'])} questions, expected {BLANK_COUNT}."
+                )
+            handle.write(json.dumps(_slim(sample, record), ensure_ascii=False) + "\n")
+            if index == 1 or index % 10 == 0:
+                print(f"wrote {index}/{len(samples)}", flush=True)
+    partial.replace(path)
+    pilot = _pilot(samples)
+    (OUT_DIR / "pilot_10.json").write_text(
+        json.dumps({"ids": pilot, "counts": PILOT_COUNTS, "seed": PILOT_SEED}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    (OUT_DIR / "00_索引.md").write_text(_index(pilot), encoding="utf-8")
     print(f"Wrote {len(samples)} samples to {OUT_DIR}")
     print("Pilot: " + ", ".join(pilot))
 

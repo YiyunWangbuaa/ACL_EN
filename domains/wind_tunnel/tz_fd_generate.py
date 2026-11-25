@@ -99,7 +99,12 @@ DIRECTED = [
 
 ALPHA_SYM, BETA_SYM, GAMMA_SYM = sp.symbols("alpha_M beta_M gamma_M", real=True)
 SYMBOL_OF = {ALPHA_M: ALPHA_SYM, BETA_M: BETA_SYM, GAMMA_M: GAMMA_SYM}
-DISPLAY = {"alpha_M": "α_M", "beta_M": "β_M", "gamma_M": "γ_M"}
+DISPLAY = {
+    "alpha_M": "α_M", "beta_M": "β_M", "gamma_M": "γ_M",
+    "alpha_t": "α_t", "beta_t": "β_t",
+    "gamma_tp": "γ_tp", "alpha_e": "α_e", "beta_e": "β_e", "gamma_e": "γ_e",
+    "alpha_V": "α_V", "beta_V": "β_V",
+}
 
 STANDARD_SPEC = {
     "alpha": {"airspeed_toward": "body_down", "sign": "positive"},

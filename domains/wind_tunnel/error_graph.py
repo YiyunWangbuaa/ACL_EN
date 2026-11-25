@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Logical dependency graph for the 200 wind-flight cloze blanks.
+"""Logical dependency graph for the 207 wind-flight cloze blanks.
 
 An edge u→v means the gold derivation of blank v uses the result of blank u.
 The edge follows the calculation, not the order of the sentences. After
@@ -53,7 +53,7 @@ PROCESS_SIZE = {
     WIND_TO_BODY: 81,
     BALANCE_TO_BODY: 35,
     BALANCE_TO_WIND: 64,
-    REFERENCE_POINT: 20,
+    REFERENCE_POINT: 33,
 }
 # 与 dataset_generate.REMOVED_SLOTS 相同。展开式已删除，空号不前移。
 REMOVED_SLOTS = {
@@ -166,13 +166,13 @@ _TABLES = {
 70 A1 sign alpha_num_sign 理论迎角分子的符号 | 62 63 64 71
 71 A1 semantic alpha_num_axis 理论迎角的分子分量 | 5 6 7 21
 72 A1 sign alpha_den_sign 理论迎角分母的符号 | 62 63 64 73
-73 A1 semantic alpha_den_axis 理论迎角的分母分量 | 5 6 7
+73 A1 semantic alpha_den_axis 理论迎角的分母分量 | 6
 74 A1 sign beta_t_sign 理论侧滑公式的外层符号 | 30
 75 A1 semantic beta_inverse 理论侧滑使用的反三角函数
 76 A1 sign beta_num_sign 理论侧滑分子的符号 | 65 66 67 77
 77 A1 semantic beta_num_axis 理论侧滑的分子分量 | 5 6 7 29
-78 A1 sign beta_den_sign 理论侧滑分母的符号
-79 A1 semantic beta_den_axis 理论侧滑的分母分量
+78 A1 sign beta_den_sign 理论侧滑分母的符号 | 75
+79 A1 semantic beta_den_axis 理论侧滑的分母分量 | 75
 80 A2 expression alpha_t 理论迎角公式 | 59 60 61 68 69 70 71 72 73
 81 A2 expression beta_t 理论侧滑公式 | 59 60 61 74 75 76 77 78 79
 """,
@@ -180,10 +180,10 @@ _TABLES = {
 82 C2 semantic load_conversion 力和力矩的转换方向
 83 C1 sign gamma_tp_hand 天平安装角相对右手定则的符号
 84 C1 sign gamma_body_hand 机体滚转相对右手定则的符号
-85 A1 expression roll_difference 天平系与机体系的滚转角差 | 83 84 90 93
+85 A1 expression roll_difference 天平系与机体系的滚转角差 | 83 84 90
 86 A1 semantic balance_roll_axis 该滚转使用的天平坐标轴 | 90
 87 A1 sign balance_roll_turn 该滚转相对坐标轴正方向的转向 | 85
-88 A2 matrix balance_roll_matrix 安装滚转矩阵 | 85 86
+88 A2 matrix balance_roll_matrix 安装滚转矩阵 | 83 84 86 87
 89 C1 semantic balance_normal_axis 天平绝对法向
 90 C1 semantic balance_axial_axis 天平绝对轴向
 91 C1 semantic balance_lateral_axis 天平绝对侧向
@@ -291,12 +291,25 @@ _TABLES = {
 192 A1 sign sign_mcn_cz 等效力矩MCN_CZ的符号 | 184 185 186
 193 A1 sign sign_mca_cn 等效力矩MCA_CN的符号 | 184 185 186
 194 A1 sign sign_mcz_cn 等效力矩MCZ_CN的符号 | 184 185 186
-195 A2 expression mcn_ca 等效力矩MCN_CA | 184 189
-196 A2 expression mcz_ca 等效力矩MCZ_CA | 184 190
-197 A2 expression mca_cz 等效力矩MCA_CZ | 184 191
-198 A2 expression mcn_cz 等效力矩MCN_CZ | 184 192
-199 A2 expression mca_cn 等效力矩MCA_CN | 184 193
-200 A2 expression mcz_cn 等效力矩MCZ_CN | 184 194
+195 A2 expression mcn_ca 等效力矩MCN_CA | 189 201 207 213
+196 A2 expression mcz_ca 等效力矩MCZ_CA | 190 202 208 213
+197 A2 expression mca_cz 等效力矩MCA_CZ | 191 203 209 213
+198 A2 expression mcn_cz 等效力矩MCN_CZ | 192 204 210 213
+199 A2 expression mca_cn 等效力矩MCA_CN | 193 205 211 213
+200 A2 expression mcz_cn 等效力矩MCZ_CN | 194 206 212 213
+201 A1 semantic moment_force_mcn_ca 等效力矩MCN_CA的分子力系数
+202 A1 semantic moment_force_mcz_ca 等效力矩MCZ_CA的分子力系数
+203 A1 semantic moment_force_mca_cz 等效力矩MCA_CZ的分子力系数
+204 A1 semantic moment_force_mcn_cz 等效力矩MCN_CZ的分子力系数
+205 A1 semantic moment_force_mca_cn 等效力矩MCA_CN的分子力系数
+206 A1 semantic moment_force_mcz_cn 等效力矩MCZ_CN的分子力系数
+207 A1 semantic moment_arm_mcn_ca 等效力矩MCN_CA的分子坐标分量 | 184
+208 A1 semantic moment_arm_mcz_ca 等效力矩MCZ_CA的分子坐标分量 | 184
+209 A1 semantic moment_arm_mca_cz 等效力矩MCA_CZ的分子坐标分量 | 184
+210 A1 semantic moment_arm_mcn_cz 等效力矩MCN_CZ的分子坐标分量 | 184
+211 A1 semantic moment_arm_mca_cn 等效力矩MCA_CN的分子坐标分量 | 184
+212 A1 semantic moment_arm_mcz_cn 等效力矩MCZ_CN的分子坐标分量 | 184
+213 A1 semantic moment_denominator 等效力矩系数的分母力臂 | 182
 """,
 }
 
@@ -309,7 +322,7 @@ DIRECT_PATHS = (
     ("60", "63", "70", "80"),
     ("22", "68", "80"),
     ("11", "12", "13", "56", "58", "60"),
-    ("83", "85", "88", "104", "111"),
+    ("83", "85", "87", "88", "104", "111"),
     ("151", "152", "158", "164", "174", "176"),
     ("182", "184", "189", "195"),
 )
@@ -352,6 +365,7 @@ class BlankNode:
             "dependency_edge_types": [_hop_type(parent) for parent in self.depends_on],
             "definition_relations": definition_relations(self.blank_id),
             **rule_mention_fields(self.blank_id),
+            **annotation_for(self.blank_id),
         }
 
 
@@ -553,6 +567,52 @@ NODE_BY_ID = {
     for nodes in GRAPH.values()
     for item in nodes.values()
 }
+# φ already reads these blanks. The prefix graph leaves them off because the
+# sentence is later or the blank sits in another subprocess.
+PHI_READS = {
+    "43": ("5", "7"),
+    "88": ("89", "91"),
+    "132": ("89", "90", "91"),
+}
+
+
+def diagnosis_parents(node_id: str) -> tuple[str, ...]:
+    """Prefix parents plus the blanks φ reads that the sentence order cannot list."""
+    node = NODE_BY_ID.get(str(node_id))
+    if node is None:
+        return ()
+    return tuple(dict.fromkeys((*node.depends_on, *PHI_READS.get(str(node_id), ()))))
+
+
+def _diagnosis_descendants() -> dict[str, tuple[str, ...]]:
+    children: dict[str, list[str]] = {node_id: [] for node_id in NODE_BY_ID}
+    for node_id in NODE_BY_ID:
+        for parent in diagnosis_parents(node_id):
+            if parent in children:
+                children[parent].append(node_id)
+    found = {}
+    for node_id in NODE_BY_ID:
+        seen: list[str] = []
+        stack = list(children[node_id])
+        visited: set[str] = set()
+        while stack:
+            current = stack.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+            seen.append(current)
+            stack.extend(children[current])
+        found[node_id] = tuple(sorted(seen, key=int))
+    return found
+
+
+DIAGNOSIS_DESCENDANTS = _diagnosis_descendants()
+
+
+def diagnosis_descendants(node_id: str) -> tuple[str, ...]:
+    return DIAGNOSIS_DESCENDANTS.get(str(node_id), ())
+
+
 if len(NODE_BY_ID) != sum(len(nodes) for nodes in GRAPH.values()):
     raise RuntimeError("题目编号跨子过程重复，定义图无法按编号回溯。")
 
@@ -801,6 +861,8 @@ def _rule_mentions() -> dict[str, tuple[str, str]]:
         "181", "182", "184",
         "189", "190", "191", "192", "193", "194",
         "195", "196", "197", "198", "199", "200",
+        "201", "202", "203", "204", "205", "206",
+        "207", "208", "209", "210", "211", "212", "213",
     }
     recalled = {blank_id for blank_id, (kind, _key) in found.items() if kind == "recall"}
     overlap = sorted(kept & recalled, key=int)
@@ -1757,6 +1819,12 @@ def format_trace(report: dict) -> str:
     return "\n".join(lines)
 
 
+def annotation_for(blank_id: str) -> dict:
+    from domains.wind_tunnel.contract_labels import annotation_for as _annotation
+
+    return _annotation(blank_id)
+
+
 def node(process: str, blank_id: str) -> BlankNode | None:
     return GRAPH.get(process, {}).get(str(blank_id))
 
@@ -1774,11 +1842,17 @@ def question_fields(process: str, blank_id: str, label: str) -> dict:
 
 
 def dependency_fields(item: dict) -> dict:
-    """Copy graph fields onto an evaluation blank without changing its label."""
+    """Copy graph fields onto an evaluation blank without changing its label.
+
+    A stored blank whose label disagrees with the graph is left untouched.
+    The batch corpus is older than the current rule graph, and attaching the
+    other blank's edges would mark the wrong parents.
+    """
     if "depends_on" in item and "target_definition" in item:
         return {key: item[key] for key in PUBLIC_KEYS if key in item}
     found = node(str(item.get("process") or ""), str(item.get("id") or item.get("blank_id") or ""))
-    if found is None:
+    label = item.get("label")
+    if found is None or (label not in (None, "") and found.label != label):
         return {}
     return found.public_fields()
 
@@ -1841,7 +1915,7 @@ def _check_known_paths() -> None:
     _direct_path(WIND_TO_BODY, ("60", "63", "70", "80"))
     _direct_path(WIND_TO_BODY, ("22", "68", "80"))
     _direct_path(WIND_TO_BODY, ("11", "12", "13", "56", "58", "60"))
-    _direct_path(BALANCE_TO_BODY, ("83", "85", "88", "104", "111"))
+    _direct_path(BALANCE_TO_BODY, ("83", "85", "87", "88", "104", "111"))
     _direct_path(BALANCE_TO_WIND, ("151", "152", "158", "164", "174", "176"))
     _direct_path(REFERENCE_POINT, ("182", "184", "189", "195"))
     alpha_sign = node(WIND_TO_BODY, "68")
