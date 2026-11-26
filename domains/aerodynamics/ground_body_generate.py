@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cloze for the ground-frame to body-frame attitude transform.
 
-The manuscript is 地面系转换机体系.md. Geometry and rotation sense come from
+The manuscript is the ground frame to the airframe. Geometry and rotation sense come from
 FlightFrameModel. Passive rotation and intrinsic order are fixed: yaw, then
 pitch, then roll. The first angle's matrix is the rightmost factor.
 
@@ -39,19 +39,19 @@ from flight_frame_model import (
 )
 
 
-PROCESS = "地面系到机体系"
+PROCESS = "ground to body"
 BLANK_COUNT = 32
 BODY_SHOW = {"Xb": "xb", "Yb": "yb", "Zb": "zb"}
 UNDRECTED_AXES = ["Xg", "Yg", "Zg", "xb", "yb", "zb"]
 GROUND_DIRECTED = ["+Xg", "-Xg", "+Yg", "-Yg", "+Zg", "-Zg"]
 BODY_DIRECTED = ["+xb", "-xb", "+yb", "-yb", "+zb", "-zb"]
-TRANSFORMS = ["主动", "被动"]
-ROTATIONS = ["外旋", "内旋"]
-SIDES = ["左侧", "右侧"]
-YAW_SIDES = ["左", "右"]
-PITCH_MOTIONS = ["低头", "抬头"]
-ROLL_SIDES = ["右侧", "左侧"]
-TURNS = ["正向", "逆向"]
+TRANSFORMS = ["active", "passive"]
+ROTATIONS = ["extrinsic fixed axes", "intrinsic moving axes"]
+SIDES = ["the leftmost factor", "the rightmost factor"]
+YAW_SIDES = ["left", "right"]
+PITCH_MOTIONS = ["downward", "upward"]
+ROLL_SIDES = ["right", "left"]
+TURNS = ["positive", "reverse"]
 PRODUCT_CODES = ["R_ψ", "R_θ", "R_Φ", "RP_g"]
 SYMBOL = {
     PSI: sp.Symbol("ψ"),
@@ -61,7 +61,7 @@ SYMBOL = {
 
 
 def _order_text(names: tuple[str, ...]) -> str:
-    return "，".join(ANGLE_SPEC[name].symbol for name in names)
+    return ", ".join(ANGLE_SPEC[name].symbol for name in names)
 
 
 ATTITUDE_ORDERS = [_order_text(item) for item in permutations(ATTITUDE_ORDER)]
@@ -129,35 +129,35 @@ def _yaw_side(model: FlightFrameModel) -> str:
     toward = model.binding(PSI).positive_toward
     vector = model.geometry["ground"].vector[toward]
     if vector == GEOMETRY["ground"].vector["ground_right"]:
-        return "右"
+        return "right"
     if vector == GEOMETRY["ground"].vector["ground_left"]:
-        return "左"
+        return "left"
     raise DefinitionError(f"Positive yaw moves toward {toward}, which is not beside Xg.")
 
 
 def _pitch_motion(model: FlightFrameModel) -> str:
     toward = model.binding(THETA).positive_toward
     if toward == "ground_up":
-        return "抬头"
+        return "upward"
     if toward == "ground_down":
-        return "低头"
+        return "downward"
     raise DefinitionError(f"Positive pitch moves toward {toward}.")
 
 
 def _roll_side(model: FlightFrameModel) -> str:
     if model.binding(PHI).sign == POSITIVE:
-        return "右侧"
+        return "right"
     if model.binding(PHI).sign == NEGATIVE:
-        return "左侧"
+        return "left"
     raise DefinitionError("Roll sign is missing.")
 
 
 def _turn(model: FlightFrameModel, angle: str) -> str:
     sense = _binding(model, angle).rotation_when_positive
     if sense == POSITIVE_ROTATION:
-        return "正向"
+        return "positive"
     if sense == NEGATIVE_ROTATION:
-        return "逆向"
+        return "reverse"
     raise DefinitionError(f"{angle} has no rotation sense.")
 
 
@@ -237,37 +237,37 @@ def generate(spec: dict) -> dict:
     body = model.geometry["body"]
 
     rows = [
-        (1, "C2", "地面系向机体系采用的变换", "被动", TRANSFORMS),
-        (2, "C2", "姿态旋转采用的方式", "内旋", ROTATIONS),
-        (3, "C2", "最先旋转的角度所对应矩阵在连乘式中的位置", "右侧", SIDES),
-        (4, "A1", "不扰动已经转过的轴时采用的角度顺序", _order_text(ATTITUDE_ORDER), ANGLE_ORDERS),
-        (5, "C1", "地面法向正方向对应的有向坐标轴", _directed(model, "ground", ground.positive["normal"]), GROUND_DIRECTED),
-        (6, "C1", "地面侧向正方向对应的有向坐标轴", _directed(model, "ground", ground.positive["lateral"]), GROUND_DIRECTED),
-        (7, "C1", "地面轴向正方向对应的有向坐标轴", _directed(model, "ground", ground.positive["axial"]), GROUND_DIRECTED),
-        (8, "C1", "机体法向正方向对应的有向坐标轴", _directed(model, "body", body.positive["normal"]), BODY_DIRECTED),
-        (9, "C1", "机体侧向正方向对应的有向坐标轴", _directed(model, "body", body.positive["lateral"]), BODY_DIRECTED),
-        (10, "C1", "机体轴向正方向对应的有向坐标轴", _directed(model, "body", body.positive["axial"]), BODY_DIRECTED),
-        (11, "C1", "正偏航时机体轴向投影在 Xg 的一侧", _yaw_side(model), YAW_SIDES),
-        (12, "A1", "偏航旋转所绕的无方向坐标轴", _show(_binding(model, PSI).axis), UNDRECTED_AXES),
-        (13, "A2", "绕该轴旋转 ψ 的转向", _turn(model, PSI), TURNS),
-        (14, "A2", "ψ 的被动旋转矩阵", _matrix_text(yaw), None),
-        (15, "C1", "正俯仰时机头相对地面的动作", _pitch_motion(model), PITCH_MOTIONS),
-        (16, "A1", "俯仰旋转所绕的无方向坐标轴", _show(_binding(model, THETA).axis), UNDRECTED_AXES),
-        (17, "A2", "绕该轴旋转 θ 的转向", _turn(model, THETA), TURNS),
-        (18, "A2", "θ 的被动旋转矩阵", _matrix_text(pitch), None),
-        (19, "C1", "正滚转时机体滚向", _roll_side(model), ROLL_SIDES),
-        (20, "A1", "滚转旋转所绕的无方向坐标轴", _show(_binding(model, PHI).axis), UNDRECTED_AXES),
-        (21, "A1", "绕该轴旋转 Φ 的转向", _turn(model, PHI), TURNS),
-        (22, "A2", "Φ 的被动旋转矩阵", _matrix_text(roll), None),
-        (23, "A2", "地面坐标轴与机体坐标轴重合的 RP_g", _matrix_text(alignment), None),
-        (24, "A2", "地面系到机体系连乘式中的 R1", "RP_g", PRODUCT_CODES),
-        (25, "A2", "地面系到机体系连乘式中的 R2", "R_Φ", PRODUCT_CODES),
-        (26, "A2", "地面系到机体系连乘式中的 R3", "R_θ", PRODUCT_CODES),
-        (27, "A2", "地面系到机体系连乘式中的 R4", "R_ψ", PRODUCT_CODES),
-        (28, "A2", "总矩阵前 R1 的展开式", _matrix_text(alignment), None),
-        (29, "A2", "总矩阵前 R2 的展开式", _matrix_text(roll), None),
-        (30, "A2", "总矩阵前 R3 的展开式", _matrix_text(pitch), None),
-        (31, "A2", "总矩阵前 R4 的展开式", _matrix_text(yaw), None),
+        (1, "C2", "Transform used from the ground frame to the airframe", "passive", TRANSFORMS),
+        (2, "C2", "How the attitude angles are rotated", "intrinsic moving axes", ROTATIONS),
+        (3, "C2", "Place of the matrix of the angle rotated first", "the rightmost factor", SIDES),
+        (4, "A1", "Angle order that leaves axes already turned undisturbed", _order_text(ATTITUDE_ORDER), ANGLE_ORDERS),
+        (5, "C1", "Directed axis of the positive ground normal", _directed(model, "ground", ground.positive["normal"]), GROUND_DIRECTED),
+        (6, "C1", "Directed axis of the positive ground lateral direction", _directed(model, "ground", ground.positive["lateral"]), GROUND_DIRECTED),
+        (7, "C1", "Directed axis of the positive ground axial direction", _directed(model, "ground", ground.positive["axial"]), GROUND_DIRECTED),
+        (8, "C1", "Directed axis of the positive airframe normal", _directed(model, "body", body.positive["normal"]), BODY_DIRECTED),
+        (9, "C1", "Directed axis of the positive airframe lateral direction", _directed(model, "body", body.positive["lateral"]), BODY_DIRECTED),
+        (10, "C1", "Directed axis of the positive airframe axial direction", _directed(model, "body", body.positive["axial"]), BODY_DIRECTED),
+        (11, "C1", "Side of Xg for the airframe-axis projection when yaw is positive", _yaw_side(model), YAW_SIDES),
+        (12, "A1", "Undirected axis of the yaw rotation", _show(_binding(model, PSI).axis), UNDRECTED_AXES),
+        (13, "A2", "Sense of rotating ψ about that axis", _turn(model, PSI), TURNS),
+        (14, "A2", "Passive rotation matrix of ψ", _matrix_text(yaw), None),
+        (15, "C1", "Where the nose points when pitch is positive", _pitch_motion(model), PITCH_MOTIONS),
+        (16, "A1", "Undirected axis of the pitch rotation", _show(_binding(model, THETA).axis), UNDRECTED_AXES),
+        (17, "A2", "Sense of rotating θ about that axis", _turn(model, THETA), TURNS),
+        (18, "A2", "Passive rotation matrix of θ", _matrix_text(pitch), None),
+        (19, "C1", "Side the aircraft rolls toward when roll is positive", _roll_side(model), ROLL_SIDES),
+        (20, "A1", "Undirected axis of the roll rotation", _show(_binding(model, PHI).axis), UNDRECTED_AXES),
+        (21, "A1", "Sense of rotating Φ about that axis", _turn(model, PHI), TURNS),
+        (22, "A2", "Passive rotation matrix of Φ", _matrix_text(roll), None),
+        (23, "A2", "RP_g that aligns the ground axes with the airframe axes", _matrix_text(alignment), None),
+        (24, "A2", "R1 in the ground to body product", "RP_g", PRODUCT_CODES),
+        (25, "A2", "R2 in the ground to body product", "R_Φ", PRODUCT_CODES),
+        (26, "A2", "R3 in the ground to body product", "R_θ", PRODUCT_CODES),
+        (27, "A2", "R4 in the ground to body product", "R_ψ", PRODUCT_CODES),
+        (28, "A2", "Expansion of R1 before the total matrix", _matrix_text(alignment), None),
+        (29, "A2", "Expansion of R2 before the total matrix", _matrix_text(roll), None),
+        (30, "A2", "Expansion of R3 before the total matrix", _matrix_text(pitch), None),
+        (31, "A2", "Expansion of R4 before the total matrix", _matrix_text(yaw), None),
         (32, "A2", "SθψΦ = R1*R2*R3*R4", _matrix_text(total), None),
     ]
     items = []
@@ -322,27 +322,27 @@ def _check_standard() -> None:
     payload = generate(deepcopy(STANDARD_SPEC))
     by_id = {item["manuscript_id"]: item["answer"] for item in payload["items"]}
     expected = {
-        "1": "被动",
-        "2": "内旋",
-        "3": "右侧",
-        "4": "ψ，θ，Φ",
+        "1": "passive",
+        "2": "intrinsic moving axes",
+        "3": "the rightmost factor",
+        "4": "ψ, θ, Φ",
         "5": "+Zg",
         "6": "+Yg",
         "7": "+Xg",
         "8": "+zb",
         "9": "+yb",
         "10": "+xb",
-        "11": "右",
+        "11": "right",
         "12": "Zg",
-        "13": "正向",
+        "13": "positive",
         "14": "[[cos(ψ), sin(ψ), 0], [-sin(ψ), cos(ψ), 0], [0, 0, 1]]",
-        "15": "抬头",
+        "15": "upward",
         "16": "Yg",
-        "17": "正向",
+        "17": "positive",
         "18": "[[cos(θ), 0, -sin(θ)], [0, 1, 0], [sin(θ), 0, cos(θ)]]",
-        "19": "右侧",
+        "19": "right",
         "20": "Xg",
-        "21": "正向",
+        "21": "positive",
         "22": "[[1, 0, 0], [0, cos(Φ), sin(Φ)], [0, -sin(Φ), cos(Φ)]]",
         "23": "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
         "24": "RP_g",

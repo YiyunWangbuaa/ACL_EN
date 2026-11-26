@@ -16,9 +16,14 @@ from domains.aerodynamics.flow_generate import (
     PITCH,
     ROLL,
     SIDESLIP,
+    VX,
+    VY,
+    VZ,
     YAW,
     _at_degrees,
+    _formula,
     _parse_factor,
+    _recovers,
     _show,
     _vector,
 )
@@ -30,25 +35,34 @@ from domains.aerodynamics.signed_lists import DECLARATION_ROOTS, DERIVED_EXCEPTI
 E1 = sp.Matrix([1, 0, 0])
 _DEGREE = re.compile(r"(\d+)°")
 _INPUTS = {
+    "12": ("4", "5"),
     "15": ("12", "13"),
     "16": ("15",),
+    "25": ("22",),
     "28": ("25",),
     "29": ("28",),
     "31": ("21",),
     "32": ("23",),
     "33": ("23",),
     "34": ("25",),
+    "40": ("36",),
+    "41": ("37",),
+    "42": ("40", "41"),
     "45": ("42", "43"),
     "46": ("2",),
     "47": ("1",),
+    "48": ("42", "43"),
     "49": ("37", "46"),
     "50": ("36", "47"),
+    "51": ("42", "43"),
     "55": ("34",),
     "56": ("44", "54"),
     "72": ("35", "36"),
     "73": ("1", "64", "72"),
+    "74": ("40",),
     "75": ("37",),
     "76": ("2", "63", "75"),
+    "77": ("41",),
     "79": ("77",),
     "80": ("74",),
     "81": ("79", "80"),
@@ -68,7 +82,13 @@ _INPUTS = {
     "125": ("112",),
     "126": ("112",),
 }
-_TRACK_ROLL = "气流系 Ya、Za 相对航迹系的方向"
+_TRACK_ROLL = "the directions of airflow Ya and Za relative to the track frame"
+_FACTOR = re.compile(r"C([xyz])\((.+)\)")
+_YAW_ARG = {"right on the ground": "-ψ", "left on the ground": "ψ"}
+_PITCH_ARG = {"upward": "-θ", "downward": "θ"}
+_INCLINE_ARG = {"upward": "-μ", "downward": "μ"}
+_ATTACK_FACTOR = {"downward": "Cy(α)", "upward": "Cy(-α)"}
+_SIDESLIP_FACTOR = {"right": "Cz(-β)", "left": "Cz(β)"}
 _EXTRA = {
     "114": ("X", 1), "115": ("X", 2),
     "116": ("Y_b", 0), "117": ("Y_b", 2),
@@ -93,9 +113,10 @@ def _text(texts: dict[str, str], node: str) -> str:
 
 
 def _same_side(left: str, right: str) -> str:
-    if left not in {"上方", "下方", "左方", "右方"} or right not in {"上方", "下方", "左方", "右方"}:
-        raise ValueError(f"方向无法对照：{left}，{right}")
-    return "正" if left == right else "负"
+    known = {"upward", "downward", "left", "right"}
+    if left not in known or right not in known:
+        raise ValueError(f"Directions cannot be compared: {left}, {right}")
+    return "positive" if left == right else "negative"
 
 
 def _cross(arm: list[int], force: list[int]) -> list[int]:
@@ -112,63 +133,128 @@ def _arm_of(formula: str) -> list[int]:
         return [-1, -1, -1]
     if formula == "r_AG×F_b":
         return [1, 1, 1]
-    raise ValueError(f"附加力矩公式不是力的叉乘：{formula}")
+    raise ValueError(f"The additional-moment formula is not a cross product of a force: {formula}")
 
 
 def _signed_component(texts: dict[str, str], force: str, index: int) -> str:
     hand = _text(texts, "3")
-    if hand not in {"右手系", "左手系"}:
-        raise ValueError("坐标系手性不是右手系或左手系。")
+    if hand not in {"right-handed", "left-handed"}:
+        raise ValueError("Frame chirality is not right-handed or left-handed.")
     arm = _arm_of(_text(texts, "112"))
     column = {"X": [1, 0, 0], "Y_b": [0, 1, 0], "Z": [0, 0, 1]}[force]
     value = _cross(arm, column)[index]
-    if hand == "左手系":
+    if hand == "left-handed":
         value = -value
     if value == 0:
-        return "零"
-    return "正" if value > 0 else "负"
+        return "zero"
+    return "positive" if value > 0 else "negative"
 
 
 def _nose_pitch(texts: dict[str, str]) -> str:
     """Upward force on a nose-forward offset. +Z follows the stated normal."""
     normal = _text(texts, "1")
-    if normal == "下方":
+    if normal == "downward":
         force_z = -1
-    elif normal == "上方":
+    elif normal == "upward":
         force_z = 1
     else:
-        raise ValueError("法向正方向不是上方或下方。")
+        raise ValueError("The positive normal is not upward or downward.")
     formula = _text(texts, "112")
     arm = [-1, 0, 0] if formula == "r_GA×F_b" else [1, 0, 0] if formula == "r_AG×F_b" else None
     if arm is None:
-        raise ValueError(f"附加力矩公式不是力的叉乘：{formula}")
+        raise ValueError(f"The additional-moment formula is not a cross product of a force: {formula}")
     pitch = _cross(arm, [0, 0, force_z])[1]
-    if _text(texts, "3") == "左手系":
+    if _text(texts, "3") == "left-handed":
         pitch = -pitch
-    if normal == "下方":
-        return "抬头方向" if pitch > 0 else "低头方向"
-    return "低头方向" if pitch > 0 else "抬头方向"
+    if normal == "downward":
+        return "nose-up" if pitch > 0 else "nose-down"
+    return "nose-down" if pitch > 0 else "nose-up"
+
+
+def _problem_factor(node: str, axis: str) -> str:
+    """Axis factor that no blank asks about. Roll and track azimuth are problem data."""
+    for part in gold_texts()[node].split("*"):
+        matched = _FACTOR.fullmatch(part)
+        if matched and matched.group(1) == axis:
+            return part
+    raise ValueError(f"ID{node} has no {axis} factor.")
+
+
+def _one_factor(text: str) -> str:
+    factor = text.strip()
+    if not _FACTOR.fullmatch(factor):
+        raise ValueError(f"A factor cannot be expanded: {factor}")
+    return factor
+
+
+def _ground_body(texts: dict[str, str]) -> str:
+    yaw = _YAW_ARG.get(_text(texts, "4"))
+    pitch = _PITCH_ARG.get(_text(texts, "5"))
+    if yaw is None:
+        raise ValueError("The positive yaw direction is not right on the ground or left on the ground.")
+    if pitch is None:
+        raise ValueError("The positive pitch direction is not upward or downward.")
+    return f"Cz({yaw})*Cy({pitch})*{_problem_factor('12', 'x')}"
+
+
+def _ground_track(texts: dict[str, str]) -> str:
+    incline = _INCLINE_ARG.get(_text(texts, "22"))
+    if incline is None:
+        raise ValueError("The positive track inclination is not upward or downward.")
+    return f"{_problem_factor('25', 'z')}*Cy({incline})"
+
+
+def _attack_factor(texts: dict[str, str]) -> str:
+    factor = _ATTACK_FACTOR.get(_text(texts, "36"))
+    if factor is None:
+        raise ValueError("The airspeed direction for positive angle of attack is not upward or downward.")
+    return factor
+
+
+def _sideslip_factor(texts: dict[str, str]) -> str:
+    factor = _SIDESLIP_FACTOR.get(_text(texts, "37"))
+    if factor is None:
+        raise ValueError("The airspeed direction for positive sideslip is not left or right.")
+    return factor
+
+
+def _factor_product(texts: dict[str, str]) -> str:
+    return f"{_one_factor(_text(texts, '40'))}*{_one_factor(_text(texts, '41'))}"
+
+
+def _transposed_factor(text: str) -> str:
+    return _show_matrix(_parse_factor(_one_factor(text)).T)
 
 
 def _applied(node: str, texts: dict[str, str]) -> str:
     """Application answers read from the recognition blanks already on the page."""
+    if node == "12":
+        return _ground_body(texts)
+    if node == "25":
+        return _ground_track(texts)
     if node == "31":
-        return "转动" if _text(texts, "21") in {"Xg", "Yg"} else "保持不变"
+        return "turns" if _text(texts, "21") in {"Xg", "Yg"} else "stays unchanged"
     if node == "32":
-        return "不改变" if _text(texts, "23") == "Xp" else "改变"
+        return "does not change" if _text(texts, "23") == "Xp" else "changes"
     if node == "33":
         if _text(texts, "23") == "Xp":
             return _TRACK_ROLL
-        return "航迹系 Yp、Zp 轴"
+        return "the track axes Yp and Zp"
+    if node == "40":
+        return _attack_factor(texts)
+    if node == "41":
+        return _sideslip_factor(texts)
+    if node == "42":
+        return _factor_product(texts)
     if node == "46":
         side = _text(texts, "2")
-        if side not in {"左方", "右方"}:
-            raise ValueError("侧向正方向不是左方或右方。")
+        if side not in {"left", "right"}:
+            raise ValueError("The positive lateral direction is not left or right.")
         return side
     if node == "47":
         side = _text(texts, "1")
-        if side not in {"上方", "下方"}:
-            raise ValueError("法向正方向不是上方或下方。")
+        if side not in {"upward", "downward"}:
+            raise ValueError("The positive normal is not upward or downward.")
         return side
     if node == "49":
         return _same_side(_text(texts, "37"), _text(texts, "46"))
@@ -176,77 +262,81 @@ def _applied(node: str, texts: dict[str, str]) -> str:
         return _same_side(_text(texts, "36"), _text(texts, "47"))
     if node == "56":
         direct = _text(texts, "44") == "bRa"
-        plain = _text(texts, "54").startswith("不直接")
+        plain = _text(texts, "54").startswith("do not enter")
         if direct and plain:
-            return "相同"
+            return "same"
         if not direct:
-            return "相反"
-        return "一般不相关"
+            return "opposite"
+        return "generally unrelated"
     if node == "72":
-        if "对称面" not in _text(texts, "35"):
-            raise ValueError("稳定性系前方轴不是空速在对称面内的投影。")
+        if "plane of symmetry" not in _text(texts, "35"):
+            raise ValueError("The stability forward axis is not the airspeed projection in the plane of symmetry.")
         side = _text(texts, "36")
-        if side not in {"上方", "下方"}:
-            raise ValueError("正迎角的空速偏向不是上方或下方。")
+        if side not in {"upward", "downward"}:
+            raise ValueError("The airspeed direction for positive angle of attack is not upward or downward.")
         return side
     if node == "73":
         if _text(texts, "64") != "Z_b":
-            return "零"
+            return "zero"
         return _same_side(_text(texts, "72"), _text(texts, "1"))
+    if node == "74":
+        return _transposed_factor(_text(texts, "40"))
     if node == "75":
         side = _text(texts, "37")
-        if side not in {"左方", "右方"}:
-            raise ValueError("正侧滑的空速偏向不是左方或右方。")
+        if side not in {"left", "right"}:
+            raise ValueError("The airspeed direction for positive sideslip is not left or right.")
         return side
     if node == "76":
         if _text(texts, "63") != "Y_b":
-            return "零"
+            return "zero"
         return _same_side(_text(texts, "75"), _text(texts, "2"))
+    if node == "77":
+        return _transposed_factor(_text(texts, "41"))
     if node == "91":
-        if _text(texts, "19") == "逆矩阵":
-            return "相同"
-        return "一般增大"
+        if _text(texts, "19") == "inverse":
+            return "same"
+        return "generally increases"
     if node == "96":
         if _text(texts, "70") == "+Y_a" and _text(texts, "63") == "Y_b":
-            return "重合"
+            return "aligned"
         if _text(texts, "70") in {"+X_a", "+Z_a"}:
-            return "相互垂直"
-        return "方向无法确定"
+            return "perpendicular"
+        return "direction indeterminate"
     if node == "107":
         direction = _text(texts, "106")
-        if direction == "后方":
-            return "相反"
-        if direction == "前方":
-            return "相同"
-        raise ValueError("工程轴向正方向不是前方或后方。")
+        if direction == "rearward":
+            return "opposite"
+        if direction == "forward":
+            return "same"
+        raise ValueError("The positive engineering axial direction is not forward or rearward.")
     if node in _EXTRA:
         force, index = _EXTRA[node]
         return _signed_component(texts, force, index)
     if node == "124":
-        if _text(texts, "3") not in {"右手系", "左手系"}:
-            raise ValueError("坐标系手性不是右手系或左手系。")
+        if _text(texts, "3") not in {"right-handed", "left-handed"}:
+            raise ValueError("Frame chirality is not right-handed or left-handed.")
         return _nose_pitch(texts)
     if node == "125":
         formula = _text(texts, "112")
         if formula in {"r_GA×F_b", "r_AG×F_b"}:
-            return "零"
-        raise ValueError("平行向量的附加力矩只对力的叉乘有定义。")
+            return "zero"
+        raise ValueError("The additional moment of parallel vectors is defined only for a cross product of a force.")
     if node == "126":
         formula = _text(texts, "112")
         if formula in {"r_GA×F_b", "r_AG×F_b"}:
-            return "相同"
-        return "不能建立关系"
+            return "same"
+        return "no relation can be formed"
     raise ValueError(node)
 
 
 def derive(_model, node_id: str, texts: dict[str, str]) -> Execution:
     node_id = str(node_id)
     if node_id not in NODE_IDS:
-        return Execution("contradictory", reason=f"ID{node_id} 不在 1–131。")
+        return Execution("contradictory", reason=f"ID{node_id} not in 1-131.")
     if node_id in DECLARATION_ROOTS or not input_ids(node_id):
         return Execution("derived", gold_texts()[node_id])
     try:
-        if node_id in _INPUTS and node_id not in {"15", "16", "28", "29", "34", "45", "55", "79", "80", "81", "83", "109", "110"}:
+        if node_id in _INPUTS and node_id not in {"15", "16", "28", "29", "34", "45", "48", "51", "55", "79", "80", "81", "83", "109", "110"}:
             return Execution("derived", _applied(node_id, texts))
         if node_id == "15":
             return Execution("derived", _nose_ground(texts))
@@ -260,6 +350,10 @@ def derive(_model, node_id: str, texts: dict[str, str]) -> Execution:
             return Execution("derived", _sign_from_normal(texts["28"]))
         if node_id == "45":
             return Execution("derived", _body_speed(texts["42"], texts["43"]))
+        if node_id == "48":
+            return Execution("derived", _sideslip_formula(texts["42"], texts["43"]))
+        if node_id == "51":
+            return Execution("derived", _attack_formula(texts["42"], texts["43"]))
         if node_id == "55":
             return Execution("derived", str(texts["34"]).strip())
         if node_id == "79":
@@ -276,7 +370,7 @@ def derive(_model, node_id: str, texts: dict[str, str]) -> Execution:
             return Execution("derived", _negate_vector(texts["109"]))
     except Exception as exc:
         return Execution("contradictory", reason=str(exc))
-    return Execution("contradictory", reason=f"ID{node_id} 没有计算器。")
+    return Execution("contradictory", reason=f"ID{node_id} no calculator.")
 
 
 def _locals() -> dict:
@@ -300,11 +394,11 @@ def _parse_product(text: str) -> sp.Matrix:
 def _parse_vector(text: str) -> sp.Matrix:
     raw = str(text).strip()
     if not (raw.startswith("[") and raw.endswith("]")):
-        raise ValueError(f"不是向量：{text}")
+        raise ValueError(f"Not a vector: {text}")
     body = raw[1:-1]
     cells = [item.strip() for item in body.split(",")]
     if len(cells) != 3:
-        raise ValueError(f"向量不是三维：{text}")
+        raise ValueError(f"vector not three-dimensional: {text}")
     values = []
     for cell in cells:
         expr_text = cell
@@ -317,7 +411,7 @@ def _parse_vector(text: str) -> sp.Matrix:
 def _parse_literal_matrix(text: str) -> sp.Matrix:
     raw = str(text).replace(" ", "")
     if not (raw.startswith("[[") and raw.endswith("]]")):
-        raise ValueError(f"不是矩阵：{text}")
+        raise ValueError(f"Not a matrix: {text}")
     rows = []
     depth = 0
     current = ""
@@ -337,13 +431,13 @@ def _parse_literal_matrix(text: str) -> sp.Matrix:
         else:
             current += ch
     if len(rows) != 3:
-        raise ValueError(f"矩阵不是 3×3：{text}")
+        raise ValueError(f"matrix not 3×3: {text}")
     data = []
     for row in rows:
         body = row[1:-1]
         cells = body.split(",")
         if len(cells) != 3:
-            raise ValueError(f"矩阵行不是三维：{row}")
+            raise ValueError(f"matrix row not three-dimensional: {row}")
         data.append([sp.sympify(cell, locals=_locals()) for cell in cells])
     return sp.Matrix(data)
 
@@ -368,8 +462,8 @@ def _vertical_word(vector_text: str) -> str:
         text = text.replace(f"{amount}°", f"({sp.rad(amount)})")
     number = sp.N(sp.sympify(text, locals={"cos": sp.cos, "sin": sp.sin}))
     if abs(number) < 1e-10:
-        raise ValueError("法向分量为 0")
-    return "下方" if number > 0 else "上方"
+        raise ValueError("The normal component is 0")
+    return "downward" if number > 0 else "upward"
 
 
 def _track_speed(product_text: str) -> str:
@@ -388,12 +482,35 @@ def _sign_from_normal(normal_text: str) -> str:
         expr_text = expr_text.replace(f"{amount}°", f"({sp.rad(int(amount))})")
     number = sp.N(sp.sympify(expr_text, locals={"cos": sp.cos, "sin": sp.sin}))
     if abs(number) < 1e-10:
-        raise ValueError("法向分量为 0")
-    return "下方" if number > 0 else "上方"
+        raise ValueError("The normal component is 0")
+    return "downward" if number > 0 else "upward"
 
 
 def _body_speed(product_text: str, air_vector_text: str) -> str:
     return _vector(sp.simplify(_parse_product(product_text) * _parse_vector(air_vector_text)))
+
+
+def _recovered(product_text: str, air_vector_text: str, target, candidates: list) -> str:
+    speed = sp.simplify(_parse_product(product_text) * _parse_vector(air_vector_text))
+    return _formula(_recovers(speed, target, candidates))
+
+
+def _sideslip_formula(product_text: str, air_vector_text: str) -> str:
+    return _recovered(product_text, air_vector_text, SIDESLIP, [
+        sp.atan2(VY, sp.sqrt(VX**2 + VZ**2)),
+        sp.atan2(-VY, sp.sqrt(VX**2 + VZ**2)),
+        sp.atan2(VZ, sp.sqrt(VX**2 + VY**2)),
+        sp.atan2(-VZ, sp.sqrt(VX**2 + VY**2)),
+    ])
+
+
+def _attack_formula(product_text: str, air_vector_text: str) -> str:
+    return _recovered(product_text, air_vector_text, ATTACK, [
+        sp.atan2(VZ, VX),
+        sp.atan2(-VZ, VX),
+        sp.atan2(VY, VX),
+        sp.atan2(-VY, VX),
+    ])
 
 
 def _matrix_product(left: str, right: str) -> str:
@@ -435,38 +552,67 @@ def check_verifiers() -> None:
     gold = gold_texts()
     rows = questions()
     if set(DECLARATION_ROOTS) | DERIVED_NODES != set(NODE_IDS):
-        raise RuntimeError("声明根与派生节点没有覆盖 1–131")
+        raise RuntimeError("Declaration roots and derived nodes do not cover 1-131")
     for node in NODE_IDS:
         got = derive(None, node, gold)
         if not got.ok:
-            raise RuntimeError(f"ID{node} 金标回归失败：{got.reason}")
+            raise RuntimeError(f"ID{node} gold regression failed: {got.reason}")
         if rows[node]["options"]:
             if got.matrix != gold[node]:
-                raise RuntimeError(f"ID{node} 金标回归值不一致：{got.matrix!r} vs {gold[node]!r}")
+                raise RuntimeError(f"ID{node} gold regression value disagrees: {got.matrix!r} vs {gold[node]!r}")
         elif not answers_equal(got.matrix, gold[node], rows[node]["format"]):
-            raise RuntimeError(f"ID{node} 金标回归值不一致：{got.matrix!r} vs {gold[node]!r}")
+            raise RuntimeError(f"ID{node} gold regression value disagrees: {got.matrix!r} vs {gold[node]!r}")
     wrong12 = "Cx(Φ)*Cy(θ)*Cz(ψ)"
     if wrong12 == gold["12"]:
         wrong12 = "Cz(ψ)*Cy(θ)*Cx(Φ)"
     changed = answer_under("15", {"12": wrong12})
-    if changed is None or answers_equal(changed, gold["15"], "向量"):
-        raise RuntimeError("改写 ID12 后 ID15 没有变化。")
+    if changed is None or answers_equal(changed, gold["15"], "vector"):
+        raise RuntimeError("ID15 did not change after ID12 was rewritten.")
     bad = derive(None, "15", {**gold, "12": "not-a-product"})
     if bad.ok:
-        raise RuntimeError("非法上游仍推出了 ID15。")
+        raise RuntimeError("An illegal upstream still produced ID15.")
     # Load-block: swapping a factor matrix must move ID81.
     alt79 = gold["74"] if gold["79"] != gold["74"] else "[[1, 0, 0], [0, 1, 0], [0, 0, -1]]"
     changed81 = answer_under("81", {"79": alt79})
-    if changed81 is None or answers_equal(changed81, gold["81"], "矩阵"):
-        raise RuntimeError("改写 ID79 后 ID81 没有变化。")
+    if changed81 is None or answers_equal(changed81, gold["81"], "matrix"):
+        raise RuntimeError("ID81 did not change after ID79 was rewritten.")
+    flipped_yaw = "left on the ground" if gold["4"] == "right on the ground" else "right on the ground"
+    yaw_body = "ψ" if flipped_yaw == "left on the ground" else "-ψ"
+    changed12 = answer_under("12", {"4": flipped_yaw})
+    if changed12 is None or changed12 == gold["12"] or not changed12.startswith(f"Cz({yaw_body})*"):
+        raise RuntimeError("The yaw factor of ID12 did not change after ID4 was rewritten.")
+    flipped_pitch = "downward" if gold["5"] == "upward" else "upward"
+    pitch_body = "θ" if flipped_pitch == "downward" else "-θ"
+    pitched = answer_under("12", {"5": flipped_pitch})
+    if pitched is None or f"Cy({pitch_body})*" not in pitched:
+        raise RuntimeError("The pitch factor of ID12 did not change after ID5 was rewritten.")
+    both = answer_under("12", {"4": flipped_yaw, "5": flipped_pitch})
+    roll = gold["12"].split("*")[-1]
+    if both != f"Cz({yaw_body})*Cy({pitch_body})*{roll}":
+        raise RuntimeError(f"After yaw and pitch are both reversed, ID12 is {both}.")
+    climbed = answer_under("25", {"22": "downward"})
+    if climbed is None or not climbed.endswith("*Cy(μ)"):
+        raise RuntimeError("The inclination factor of ID25 did not change after ID22 was rewritten.")
+    attacked = answer_under("40", {"36": "upward"})
+    if attacked != "Cy(-α)":
+        raise RuntimeError("ID40 did not become Cy(-α) after ID36 was rewritten.")
+    slipped = answer_under("41", {"37": "left"})
+    if slipped != "Cz(β)":
+        raise RuntimeError("ID41 did not become Cz(β) after ID37 was rewritten.")
+    recovered = answer_under("48", {"42": "Cy(α)*Cz(β)"})
+    if recovered != "atan2(-vy, sqrt(vx^2+vz^2))":
+        raise RuntimeError(f"After ID42 was rewritten, ID48 is {recovered}.")
+    attacked_alpha = answer_under("51", {"42": "Cy(-α)*Cz(-β)"})
+    if attacked_alpha != "atan2(-vz, vx)":
+        raise RuntimeError(f"After ID42 was rewritten, ID51 is {attacked_alpha}.")
     if DERIVED_EXCEPTIONS:
-        raise RuntimeError(f"派生例外未清空：{DERIVED_EXCEPTIONS}")
+        raise RuntimeError(f"Derived exceptions are not empty: {DERIVED_EXCEPTIONS}")
     for node in T_FINAL:
         if node not in NODE_IDS:
-            raise RuntimeError(f"终点 {node} 不在 1–131")
+            raise RuntimeError(f"Endpoint {node} not in 1-131")
     print(
-        f"阶段3 计算器：1–131 金标回归通过，声明根 {len(DECLARATION_ROOTS)}，"
-        f"派生边 {sum(1 for n in NODE_IDS if input_ids(n))}。",
+        f"Stage 3 calculators: gold regression passed for 1-131, declaration roots {len(DECLARATION_ROOTS)}, "
+        f"derived edges {sum(1 for n in NODE_IDS if input_ids(n))}.",
         flush=True,
     )
 

@@ -1,52 +1,52 @@
 [
   {
     "id": "01",
-    "factor": "无",
-    "change": "单定义扰动：无。10 项可变定义都不改。"
+    "factor": "none",
+    "change": "Single-definition perturbation: none. None of the 10 variable definitions is changed."
   },
   {
     "id": "02",
-    "factor": "世界坐标系",
-    "change": "单定义扰动：世界坐标系。世界坐标系改为右手系，Xw沿轴向指向前方，Yw沿法向指向上方，Zw沿侧向指向右侧。"
+    "factor": "world frame",
+    "change": "Single-definition perturbation: world frame. The world frame is right-handed: Xw is axial and points forward, Yw is normal and points up, and Zw is lateral and points right."
   },
   {
     "id": "03",
-    "factor": "物体系",
-    "change": "单定义扰动：物体系。物体系改为右手系，Xb沿轴向指向前方，Yb沿法向指向上方，Zb沿侧向指向右侧。"
+    "factor": "object frame",
+    "change": "Single-definition perturbation: object frame. The object frame is right-handed: Xb is axial and points forward, Yb is normal and points up, and Zb is lateral and points right."
   },
   {
     "id": "04",
-    "factor": "相机1系",
-    "change": "单定义扰动：相机1系。相机1系改为右手系，X1沿轴向指向前方，Y1沿法向指向上方，Z1沿侧向指向右侧。"
+    "factor": "camera-1 frame",
+    "change": "Single-definition perturbation: camera-1 frame. The camera-1 frame is right-handed: X1 is axial and points forward, Y1 is normal and points up, and Z1 is lateral and points right."
   },
   {
     "id": "05",
-    "factor": "相机2系",
-    "change": "单定义扰动：相机2系。相机2系改为右手系，X2沿轴向指向前方，Y2沿法向指向上方，Z2沿侧向指向右侧。"
+    "factor": "camera-2 frame",
+    "change": "Single-definition perturbation: camera-2 frame. The camera-2 frame is right-handed: X2 is axial and points forward, Y2 is normal and points up, and Z2 is lateral and points right."
   },
   {
     "id": "06",
-    "factor": "相机方位角",
-    "change": "单定义扰动：相机方位角。相机方位角改为光轴偏向世界左侧为正。"
+    "factor": "camera azimuth",
+    "change": "Single-definition perturbation: camera azimuth. Camera azimuth is positive when the optical axis deflects to the left of the world."
   },
   {
     "id": "07",
-    "factor": "相机俯仰角",
-    "change": "单定义扰动：相机俯仰角。相机俯仰角改为光轴偏向世界下方为正。"
+    "factor": "camera pitch",
+    "change": "Single-definition perturbation: camera pitch. Camera pitch is positive when the optical axis deflects downward in the world."
   },
   {
     "id": "08",
-    "factor": "相机滚转角",
-    "change": "单定义扰动：相机滚转角。相机滚转角改为像面右缘偏向相机上方为正。"
+    "factor": "camera roll",
+    "change": "Single-definition perturbation: camera roll. Camera roll is positive when the right edge of the image deflects upward in the camera."
   },
   {
     "id": "09",
-    "factor": "机构俯仰角",
-    "change": "单定义扰动：机构俯仰角。机构俯仰角改为物体轴向偏向世界下方为正。"
+    "factor": "mechanism pitch",
+    "change": "Single-definition perturbation: mechanism pitch. Mechanism pitch is positive when the object axis deflects downward in the world."
   },
   {
     "id": "10",
-    "factor": "机构方位角",
-    "change": "单定义扰动：机构方位角。机构方位角改为物体轴向偏向世界右侧为正。"
+    "factor": "mechanism azimuth",
+    "change": "Single-definition perturbation: mechanism azimuth. Mechanism azimuth is positive when the object axis deflects to the right of the world."
   }
 ]

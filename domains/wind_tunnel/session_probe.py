@@ -20,10 +20,11 @@ from domains.wind_tunnel.rt_isolation import (
     STAGES,
     _compact,
     _next_slotfree,
+    PROBE_MARK,
     _question,
 )
 
-PROBE_LEAD = "这是一次旁路探针。只回答这一问。"
+PROBE_LEAD = "This is a side probe. Answer only this question."
 
 
 def _stages() -> list[dict]:
@@ -61,7 +62,7 @@ def _target_blank(chain: dict, blank_id: str) -> dict:
         for blank in sentence["blanks"]:
             if str(blank["blank_id"]) == str(blank_id):
                 return blank
-    raise KeyError(f"{chain['process']} 没有探针目标 ID{blank_id}")
+    raise KeyError(f"{chain['process']} has no probe target ID{blank_id}")
 
 
 def forks_after(chain: dict, blank_ids: list[str]) -> list[dict]:
@@ -100,24 +101,24 @@ def probe_question(chain: dict, spec: dict) -> str:
     preamble = _next_slotfree(chain, spec["anchor"]).strip()
     parts = [
         PROBE_LEAD,
-        "不要填写过程中的空，不要继续后面的句子。",
-        "这个答案只作评分记录，不会写回主会话。",
+        "Do not fill blanks in the process, and do not continue the later sentences.",
+        "This answer is only a score record. It is not written back to the main session.",
     ]
     if preamble:
-        parts.extend(["", "【题目前文】", preamble])
+        parts.extend(["", "[Text so far]", preamble])
     parts.extend([
         "",
-        "【探针】",
+        "[Probe]",
         _question(spec["name"]),
         "",
-        f"只输出一个 JSON 对象，键是 {spec['target']}，值是矩阵字符串。不要解释。",
+        f"Output one JSON object only. The key is {spec['target']}, and the value is the matrix string. Do not explain.",
     ])
     question = "\n".join(parts)
     marker = chain["declaration"].strip()[:40]
-    if "【定义声明】" in question or (len(marker) >= 12 and marker in question):
-        raise RuntimeError(f"{spec['probe_id']} 的探针题干重复了定义声明")
-    if "重新推导" in question or "重新写出" in question:
-        raise RuntimeError(f"{spec['probe_id']} 的探针仍在要求重新推导")
+    if "[Declaration]" in question or (len(marker) >= 12 and marker in question):
+        raise RuntimeError(f"{spec['probe_id']} probe repeats the declaration")
+    if "re-derive" in question or "write it again" in question:
+        raise RuntimeError(f"{spec['probe_id']} probe still asks for a re-derivation")
     return question
 
 
@@ -177,11 +178,11 @@ def clear_turn(
         if gold and gold in text:
             text = text.replace(gold, PLACEHOLDER)
     if PLACEHOLDER not in text:
-        raise RuntimeError("主会话没有清掉矩阵答案：" + "、".join(ids))
+        raise RuntimeError("The main session did not clear the matrix answers: " + ", ".join(ids))
     for blank_id in ids:
         gold = _compact(gold_by_id.get(blank_id, ""))
         if gold and gold in _compact(text):
-            raise RuntimeError(f"主会话仍保留 ID{blank_id} 的矩阵答案")
+            raise RuntimeError(f"The main session still keeps the matrix answer of ID{blank_id}")
     messages[index]["content"] = text
 
 
@@ -189,7 +190,7 @@ def _reply_text(messages: list[dict], committed: list[dict], blank_id: str) -> s
     for turn in committed:
         if str(blank_id) in {str(item) for item in turn["blank_ids"]}:
             return messages[turn["assistant_index"]]["content"]
-    raise RuntimeError(f"主会话里还没有 ID{blank_id} 的回答")
+    raise RuntimeError(f"The main session does not yet have an answer for ID{blank_id}")
 
 
 def hide_replies(
@@ -220,11 +221,11 @@ def hide_replies(
             if gold and gold in text:
                 text = text.replace(gold, placeholder)
         if PLACEHOLDER not in text:
-            raise RuntimeError("重推导分支没能隐去分矩阵回答")
+            raise RuntimeError("The rederive branch did not hide the component-matrix reply")
         hidden[index]["content"] = text
         touched = True
     if not touched:
-        raise RuntimeError("重推导分支没有找到要隐去的分矩阵回答")
+        raise RuntimeError("The rederive branch found no component-matrix reply to hide")
     return hidden
 
 
@@ -243,13 +244,13 @@ def make_branch(
         present = {str(blank_id) for turn in committed for blank_id in turn["blank_ids"]}
         missing = [blank_id for blank_id in spec["hide"] if str(blank_id) not in present]
         if missing:
-            raise RuntimeError(f"{spec['probe_id']} 还没走完要隐去的分矩阵：" + "、".join(missing))
+            raise RuntimeError(f"{spec['probe_id']} has not finished the component matrices to hide: " + ", ".join(missing))
         source = hide_replies(messages, committed, spec["hide"], gold_by_id)
     question = probe_question(chain, spec)
     branch = [{"role": item["role"], "content": item["content"]} for item in source]
     branch.append({"role": "user", "content": question})
     if _snapshot(messages) != before:
-        raise RuntimeError(f"{spec['probe_id']} 在构造分支时改写了主会话")
+        raise RuntimeError(f"{spec['probe_id']} rewrote the main session while building the branch")
     _audit(chain, messages, branch, committed, spec, gold_by_id)
     return branch
 
@@ -263,18 +264,18 @@ def _audit(
     gold_by_id: dict[str, str],
 ) -> None:
     if branch[-1]["role"] != "user" or PROBE_LEAD not in branch[-1]["content"]:
-        raise RuntimeError(f"{spec['probe_id']} 的分支末尾不是探针问题")
+        raise RuntimeError(f"{spec['probe_id']} branch does not end with the probe question")
     if len(branch) != len(messages) + 1:
-        raise RuntimeError(f"{spec['probe_id']} 的分支没有只多出一轮提问")
+        raise RuntimeError(f"{spec['probe_id']} branch did not add exactly one question turn")
     transcript = "\n".join(item["content"] for item in branch)
     if spec["named"] not in transcript:
-        raise RuntimeError(f"{spec['name']} 的探针还没看见矩阵名称")
-    if "【定义声明】" in branch[-1]["content"]:
-        raise RuntimeError(f"{spec['probe_id']} 在后续提问里重复注入了定义")
+        raise RuntimeError(f"{spec['name']} probe has not seen the matrix name")
+    if "[Declaration]" in branch[-1]["content"]:
+        raise RuntimeError(f"{spec['probe_id']} injects the declaration again in a later question")
     own = _compact(gold_by_id[spec["target"]])
     if spec["kind"] == "shallow":
         if own and own in _compact(transcript):
-            raise RuntimeError(f"{spec['name']} 的浅层探针看见了自己的原答案")
+            raise RuntimeError(f"{spec['name']} shallow probe saw its own original answer")
     elif spec["kind"] == "deep_rederive":
         hide = {str(item) for item in spec["hide"]}
         for turn in committed:
@@ -283,15 +284,15 @@ def _audit(
                 continue
             text = branch[turn["assistant_index"]]["content"]
             if PLACEHOLDER not in text:
-                raise RuntimeError(f"{spec['name']} 的重推导分支没有隐去分矩阵")
+                raise RuntimeError(f"{spec['name']} rederive branch did not hide the component matrices")
             for blank_id in ids:
                 gold = _compact(gold_by_id.get(blank_id, ""))
                 if gold and gold in _compact(text):
-                    raise RuntimeError(f"{spec['name']} 的重推导探针仍然看见分矩阵答案")
+                    raise RuntimeError(f"{spec['name']} rederive probe still sees a component-matrix answer")
     else:
-        raise RuntimeError(f"未知探针类型 {spec['kind']}")
+        raise RuntimeError(f"Unknown probe kind {spec['kind']}")
     if chain["process"] != spec["probe_id"].split(":", 1)[0]:
-        raise RuntimeError("探针过程与会话过程不一致")
+        raise RuntimeError("The probe process does not match the session process")
 
 
 def check_session(chain: dict) -> int:
@@ -308,10 +309,10 @@ def check_session(chain: dict) -> int:
     for index, sentence in enumerate(sentences):
         question = _session_question(chain, sentence, previous)
         if PROBE_LEAD in question:
-            raise RuntimeError(f"{chain['process']} 的主问题带了探针题干")
+            raise RuntimeError(f"{chain['process']} main question contains a probe stem")
         for gold in cleared:
             if gold and gold in _compact(question):
-                raise RuntimeError(f"{chain['process']} 的后续主问题又带上了已清除的矩阵答案")
+                raise RuntimeError(f"{chain['process']} later main question contains a cleared matrix answer")
         messages.append({"role": "user", "content": question})
         messages.append({"role": "assistant", "content": gold_reply(sentence["blanks"])})
         committed.append({
@@ -327,20 +328,20 @@ def check_session(chain: dict) -> int:
         before = _snapshot(messages)
         for spec in forks_after(chain, sentence["blank_ids"]):
             branch = make_branch(chain, messages, committed, spec, gold_by_id)
-            branch.append({"role": "assistant", "content": f"《探针记录》{spec['probe_id']}"})
+            branch.append({"role": "assistant", "content": f"{PROBE_MARK}{spec['probe_id']}"})
             if _snapshot(messages) != before:
-                raise RuntimeError(f"{spec['probe_id']} 写回了主会话")
+                raise RuntimeError(f"{spec['probe_id']} wrote back into the main session")
             if PROBE_LEAD in "\n".join(item["content"] for item in messages):
-                raise RuntimeError(f"{spec['probe_id']} 的题干进入了主会话")
+                raise RuntimeError(f"{spec['probe_id']} stem entered the main session")
             if index + 1 < len(sentences):
                 nxt = _session_question(chain, sentences[index + 1], sentence)
-                if PROBE_LEAD in nxt or "《探针记录》" in nxt:
-                    raise RuntimeError(f"{spec['probe_id']} 之后的主问题带了探针")
+                if PROBE_LEAD in nxt or PROBE_MARK in nxt:
+                    raise RuntimeError(f"{spec['probe_id']} later main question contains a probe")
             count += 1
         previous = sentence
     expected = _expected_count(chain["process"])
     if expected and count != expected:
-        raise RuntimeError(f"{chain['process']} 叉出 {count} 个探针，应当是 {expected} 个")
+        raise RuntimeError(f"{chain['process']} forked {count} probes, expected {expected}")
     return count
 
 

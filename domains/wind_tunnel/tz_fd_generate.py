@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Generate cloze answers for the wind-frame to body-frame attitude evaluation.
 
-The questions follow TZ_FD.md. Geometry, signs, and matrices come from
+The questions follow doc/TZ_FD.md. Geometry, signs, and matrices come from
 BodyFrameModel under the given declaration. Passive rotation and intrinsic
 moving-axis rotation are fixed by the aircraft and are not declaration choices.
 
-Question IDs follow TZ_FD.md. RP1 matches declared axis directions with the
+Question IDs follow doc/TZ_FD.md. RP1 matches declared axis directions with the
 model treated as upright, and that upright embedding is the intermediate body
 frame used for the attitude rotations. RP2 is the extra mounting matrix:
 identity when the model is upright, and a normal/lateral sign change when it
@@ -63,32 +63,32 @@ from body_frame_model import (
 )
 
 
-ANGLE_ZH = {ALPHA: "迎角", BETA: "侧滑角", GAMMA: "滚转角"}
+ANGLE_ZH = {ALPHA: "angle of attack", BETA: "sideslip", GAMMA: "roll"}
 MECHANISM_OF = {ALPHA: ALPHA_M, BETA: BETA_M, GAMMA: GAMMA_M}
 ROLE_ZH = {
-    "forward": "前面",
-    "rearward": "后面",
-    "up": "上方",
-    "down": "下方",
-    "left": "左侧",
-    "right": "右侧",
+    "forward": "front",
+    "rearward": "rear",
+    "up": "upward",
+    "down": "downward",
+    "left": "left",
+    "right": "right",
 }
-SIGN_ZH = {POSITIVE: "正", NEGATIVE: "负", UNKNOWN: "不确定"}
-ROTATION_ZH = {POSITIVE_ROTATION: "正", NEGATIVE_ROTATION: "负"}
-FRAMES = ["中间体轴系", "天平系", "风轴系"]
-CONVERSION_FRAMES = ["体轴系", "天平系", "风轴系"]
+SIGN_ZH = {POSITIVE: "positive", NEGATIVE: "negative", UNKNOWN: "indeterminate"}
+ROTATION_ZH = {POSITIVE_ROTATION: "positive", NEGATIVE_ROTATION: "negative"}
+FRAMES = ["intermediate body-axis frame", "balance frame", "wind frame"]
+CONVERSION_FRAMES = ["body-axis frame", "balance frame", "wind frame"]
 CONVERSION_PAIRS = [
-    f"{source}向{target}" for source in CONVERSION_FRAMES for target in CONVERSION_FRAMES
+    f"{source} to {target}" for source in CONVERSION_FRAMES for target in CONVERSION_FRAMES
 ]
-DIRECTIONS = ["上方", "下方", "左侧", "右侧", "前面", "后面"]
-SIGNS = ["正", "负", "不确定"]
-EULER = ["迎角", "侧滑角", "滚转角"]
-TRANSFORMS = ["主动", "被动"]
-ROTATIONS = ["内旋", "外旋"]
-FRAME_KINDS = ["动轴", "定轴"]
-LEVEL_FRAMES = ["平置机体系", "风轴系"]
-MOUNTS = ["正装", "反装"]
-AXIS_RELATIONS = ["相同", "相反"]
+DIRECTIONS = ["upward", "downward", "left", "right", "front", "rear"]
+SIGNS = ["positive", "negative", "indeterminate"]
+EULER = ["angle of attack", "sideslip", "roll"]
+TRANSFORMS = ["active", "passive"]
+ROTATIONS = ["intrinsic", "extrinsic"]
+FRAME_KINDS = ["moving axes", "fixed axes"]
+LEVEL_FRAMES = ["level airframe", "wind frame"]
+MOUNTS = ["upright", "inverted"]
+AXIS_RELATIONS = ["same", "opposite"]
 INVERSES = ["arcsin", "arctan"]
 COMPONENTS = ["XTZ", "YTZ", "ZTZ", "1"]
 AXES = ["XFD", "YFD", "ZFD", "XTZ", "YTZ", "ZTZ", "XTP", "YTP", "ZYP"]
@@ -188,18 +188,18 @@ def _declared_roll_hand(right_wing_toward: str) -> str:
     """Hand relation of γ_M about the model's nose. Installation does not enter."""
     sense = roll_about_nose_sense(right_wing_toward)
     if sense == SENSE_SAME:
-        return "相同"
+        return "same"
     if sense == SENSE_OPPOSITE:
-        return "相反"
+        return "opposite"
     raise DefinitionError("Mechanism roll has no right-hand relation about the model axis.")
 
 
 def _wing_about_nose(relation: str) -> str:
     """Body direction of the right wing after a positive roll about the nose."""
     rh_wing = _direction_name(_cross(_VECTOR[FRONT], _VECTOR[RIGHT]), BODY_VOCAB)
-    if relation == "相同":
+    if relation == "same":
         return rh_wing
-    if relation == "相反":
+    if relation == "opposite":
         return OPPOSITE[rh_wing]
     raise DefinitionError("Mechanism roll has no right-hand relation about the model axis.")
 
@@ -223,26 +223,26 @@ def _directed(frame: dict, target) -> str:
 
 def _same_sense(left: str, right: str) -> str:
     if not left or not right:
-        return "不确定"
+        return "indeterminate"
     if left == right:
-        return "正"
+        return "positive"
     if left == OPPOSITE.get(right) or right == OPPOSITE.get(left):
-        return "负"
-    return "不确定"
+        return "negative"
+    return "indeterminate"
 
 
 def _signed_component(model: BodyFrameModel, direction: str) -> tuple[str, str]:
     for name in BODY_AXES:
         pointed = model.body_frame[name].points_to
         if pointed == direction:
-            return name, "正"
+            return name, "positive"
         if pointed == OPPOSITE[direction]:
-            return name, "负"
+            return name, "negative"
     raise DefinitionError(f"{direction} is not aligned with XTZ, YTZ, or ZTZ.")
 
 
 def _apply_sign(sign: str, expr) -> sp.Expr:
-    return expr if sign == "正" else -expr
+    return expr if sign == "positive" else -expr
 
 
 def _magnitude_sign(signs: dict, axis: str, what: str) -> str:
@@ -269,10 +269,10 @@ def _require_positive_part(expr, active, what: str) -> None:
 
 def _signed_formula(outer: str, inverse: str, interior: str) -> str:
     """Put the angle sign outside. Numerator and denominator are each a positive magnitude."""
-    if outer not in ("正", "负"):
-        raise DefinitionError(f"{inverse} needs an outer angle sign of 正 or 负, got {outer}.")
+    if outer not in ("positive", "negative"):
+        raise DefinitionError(f"{inverse} needs an outer angle sign of positive or negative, got {outer}.")
     body = f"{inverse}({interior})"
-    return body if outer == "正" else f"-{body}"
+    return body if outer == "positive" else f"-{body}"
 
 
 def _mechanism_matrix(model: BodyFrameModel, name: str) -> sp.Matrix:
@@ -409,44 +409,44 @@ def generate(spec: dict) -> dict:
 
     add(
         "1", 1, "C2",
-        "为计算机构角对补偿前的 α_t、β_t 和滚转角的影响，坐标系转换方向",
-        "风轴系向体轴系",
+        "To compute the effect of the mechanism angles α_M, β_M, and γ_M on α_t, β_t, and roll before compensation, the required transform",
+        "wind frame to body-axis frame",
         CONVERSION_PAIRS,
     )
 
-    role_targets = (("法向", "body_up"), ("轴向", "body_forward"), ("侧向", "body_right"))
+    role_targets = (("normal", "body_up"), ("axial", "body_forward"), ("lateral", "body_right"))
     for manuscript_id, (role_name, target_name) in zip(("3", "4", "5"), role_targets):
         add(
             manuscript_id, 2, "C1",
-            f"风轴系绝对{role_name}正方向对应的有向坐标轴",
+            f"the coordinate axis for the positive absolute {role_name} of the wind frame",
             _directed(model.wind_frame, _VECTOR[target_name]),
             DIRECTED,
         )
     for manuscript_id, (role_name, target_name) in zip(("6", "7", "8"), role_targets):
         add(
             manuscript_id, 2, "C1",
-            f"机体系绝对{role_name}正方向对应的有向坐标轴",
+            f"the coordinate axis for the positive absolute {role_name} of the airframe",
             _directed(model.body_frame, _VECTOR[target_name]),
             DIRECTED,
         )
-    add("9", 2, "A2", "平正位置处风轴坐标到体轴坐标的前置矩阵 RP1", _matrix_text(alignment))
-    add("10", 2, "C2", "RP1 所对齐的、坐标轴与自身绝对方向相对应的坐标系", "体轴系", CONVERSION_FRAMES)
-    add("11", 2, "C2", "RP1 对照的、坐标轴与自身绝对方向相对应的坐标系", "风轴系", CONVERSION_FRAMES)
+    add("9", 2, "A2", "The pre-transform from the wind frame to the body-axis frame at the level pose is RP1", _matrix_text(alignment))
+    add("10", 2, "C2", "the frame whose axes RP1 aligns with their own absolute directions", "body-axis frame", CONVERSION_FRAMES)
+    add("11", 2, "C2", "the frame whose axes RP1 compares with their own absolute directions", "wind frame", CONVERSION_FRAMES)
     add(
         "12", 2, "C1",
-        "模型安装方式",
-        "正装" if model.placement == PLACE_UPRIGHT else "反装",
+        "The model installation",
+        "upright" if model.placement == PLACE_UPRIGHT else "inverted",
         MOUNTS,
     )
     add(
         "13", 2, "A1",
-        "模型绝对法向、侧向正方向相对风洞绝对法向、侧向正方向",
-        "相同" if model.placement == PLACE_UPRIGHT else "相反",
+        "The positive absolute normal (upward) and positive absolute lateral (right) of the model relative to the positive absolute normal and positive absolute lateral of the tunnel",
+        "same" if model.placement == PLACE_UPRIGHT else "opposite",
         AXIS_RELATIONS,
     )
-    add("14", 2, "A2", "安装引起的前置矩阵 RP2", _matrix_text(mount))
-    add("15", 2, "C2", "RP2 使其坐标轴方向被对齐的坐标系", "体轴系", CONVERSION_FRAMES)
-    add("16", 2, "C2", "RP2 所对照的坐标方向所属坐标系", "风轴系", CONVERSION_FRAMES)
+    add("14", 2, "A2", "the corresponding pre-transform is RP2", _matrix_text(mount))
+    add("15", 2, "C2", "the frame whose axis directions RP2 makes the same", "body-axis frame", CONVERSION_FRAMES)
+    add("16", 2, "C2", "the frame whose coordinate directions RP2 matches", "wind frame", CONVERSION_FRAMES)
 
     def add_airspeed_block(step: int, angle: str, mechanism: str, ids: tuple[str, ...]) -> None:
         mechanism_record = model.mechanism_angles[mechanism]
@@ -455,22 +455,22 @@ def generate(spec: dict) -> dict:
         symbol = SYMBOL[mechanism]
         add(
             ids[0], step, "C1",
-            f"由于模型的安装，{symbol} > 0 时机体轴向才确定向风洞哪一侧偏",
-            "正装" if model.placement == PLACE_UPRIGHT else "倒装",
-            ["正装", "倒装"],
+            f"The model installation used when {symbol} > 0",
+            "upright" if model.placement == PLACE_UPRIGHT else "inverted",
+            ["upright", "inverted"],
         )
-        add(ids[1], step, "A1", f"{symbol} > 0 时空速偏向的机体方向", _role(airspeed_body), DIRECTIONS)
-        add(ids[2], step, "C1", f"理论{ANGLE_ZH[angle]} > 0 时空速偏向的机体方向", _role(theory.positive_airspeed_toward), DIRECTIONS)
+        add(ids[1], step, "A1", f"When {symbol} > 0 the airspeed points this way on the airframe", _role(airspeed_body), DIRECTIONS)
+        add(ids[2], step, "C1", f"When the theoretical {ANGLE_ZH[angle]} is positive the airspeed points this way on the airframe", _role(theory.positive_airspeed_toward), DIRECTIONS)
         add(
             ids[3], step, "A1",
-            f"{symbol} > 0 时理论{ANGLE_ZH[angle]}的符号",
+            f"When {symbol} > 0 the sign of the theoretical {ANGLE_ZH[angle]}",
             _same_sense(airspeed_body, theory.positive_airspeed_toward),
             SIGNS,
         )
-        add(ids[4], step, "C2", f"旋转 {symbol} 所在的坐标系", "中间体轴系", FRAMES)
-        add(ids[5], step, "C1", f"{symbol} 绕过的机体坐标轴", mechanism_record.associated_axis, AXES)
-        add(ids[6], step, "A1", f"{symbol} > 0 时绕该轴的转向", ROTATION_ZH[mechanism_record.rotation_when_positive], SIGNS)
-        add(ids[7], step, "A2", f"旋转矩阵 R_{symbol}", _matrix_text(matrices[angle]))
+        add(ids[4], step, "C2", f"This is the level pose of the frame for {symbol}", "intermediate body-axis frame", FRAMES)
+        add(ids[5], step, "C1", f"The rotation of {symbol} is about this body coordinate axis", mechanism_record.associated_axis, AXES)
+        add(ids[6], step, "A1", f"When {symbol} > 0 the sense about that axis", ROTATION_ZH[mechanism_record.rotation_when_positive], SIGNS)
+        add(ids[7], step, "A2", f"the rotation matrix is R_{symbol}", _matrix_text(matrices[angle]))
 
     def add_roll_block(step: int, ids: tuple[str, ...]) -> None:
         mechanism_record = model.mechanism_angles[GAMMA_M]
@@ -482,59 +482,59 @@ def generate(spec: dict) -> dict:
         if mechanism_wing != mechanism_record.right_wing_toward or theory_wing != theory.right_wing_toward:
             raise DefinitionError("Right-wing direction inferred from the axial right-hand rule disagrees with the declaration.")
         symbol = SYMBOL[GAMMA_M]
-        add(ids[0], step, "C1", f"{symbol} > 0 时，以模型绝对轴向正方向（前方）为旋转轴，与右手定则的关系", mechanism_hand, AXIS_RELATIONS)
-        add(ids[1], step, "A1", f"{symbol} > 0 时右翼偏向的机体方向", _role(mechanism_wing), DIRECTIONS)
+        add(ids[0], step, "C1", f"When {symbol} > 0, about the positive absolute model axis (forward), the relation to the right-hand rule", mechanism_hand, AXIS_RELATIONS)
+        add(ids[1], step, "A1", f"When {symbol} > 0 the right wing points this way on the airframe", _role(mechanism_wing), DIRECTIONS)
         add(
             ids[2], step, "C1",
-            f"理论{ANGLE_ZH[GAMMA]} > 0 时，以机体绝对轴向正方向（前方）为旋转轴，与右手定则的关系",
+            f"When the theoretical {ANGLE_ZH[GAMMA]} is positive, about the positive absolute airframe axis (forward), the relation to the right-hand rule",
             theory_hand, AXIS_RELATIONS,
         )
-        add(ids[3], step, "A1", f"理论{ANGLE_ZH[GAMMA]} > 0 时右翼偏向的机体方向", _role(theory_wing), DIRECTIONS)
+        add(ids[3], step, "A1", f"When the theoretical {ANGLE_ZH[GAMMA]} is positive the right wing points this way on the airframe", _role(theory_wing), DIRECTIONS)
         add(
             ids[4], step, "A1",
-            f"{symbol} > 0 时理论{ANGLE_ZH[GAMMA]}的符号",
+            f"When {symbol} > 0 the sign of the theoretical {ANGLE_ZH[GAMMA]}",
             _same_sense(mechanism_wing, theory_wing),
             SIGNS,
         )
-        add(ids[5], step, "C2", f"旋转 {symbol} 所在的坐标系", "中间体轴系", FRAMES)
-        add(ids[6], step, "C1", f"{symbol} 绕过的机体坐标轴", mechanism_record.associated_axis, AXES)
-        add(ids[7], step, "A1", f"{symbol} > 0 时绕该坐标轴正方向的转向", ROTATION_ZH[mechanism_record.rotation_when_positive], SIGNS)
-        add(ids[8], step, "A2", f"旋转矩阵 R_{symbol}", _matrix_text(matrices[GAMMA]))
+        add(ids[5], step, "C2", f"This is the level pose of the frame for {symbol}", "intermediate body-axis frame", FRAMES)
+        add(ids[6], step, "C1", f"The rotation of {symbol} is about this body coordinate axis", mechanism_record.associated_axis, AXES)
+        add(ids[7], step, "A1", f"When {symbol} > 0 the sense about the positive direction of that coordinate axis", ROTATION_ZH[mechanism_record.rotation_when_positive], SIGNS)
+        add(ids[8], step, "A2", f"the rotation matrix is R_{symbol}", _matrix_text(matrices[GAMMA]))
 
     for index, (manuscript_id, angle) in enumerate(zip(("17", "18", "19"), model.euler_order), start=1):
-        add(manuscript_id, 3, "A1", f"内旋顺序的第 {index} 项", ANGLE_ZH[angle], EULER)
+        add(manuscript_id, 3, "A1", f"rotation angle {index} of the order", ANGLE_ZH[angle], EULER)
     add_airspeed_block(4, ALPHA, ALPHA_M, ("20", "21", "22", "23", "24", "25", "26", "27"))
     add_airspeed_block(5, BETA, BETA_M, ("28", "29", "30", "31", "32", "33", "34", "35"))
     add_roll_block(6, ("36", "37", "38", "39", "40", "41", "42", "43", "44"))
-    add("45", 7, "C2", "坐标系转换采用的变换", "被动", TRANSFORMS)
-    add("46", 7, "C2", "体轴系的坐标系类型", "动轴", FRAME_KINDS)
-    add("47", 7, "C2", "动轴体轴系采用的旋转方式", "内旋", ROTATIONS)
+    add("45", 7, "C2", "This step changes coordinates, so the transform is", "passive", TRANSFORMS)
+    add("46", 7, "C2", "The body-axis frame is", "moving axes", FRAME_KINDS)
+    add("47", 7, "C2", "For that kind of frame the rotation uses", "intrinsic", ROTATIONS)
     matrix_code = {ALPHA: "R_α_M", BETA: "R_β_M", GAMMA: "R_γ_M"}
     factor_options = ["RP1", "RP2", "R_α_M", "R_β_M", "R_γ_M"]
     first_code, second_code, third_code = [matrix_code[name] for name in model.euler_order]
-    add("48", 7, "A2", "内旋连乘式中的 R1", third_code, factor_options)
-    add("49", 7, "A2", "内旋连乘式中的 R2", second_code, factor_options)
-    add("50", 7, "A2", "内旋连乘式中的 R3", first_code, factor_options)
-    add("51", 7, "A2", "连乘式中的 R4", "RP2", factor_options)
-    add("52", 7, "A2", "连乘式中的 R5", "RP1", factor_options)
-    add("56", 8, "A2", "R_t = R1*R2*R3 化简后的矩阵", _matrix_text(total))
+    add("48", 7, "A2", "R1 in the product", third_code, factor_options)
+    add("49", 7, "A2", "R2 in the product", second_code, factor_options)
+    add("50", 7, "A2", "R3 in the product", first_code, factor_options)
+    add("51", 7, "A2", "R4 in the product", "RP2", factor_options)
+    add("52", 7, "A2", "R5 in the product", "RP1", factor_options)
+    add("56", 8, "A2", "the symbolically simplified product R_t = R1*R2*R3", _matrix_text(total))
     add(
         "57", 9, "A1",
-        "RP2*RP1 乘风轴系中的空速单位向量后，平置机体系中的空速坐标",
+        "RP2*RP1 times the wind-frame airspeed unit vector, in the level airframe",
         _vector_text(level_body),
     )
-    add("58", 9, "C2", "后续只需研究的坐标系", "平置机体系", LEVEL_FRAMES)
-    add("59", 10, "A1", "平置机体系中的空速单位向量 [X_V, Y_V, Z_V]", _vector_text(level_body))
-    add("60", 10, "A2", "R_t*[X_V, Y_V, Z_V] 的 XTZ", _text(component_expr["XTZ"]))
-    add("61", 10, "A2", "R_t*[X_V, Y_V, Z_V] 的 YTZ", _text(component_expr["YTZ"]))
-    add("62", 10, "A2", "R_t*[X_V, Y_V, Z_V] 的 ZTZ", _text(component_expr["ZTZ"]))
+    add("58", 9, "C2", "the frame whose airspeed coordinates are mapped after the attitude change", "level airframe", LEVEL_FRAMES)
+    add("59", 10, "A1", "The airspeed unit vector [X_V, Y_V, Z_V] in the level frame", _vector_text(level_body))
+    add("60", 10, "A2", "XTZ from R_t*[X_V, Y_V, Z_V]", _text(component_expr["XTZ"]))
+    add("61", 10, "A2", "YTZ from R_t*[X_V, Y_V, Z_V]", _text(component_expr["YTZ"]))
+    add("62", 10, "A2", "ZTZ from R_t*[X_V, Y_V, Z_V]", _text(component_expr["ZTZ"]))
 
     def add_component_signs(step: int, mechanism: str, start: int) -> None:
         signs = model.mechanism_angles[mechanism].airspeed_signs
         for offset, axis in enumerate(BODY_AXES):
             add(
                 str(start + offset), step, "A1",
-                f"仅 {SYMBOL[mechanism]} > 0 时 {axis} 的符号",
+                f"When only {SYMBOL[mechanism]} > 0, the sign of {axis}",
                 SIGN_ZH[signs[axis]],
                 SIGNS,
             )
@@ -542,21 +542,21 @@ def generate(spec: dict) -> dict:
     add_component_signs(11, ALPHA_M, 63)
     add_component_signs(12, BETA_M, 66)
 
-    inside = "要求分子和分母都必须为正，不能两者同时为负。角度正负只能写在函数外面"
-    add("69", 13, "A1", f"写在 arctan 外面的 α_t 符号。{inside}", alpha_outer, SIGNS)
-    add("70", 13, "A1", f"α_t 公式的反三角函数。{inside}", "arctan", INVERSES)
-    add("71", 13, "A1", f"根据所选体轴分量在仅α_M>0时的符号，α_t 分子的符号。{inside}", alpha_num_sign, SIGNS)
-    add("72", 13, "A1", f"α_t 的分子应使用的体轴分量。{inside}", alpha_num, COMPONENTS)
-    add("73", 13, "A1", f"根据所选体轴分量在仅α_M>0时的符号，α_t 分母的符号。{inside}", alpha_den_sign, SIGNS)
-    add("74", 13, "A1", f"α_t 的分母应使用的体轴分量。{inside}", alpha_den, COMPONENTS)
-    add("75", 14, "A1", f"写在 arcsin 外面的 β_t 符号。{inside}", beta_outer, SIGNS)
-    add("76", 14, "A1", f"β_t 公式的反三角函数。{inside}", "arcsin", INVERSES)
-    add("77", 14, "A1", f"根据所选体轴分量在仅β_M>0时的符号，β_t 分子的符号。{inside}", beta_num_sign, SIGNS)
-    add("78", 14, "A1", f"β_t 的分子应使用的体轴分量。{inside}", beta_num, COMPONENTS)
-    add("79", 14, "A1", f"分母的符号。{inside}", "正", SIGNS)
-    add("80", 14, "A1", f"β_t 公式的分母分量。{inside}", "1", COMPONENTS)
-    add("81", 15, "A2", f"代入分量表达式后的 α_t。{inside}，负号写在整个 arctan 之前", alpha_answer)
-    add("82", 15, "A2", f"代入分量表达式后的 β_t。{inside}，负号写在整个 arcsin 之前", beta_answer)
+    inside = "The numerator and the denominator must both be positive. The sign may be written only outside the inverse function"
+    add("69", 13, "A1", f"The angle sign of α_t, written outside arctan. {inside}", alpha_outer, SIGNS)
+    add("70", 13, "A1", f"The inverse function of α_t. {inside}", "arctan", INVERSES)
+    add("71", 13, "A1", f"From the sign of the chosen body-axis component when only α_M > 0, the numerator sign of α_t. {inside}", alpha_num_sign, SIGNS)
+    add("72", 13, "A1", f"The body-axis component in the numerator of α_t. {inside}", alpha_num, COMPONENTS)
+    add("73", 13, "A1", f"From the sign of the chosen body-axis component when only α_M > 0, the denominator sign of α_t. {inside}", alpha_den_sign, SIGNS)
+    add("74", 13, "A1", f"The body-axis component in the denominator of α_t. {inside}", alpha_den, COMPONENTS)
+    add("75", 14, "A1", f"The angle sign of β_t, written outside arcsin. {inside}", beta_outer, SIGNS)
+    add("76", 14, "A1", f"The inverse function of β_t. {inside}", "arcsin", INVERSES)
+    add("77", 14, "A1", f"From the sign of the chosen body-axis component when only β_M > 0, the numerator sign of β_t. {inside}", beta_num_sign, SIGNS)
+    add("78", 14, "A1", f"The body-axis component in the numerator of β_t. {inside}", beta_num, COMPONENTS)
+    add("79", 14, "A1", f"The denominator sign of β_t. {inside}", "positive", SIGNS)
+    add("80", 14, "A1", f"The denominator component of β_t. {inside}", "1", COMPONENTS)
+    add("81", 15, "A2", f"α_t after substituting the component expressions. {inside}. A minus sign is written only before the whole arctan", alpha_answer)
+    add("82", 15, "A2", f"β_t after substituting the component expressions. {inside}. A minus sign is written only before the whole arcsin", beta_answer)
 
     _check_component_signs(model, component_expr)
     return {
@@ -594,18 +594,18 @@ def _check_component_signs(model: BodyFrameModel, component_expr: dict[str, sp.E
 
 
 def _render(payload: dict) -> str:
-    lines = ["# 风轴系到体轴系评测答案", ""]
+    lines = ["# wind frame to body-axis frame answers", ""]
     step = None
     for item in payload["items"]:
         if item["step"] != step:
             step = item["step"]
-            lines.append(f"## 步骤 {step}")
+            lines.append(f"## Step {step}")
             lines.append("")
         options = ""
         if item["options"]:
             options = "（" + "/".join(item["options"]) + "）"
         lines.append(
-            f"- ID {item['manuscript_id']} [{item['label']}] {item['prompt']}{options}：{item['answer']}"
+            f"- ID {item['manuscript_id']} [{item['label']}] {item['prompt']}{options}: {item['answer']}"
         )
     lines.append("")
     return "\n".join(lines)
@@ -614,7 +614,7 @@ def _render(payload: dict) -> str:
 def _check_standard() -> None:
     payload = generate(STANDARD_SPEC)
     by_id = {item["manuscript_id"]: item["answer"] for item in payload["items"]}
-    assert by_id["1"] == "风轴系向体轴系"
+    assert by_id["1"] == "wind frame to body-axis frame"
     assert by_id["2"] == "YFD"
     assert by_id["3"] == "XFD"
     assert by_id["4"] == "ZFD"
@@ -622,51 +622,51 @@ def _check_standard() -> None:
     assert by_id["6"] == "XTZ"
     assert by_id["7"] == "ZTZ"
     assert by_id["8"] == "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"
-    assert by_id["9"] == "体轴系"
-    assert by_id["10"] == "风轴系"
-    assert by_id["11"] == "正装"
-    assert by_id["12"] == "相同"
+    assert by_id["9"] == "body-axis frame"
+    assert by_id["10"] == "wind frame"
+    assert by_id["11"] == "upright"
+    assert by_id["12"] == "same"
     assert by_id["13"] == "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"
-    assert by_id["14"] == "体轴系"
-    assert by_id["15"] == "风轴系"
-    assert [by_id["16"], by_id["17"], by_id["18"]] == ["迎角", "侧滑角", "滚转角"]
-    assert by_id["19"] == "正装"
-    assert by_id["20"] == "下方"
-    assert by_id["21"] == "下方"
-    assert by_id["22"] == "正"
-    assert by_id["23"] == "中间体轴系"
+    assert by_id["14"] == "body-axis frame"
+    assert by_id["15"] == "wind frame"
+    assert [by_id["16"], by_id["17"], by_id["18"]] == ["angle of attack", "sideslip", "roll"]
+    assert by_id["19"] == "upright"
+    assert by_id["20"] == "downward"
+    assert by_id["21"] == "downward"
+    assert by_id["22"] == "positive"
+    assert by_id["23"] == "intermediate body-axis frame"
     assert by_id["24"] == "ZTZ"
-    assert by_id["25"] == "正"
-    assert by_id["27"] == "正装"
-    assert by_id["28"] == "右侧"
-    assert by_id["30"] == "正"
-    assert by_id["31"] == "中间体轴系"
+    assert by_id["25"] == "positive"
+    assert by_id["27"] == "upright"
+    assert by_id["28"] == "right"
+    assert by_id["30"] == "positive"
+    assert by_id["31"] == "intermediate body-axis frame"
     assert by_id["32"] == "YTZ"
-    assert by_id["33"] == "正"
-    assert by_id["35"] == "相同"
+    assert by_id["33"] == "positive"
+    assert by_id["35"] == "same"
     assert next(item["label"] for item in payload["items"] if item["manuscript_id"] == "35") == "C1"
-    assert by_id["36"] == "下方"
-    assert by_id["37"] == "相同"
-    assert by_id["38"] == "下方"
-    assert by_id["39"] == "正"
-    assert by_id["40"] == "中间体轴系"
+    assert by_id["36"] == "downward"
+    assert by_id["37"] == "same"
+    assert by_id["38"] == "downward"
+    assert by_id["39"] == "positive"
+    assert by_id["40"] == "intermediate body-axis frame"
     assert by_id["41"] == "XTZ"
-    assert by_id["42"] == "正"
-    assert by_id["44"] == "被动"
-    assert by_id["46"] == "内旋"
+    assert by_id["42"] == "positive"
+    assert by_id["44"] == "passive"
+    assert by_id["46"] == "intrinsic"
     assert [by_id["47"], by_id["48"], by_id["49"], by_id["50"], by_id["51"]] == [
         "R_γ_M", "R_β_M", "R_α_M", "RP2", "RP1",
     ]
-    assert by_id["57"] == "平置机体系"
+    assert by_id["57"] == "level airframe"
     assert "52" not in by_id and "53" not in by_id and "54" not in by_id
     assert by_id["56"] == "[1, 0, 0]"
-    assert by_id["62"] == "正"
-    assert by_id["63"] == "负"
-    assert by_id["64"] == "不确定"
-    assert by_id["65"] == "正"
-    assert by_id["66"] == "不确定"
-    assert by_id["67"] == "正"
-    assert by_id["70"] == "负"
+    assert by_id["62"] == "positive"
+    assert by_id["63"] == "negative"
+    assert by_id["64"] == "indeterminate"
+    assert by_id["65"] == "positive"
+    assert by_id["66"] == "indeterminate"
+    assert by_id["67"] == "positive"
+    assert by_id["70"] == "negative"
     assert by_id["71"] == "YTZ"
     assert by_id["73"] == "XTZ"
     assert by_id["77"] == "ZTZ"
@@ -682,11 +682,11 @@ def _check_standard() -> None:
     flipped = json.loads(json.dumps(STANDARD_SPEC))
     flipped["beta"] = {"airspeed_toward": "body_left", "sign": "positive"}
     flipped_answers = {item["manuscript_id"]: item["answer"] for item in generate(flipped)["items"]}
-    assert flipped_answers["30"] == "负"
-    assert flipped_answers["74"] == "负"
-    assert flipped_answers["76"] == "正"
+    assert flipped_answers["30"] == "negative"
+    assert flipped_answers["74"] == "negative"
+    assert flipped_answers["76"] == "positive"
     assert flipped_answers["77"] == "ZTZ"
-    assert flipped_answers["78"] == "正"
+    assert flipped_answers["78"] == "positive"
     assert flipped_answers["81"].startswith("-arcsin(")
     assert "β_M" in flipped_answers["81"]
 
@@ -694,25 +694,25 @@ def _check_standard() -> None:
     inverted["placement"] = PLACE_INVERTED
     inverted_answers = {item["manuscript_id"]: item["answer"] for item in generate(inverted)["items"]}
     assert inverted_answers["8"] == "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"
-    assert inverted_answers["9"] == "体轴系"
-    assert inverted_answers["10"] == "风轴系"
-    assert inverted_answers["11"] == "反装"
-    assert inverted_answers["12"] == "相反"
+    assert inverted_answers["9"] == "body-axis frame"
+    assert inverted_answers["10"] == "wind frame"
+    assert inverted_answers["11"] == "inverted"
+    assert inverted_answers["12"] == "opposite"
     assert inverted_answers["13"] == "[[1, 0, 0], [0, -1, 0], [0, 0, -1]]"
-    assert inverted_answers["14"] == "体轴系"
-    assert inverted_answers["15"] == "风轴系"
+    assert inverted_answers["14"] == "body-axis frame"
+    assert inverted_answers["15"] == "wind frame"
     assert [inverted_answers["47"], inverted_answers["48"], inverted_answers["49"], inverted_answers["50"], inverted_answers["51"]] == [
         "R_γ_M", "R_β_M", "R_α_M", "RP2", "RP1",
     ]
-    assert inverted_answers["23"] == "中间体轴系"
+    assert inverted_answers["23"] == "intermediate body-axis frame"
     assert inverted_answers["24"] == "ZTZ"
-    assert inverted_answers["25"] == "正"
-    assert inverted_answers["35"] == "相同"
-    assert inverted_answers["36"] == "下方"
-    assert inverted_answers["19"] == "倒装"
-    assert inverted_answers["20"] == "下方"
-    assert inverted_answers["27"] == "倒装"
-    assert inverted_answers["28"] == "右侧"
+    assert inverted_answers["25"] == "positive"
+    assert inverted_answers["35"] == "same"
+    assert inverted_answers["36"] == "downward"
+    assert inverted_answers["19"] == "inverted"
+    assert inverted_answers["20"] == "downward"
+    assert inverted_answers["27"] == "inverted"
+    assert inverted_answers["28"] == "right"
 
     rearward = json.loads(json.dumps(STANDARD_SPEC))
     rearward["body_frame"] = {
@@ -723,13 +723,13 @@ def _check_standard() -> None:
     }
     rearward_answers = {item["manuscript_id"]: item["answer"] for item in generate(rearward)["items"]}
     assert rearward_answers["6"] == "-XTZ"
-    assert rearward_answers["35"] == "相同"
-    assert rearward_answers["36"] == "下方"
-    assert rearward_answers["37"] == "相同"
-    assert rearward_answers["38"] == "下方"
-    assert rearward_answers["40"] == "中间体轴系"
+    assert rearward_answers["35"] == "same"
+    assert rearward_answers["36"] == "downward"
+    assert rearward_answers["37"] == "same"
+    assert rearward_answers["38"] == "downward"
+    assert rearward_answers["40"] == "intermediate body-axis frame"
     assert rearward_answers["41"] == "XTZ"
-    assert rearward_answers["42"] == "负"
+    assert rearward_answers["42"] == "negative"
 
     wind_swap = json.loads(json.dumps(STANDARD_SPEC))
     wind_swap["wind_frame"] = {
@@ -747,8 +747,8 @@ def _check_standard() -> None:
     opposite_roll = json.loads(json.dumps(STANDARD_SPEC))
     opposite_roll["gamma_m"] = {"right_wing_toward": "body_up", "sign": "positive"}
     opposite_answers = {item["manuscript_id"]: item["answer"] for item in generate(opposite_roll)["items"]}
-    assert opposite_answers["35"] == "相反"
-    assert opposite_answers["36"] == "上方"
+    assert opposite_answers["35"] == "opposite"
+    assert opposite_answers["36"] == "upward"
 
 
 def main() -> None:

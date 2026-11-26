@@ -5,11 +5,14 @@ from __future__ import annotations
 from domains.computer_vision import cv_model as cm
 
 _WORDS = {
-    "右侧": "right", "左侧": "left", "上方": "up", "下方": "down",
-    "前方": "forward", "后方": "rearward",
+    "right": "right", "left": "left",
+    "up": "up", "upward": "up",
+    "down": "down", "downward": "down",
+    "forward": "forward", "front": "forward",
+    "rearward": "rearward", "rear": "rearward",
 }
-_ROLES = (("法向", "normal"), ("侧向", "lateral"), ("轴向", "axial"))
-_ANGLES = {"方位角": "ψ", "俯仰角": "θ", "滚转角": "φ"}
+_ROLES = (("normal", "normal"), ("lateral", "lateral"), ("axial", "axial"))
+_ANGLES = {"azimuth": "ψ", "pitch": "θ", "roll": "φ"}
 
 
 def _bind(answer: str, direction):
@@ -25,10 +28,10 @@ def frame_from(texts: dict[str, str], slots: tuple[str, str, str]) -> dict:
     for slot, direction in zip(slots, (cm.FORWARD, cm.UP, cm.RIGHT)):
         name, vector = _bind(texts[slot], direction)
         if name in found:
-            raise ValueError(f"ID{slot} 与另一根轴使用了同一个坐标名。")
+            raise ValueError(f"ID{slot} uses the same coordinate name as another axis.")
         found[name] = vector
     if len(found) != 3:
-        raise ValueError("三根坐标轴没有各对应一个绝对方向。")
+        raise ValueError("The three axes do not each match one absolute direction.")
     return found
 
 
@@ -36,7 +39,7 @@ def _role(text: str) -> str:
     for word, role in _ROLES:
         if word in str(text):
             return role
-    raise ValueError(f"绝对方向不是轴向、法向或侧向：{text}")
+    raise ValueError(f"absolute direction is not axial, normal, or lateral: {text}")
 
 
 def positive_axis(pointing: str) -> str:
@@ -44,7 +47,7 @@ def positive_axis(pointing: str) -> str:
     if raw.startswith("-"):
         raw = raw[1:]
     if not raw:
-        raise ValueError("坐标轴名为空。")
+        raise ValueError("coordinate axis name is empty.")
     return raw
 
 
@@ -53,17 +56,17 @@ def rotation_sign(texts: dict[str, str], triad: tuple[str, str, str], role_id: s
     frame = frame_from(texts, triad)
     axis = positive_axis(texts[axis_id])
     if axis not in frame:
-        raise ValueError(f"旋转轴 {axis} 不在已声明的三根坐标轴里。")
+        raise ValueError(f"rotation axis {axis} is not one of the three declared axes.")
     direction = _WORDS.get(str(texts[direction_id]).strip())
     if direction is None:
-        raise ValueError(f"偏转方向无法识别：{texts[direction_id]}")
+        raise ValueError(f"deflection direction is not recognized: {texts[direction_id]}")
     moving = cm.axis_on(frame, moving_role)[1]
     handed = cm.sense(frame[axis], moving, cm.DIRECTIONS[direction])
     stated = _role(texts[role_id])
     actual = cm.role_of(frame[axis])
     if stated != actual:
-        raise ValueError(f"所绕的轴是{actual}，写的绝对方向是{stated}。")
-    return "正" if handed > 0 else "负"
+        raise ValueError(f"the axis used is {actual}, the stated absolute direction is {stated}.")
+    return "positive" if handed > 0 else "negative"
 
 
 def product_names(texts: dict[str, str], order: tuple[str, str, str], suffix: str, sense_id: str, kind_id: str, spin_id: str, tail: str) -> tuple[str, str, str, str]:
@@ -71,28 +74,28 @@ def product_names(texts: dict[str, str], order: tuple[str, str, str], suffix: st
     sense = str(texts[sense_id]).strip()
     kind = str(texts[kind_id]).strip()
     spin = str(texts[spin_id]).strip()
-    paired = {("动轴", "内旋"): False, ("定轴", "外旋"): True}
+    paired = {("moving axes", "intrinsic"): False, ("fixed axes", "extrinsic"): True}
     if (kind, spin) not in paired:
-        raise ValueError("动轴必须配内旋，定轴必须配外旋。")
-    if sense not in {"主动", "被动"}:
-        raise ValueError("坐标系转换不是主动或被动。")
+        raise ValueError("moving axes must be paired with intrinsic, and fixed axes with extrinsic.")
+    if sense not in {"active", "passive"}:
+        raise ValueError("the coordinate transform is not active or passive.")
     factors = []
     for node in order:
         angle = str(texts[node]).strip()
         if angle not in _ANGLES:
-            raise ValueError(f"欧拉角顺序不是方位、俯仰、滚转：{angle}")
+            raise ValueError(f"Euler order is not azimuth, pitch, or roll: {angle}")
         factors.append(f"R_{_ANGLES[angle]}{suffix}")
     extrinsic = paired[(kind, spin)]
     slots = tuple(factors) if extrinsic else (factors[2], factors[1], factors[0])
-    if sense == "主动":
+    if sense == "active":
         slots = tuple(reversed(slots))
     return slots + (tail,)
 
 
 def mount_agreement(placement: str) -> str:
     text = str(placement).strip()
-    if "反" in text or "倒" in text:
-        return "相反"
-    if "正" in text:
-        return "相同"
-    raise ValueError(f"安装方式无法判断绝对方向是否一致：{text}")
+    if text in {"inverted", "reversed"}:
+        return "opposite"
+    if text == "upright":
+        return "same"
+    raise ValueError(f"installation does not decide whether the absolute directions agree: {text}")

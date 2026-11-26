@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Generate cloze answers for balance elastic angles in the wind frame.
 
-The questions follow TP_FD.md. Axis directions, installation sense, elastic
+The questions follow doc/TP_FD.md. Axis directions, installation sense, elastic
 bends, and increment signs come from BodyFrameModel. Passive rotation is fixed.
 
 The level balance frame is aligned with the wind frame by RP_TP_FD. The
@@ -66,33 +66,33 @@ from body_frame_model import (
 
 
 ROLE_ZH = {
-    "forward": "前面",
-    "rearward": "后面",
-    "up": "上方",
-    "down": "下方",
-    "left": "左侧",
-    "right": "右侧",
+    "forward": "front",
+    "rearward": "rear",
+    "up": "upward",
+    "down": "downward",
+    "left": "left",
+    "right": "right",
 }
-AXIS_ROLE_ZH = {"axial": "轴向", "normal": "法向", "lateral": "侧向"}
-SIGN_ZH = {POSITIVE: "正", NEGATIVE: "负", UNKNOWN: "不确定"}
+AXIS_ROLE_ZH = {"axial": "axial", "normal": "normal", "lateral": "lateral"}
+SIGN_ZH = {POSITIVE: "positive", NEGATIVE: "negative", UNKNOWN: "indeterminate"}
 DIRECTED = [
     "XFD", "YFD", "ZFD", "XTZ", "YTZ", "ZTZ", "XTP", "YTP", "ZYP",
     "-XFD", "-YFD", "-ZFD", "-XTZ", "-YTZ", "-ZTZ", "-XTP", "-YTP", "-ZYP",
 ]
 PLAIN_AXES = ["XFD", "YFD", "ZFD", "XTZ", "YTZ", "ZTZ", "XTP", "YTP", "ZYP"]
 WIND_COMPONENTS = ["XFD", "YFD", "ZFD"]
-FRAMES = ["机体系", "天平系", "风轴系"]
-CONVERSION_PAIRS = [f"{source}向{target}" for source in FRAMES for target in FRAMES]
-DIRECTIONS = ["上方", "下方", "左侧", "右侧", "前面", "后面"]
-SIGNS = ["正", "负", "不确定"]
-ROLES = ["轴向", "法向", "侧向"]
-TURNS = ["正", "逆"]
-CLOCKS = ["逆时针", "顺时针"]
-MOUNTS = ["正装", "反装"]
-VERTICAL = ["上方", "下方"]
-SIDES = ["左侧", "右侧"]
-HAND = ["正", "负"]
-RELATIONS = ["相同", "相反"]
+FRAMES = ["airframe", "balance frame", "wind frame"]
+CONVERSION_PAIRS = [f"{source} to {target}" for source in FRAMES for target in FRAMES]
+DIRECTIONS = ["upward", "downward", "left", "right", "front", "rear"]
+SIGNS = ["positive", "negative", "indeterminate"]
+ROLES = ["axial", "normal", "lateral"]
+TURNS = ["positive", "reverse"]
+CLOCKS = ["counterclockwise", "clockwise"]
+MOUNTS = ["upright", "inverted"]
+VERTICAL = ["upward", "downward"]
+SIDES = ["left", "right"]
+HAND = ["positive", "negative"]
+RELATIONS = ["same", "opposite"]
 
 ALPHA_E_SYM, BETA_E_SYM, GAMMA_TP_SYM = sp.symbols("alpha_e beta_e gamma_tp", real=True)
 DISPLAY = {
@@ -101,7 +101,7 @@ DISPLAY = {
     "gamma_e": "γ_e",
     "gamma_tp": "γ_tp",
 }
-ROLE_VECTOR = {"法向": _VECTOR["body_up"], "侧向": _VECTOR["body_right"], "轴向": _VECTOR["body_forward"]}
+ROLE_VECTOR = {"normal": _VECTOR["body_up"], "lateral": _VECTOR["body_right"], "axial": _VECTOR["body_forward"]}
 
 STANDARD_SPEC = {
     "alpha": {"airspeed_toward": "body_down", "sign": "positive"},
@@ -156,7 +156,7 @@ def _vector_text(values) -> str:
 
 
 def _axial_hand_sign(right_wing_toward: str) -> str:
-    return "正" if roll_about_nose_sense(right_wing_toward) == SENSE_SAME else "负"
+    return "positive" if roll_about_nose_sense(right_wing_toward) == SENSE_SAME else "negative"
 
 
 def _balance_roll_relation(model: BodyFrameModel) -> str:
@@ -164,9 +164,9 @@ def _balance_roll_relation(model: BodyFrameModel) -> str:
     toward = model.elastic_angles[GAMMA_E].positive_toward
     sense = model._roll_sense(_VECTOR[BALANCE_FRONT], toward)
     if sense == POSITIVE_ROTATION:
-        return "相同"
+        return "same"
     if sense == NEGATIVE_ROTATION:
-        return "相反"
+        return "opposite"
     raise DefinitionError("Elastic roll has no sense about the balance axial positive direction.")
 
 
@@ -209,10 +209,10 @@ def _small_sign(expr, positives: tuple) -> str:
         constant = sp.simplify(constant.subs(symbol, 0))
     if constant != 0:
         if constant > 0:
-            return "正"
+            return "positive"
         if constant < 0:
-            return "负"
-        return "不确定"
+            return "negative"
+        return "indeterminate"
     usable = []
     for coefficient in coefficients:
         if coefficient == 0:
@@ -222,10 +222,10 @@ def _small_sign(expr, positives: tuple) -> str:
         elif coefficient < 0:
             usable.append(-1)
         else:
-            return "不确定"
+            return "indeterminate"
     if len(set(usable)) != 1:
-        return "不确定"
-    return "正" if usable[0] > 0 else "负"
+        return "indeterminate"
+    return "positive" if usable[0] > 0 else "negative"
 
 
 def _projection(components, frame: dict, names: tuple[str, ...], target) -> sp.Expr:
@@ -325,7 +325,7 @@ def generate(spec: dict) -> dict:
         theory = model.angles[theory_name].positive_airspeed_toward
         if not flow or not theory:
             raise DefinitionError(f"{flow_name} and {theory_name} must both be declared.")
-        return "正" if flow == theory else "负"
+        return "positive" if flow == theory else "negative"
 
     items: list[dict] = []
 
@@ -340,82 +340,82 @@ def generate(spec: dict) -> dict:
             "answer": answer if isinstance(answer, str) else _text(answer),
         })
 
-    add(1, "C2", "弹性角增量的坐标系转换方向", "天平系向风轴系", CONVERSION_PAIRS)
-    add(1, "C1", "风洞绝对轴向正方向（前方）", _directed(model.wind_frame, ROLE_VECTOR["轴向"]), DIRECTED)
-    add(1, "C1", "天平绝对轴向正方向（前方）", _directed(model.balance_frame, ROLE_VECTOR["轴向"]), DIRECTED)
-    for role_name in ("法向", "侧向", "轴向"):
-        add(1, "C1", f"风轴系绝对{role_name}正方向对应的有向坐标轴", _directed(model.wind_frame, ROLE_VECTOR[role_name]), DIRECTED)
-    for role_name in ("法向", "侧向", "轴向"):
+    add(1, "C2", "To compute the angle-of-attack and sideslip increments that the balance elastic angles produce in the wind frame, the required transform", "balance frame to wind frame", CONVERSION_PAIRS)
+    add(1, "C1", "The positive absolute tunnel axis (forward)", _directed(model.wind_frame, ROLE_VECTOR["axial"]), DIRECTED)
+    add(1, "C1", "The positive absolute balance axis (forward)", _directed(model.balance_frame, ROLE_VECTOR["axial"]), DIRECTED)
+    for role_name in ("normal", "lateral", "axial"):
+        add(1, "C1", f"the coordinate axis for the positive absolute {role_name} of the wind frame", _directed(model.wind_frame, ROLE_VECTOR[role_name]), DIRECTED)
+    for role_name in ("normal", "lateral", "axial"):
         add(
-            1, "C1", f"天平系绝对{role_name}正方向对应的有向坐标轴",
+            1, "C1", f"the coordinate axis for the positive absolute {role_name} of the balance frame",
             _directed(model.balance_frame, ROLE_VECTOR[role_name]), DIRECTED,
         )
-    add(1, "A2", "平置后天平坐标到风轴坐标的矩阵 RP_TP_FD", _matrix_text(alignment))
-    add(1, "C2", "RP_TP_FD 所对齐的坐标系", "天平系", FRAMES)
-    add(1, "C1", "与天平系坐标轴方向相同的坐标系", "风轴系", FRAMES)
+    add(1, "A2", "the transform matrix is RP_TP_FD", _matrix_text(alignment))
+    add(1, "C2", "the frame whose axis directions RP_TP_FD aligns", "balance frame", FRAMES)
+    add(1, "C1", "the frame whose coordinate directions are made the same", "wind frame", FRAMES)
 
-    add(2, "A1", "正安装角绕天平的绝对方向轴", AXIS_ROLE_ZH[_role(axial.absolute_axis)], ROLES)
-    add(2, "C1", "该旋转对应的坐标轴", axial.name, PLAIN_AXES)
-    add(2, "A1", "相对这根坐标轴正方向的转向", "正" if coordinate_sign == 1 else "逆", TURNS)
-    add(2, "A2", "旋转矩阵 R_γ_tp", _matrix_text(roll))
+    add(2, "A1", "When γ_tp > 0, the rotation is about this absolute direction of the balance", AXIS_ROLE_ZH[_role(axial.absolute_axis)], ROLES)
+    add(2, "C1", "On the coordinate axes, the rotation is about", axial.name, PLAIN_AXES)
+    add(2, "A1", "The sense about that axis", "positive" if coordinate_sign == 1 else "reverse", TURNS)
+    add(2, "A2", "the rotation matrix is R_γ_tp", _matrix_text(roll))
 
     factor_options = ["RP_TP_FD", "R_γ_tp"]
-    add(3, "A2", "连乘式中的 R1", "RP_TP_FD", factor_options)
-    add(3, "A2", "连乘式中的 R2", "R_γ_tp", factor_options)
+    add(3, "A2", "R1 in the product", "RP_TP_FD", factor_options)
+    add(3, "A2", "R2 in the product", "R_γ_tp", factor_options)
 
-    add(4, "A1", "未变形时沿天平绝对轴向正方向（前方）的单位向量", _vector_text(base))
-    add(4, "C1", "正弹性迎角使天平轴向弯向", _direction_zh(alpha_e.positive_toward), DIRECTIONS)
-    add(4, "C1", "正弹性侧滑角使天平轴向弯向", _direction_zh(beta_e.positive_toward), DIRECTIONS)
+    add(4, "A1", "In the balance frame, the unit vector along the positive absolute balance axis (forward)", _vector_text(base))
+    add(4, "C1", "When the balance produces α_e, the balance axis bends toward", _direction_zh(alpha_e.positive_toward), DIRECTIONS)
+    add(4, "C1", "When the balance produces β_e, the balance axis bends toward", _direction_zh(beta_e.positive_toward), DIRECTIONS)
     add(
-        4, "A1", "沿天平绝对轴向正方向（前方）看去，正弹性滚转的扭转方向",
-        "顺时针" if _balance_roll_relation(model) == "相同" else "逆时针",
+        4, "A1", "Looking along the positive absolute balance axis (forward), a positive elastic roll twists",
+        "clockwise" if _balance_roll_relation(model) == "same" else "counterclockwise",
         CLOCKS,
     )
-    for record, angle_name in ((alpha_e, "弹性迎角"), (beta_e, "弹性侧滑角"), (gamma_e, "弹性滚转角")):
-        add(4, "C1", f"{angle_name}的旋转轴", record.associated_axis, PLAIN_AXES)
+    for record, angle_name in ((alpha_e, "elastic angle of attack"), (beta_e, "elastic sideslip"), (gamma_e, "elastic roll")):
+        add(4, "C1", f"the rotation axis of the {angle_name}", record.associated_axis, PLAIN_AXES)
     for name, value in zip(("XTP_e", "YTP_e", "ZTP_e"), deformed):
-        add(4, "A1", f"正弹性角下 {name} 的符号", _small_sign(value, (ALPHA_E_SYM, BETA_E_SYM)), SIGNS)
-    add(4, "A1", "小角度近似后的天平轴向单位向量", _vector_text(deformed))
+        add(4, "A1", f"the sign of {name} under a positive elastic angle", _small_sign(value, (ALPHA_E_SYM, BETA_E_SYM)), SIGNS)
+    add(4, "A1", "The axial unit vector in the original frame after the small-angle approximation", _vector_text(deformed))
 
     for name, value in zip(WIND_COMPONENTS, wind_vector):
-        add(5, "A2", f"变形后天平轴向在风轴系的 {name}", _text(value))
+        add(5, "A2", f"{name} after substituting the deformed axial unit vector", _text(value))
 
-    add(6, "A1", "正理论迎角的空速方向确定后，Δα_e 应使用的风轴分量", _component_name(component_formula(ALPHA)), WIND_COMPONENTS)
-    add(6, "A1", "正理论侧滑的空速方向确定后，Δβ_e 应使用的风轴分量", _component_name(component_formula(BETA)), WIND_COMPONENTS)
+    add(6, "A1", "For a positive theoretical angle of attack, the wind-frame component used by Δα_e", _component_name(component_formula(ALPHA)), WIND_COMPONENTS)
+    add(6, "A1", "For a positive theoretical sideslip, the wind-frame component used by Δβ_e", _component_name(component_formula(BETA)), WIND_COMPONENTS)
 
-    add(7, "C1", "模型安装方式", "正装" if model.placement == PLACE_UPRIGHT else "反装", MOUNTS)
-    add(7, "A1", "正弹性迎角使空速位于模型的", _direction_zh(model.increments[DELTA_ALPHA].effect_toward), VERTICAL)
-    add(7, "A1", "正弹性侧滑角使空速位于模型的", _direction_zh(model.increments[DELTA_BETA].effect_toward), SIDES)
-    add(7, "A1", "正弹性滚转绕天平绝对轴向正方向（前方），与右手定则的关系", _balance_roll_relation(model), RELATIONS)
-    add(7, "C1", "正理论迎角时，空速指向机体的", _direction_zh(model.angles[ALPHA].positive_airspeed_toward), DIRECTIONS)
-    add(7, "C1", "正理论侧滑时，空速指向机体的", _direction_zh(model.angles[BETA].positive_airspeed_toward), DIRECTIONS)
-    add(7, "C1", "理论滚转角绕机体绝对轴向正方向（前方）的右手定则", _axial_hand_sign(model.angles[GAMMA].right_wing_toward), HAND)
+    add(7, "C1", "When the deformations occur, the model is", "upright" if model.placement == PLACE_UPRIGHT else "inverted", MOUNTS)
+    add(7, "A1", "After the elastic angle of attack the airspeed lies this way of the model", _direction_zh(model.increments[DELTA_ALPHA].effect_toward), VERTICAL)
+    add(7, "A1", "After the elastic sideslip the airspeed lies this way of the model", _direction_zh(model.increments[DELTA_BETA].effect_toward), SIDES)
+    add(7, "A1", "The rotation about the positive absolute balance axis (forward) relative to the right-hand rule", _balance_roll_relation(model), RELATIONS)
+    add(7, "C1", "For a positive theoretical angle of attack the airspeed points this way on the airframe", _direction_zh(model.angles[ALPHA].positive_airspeed_toward), DIRECTIONS)
+    add(7, "C1", "For a positive theoretical sideslip the airspeed points this way on the airframe", _direction_zh(model.angles[BETA].positive_airspeed_toward), DIRECTIONS)
+    add(7, "C1", "Roll is positive when it is this relation to the right-hand rule about the positive absolute airframe axis (forward)", _axial_hand_sign(model.angles[GAMMA].right_wing_toward), HAND)
     for delta_name, prompt in (
-        (DELTA_ALPHA, "天平弹性角产生的 Δα_e"),
-        (DELTA_BETA, "天平弹性角产生的 Δβ_e"),
-        (DELTA_GAMMA, "天平弹性角产生的 Δγ_e"),
+        (DELTA_ALPHA, "Δα_e produced by the balance elastic angles"),
+        (DELTA_BETA, "Δβ_e produced by the balance elastic angles"),
+        (DELTA_GAMMA, "Δγ_e produced by the balance elastic angles"),
     ):
         sign = model.increments[delta_name].increment_sign
-        add(7, "A1", prompt, SIGN_ZH.get(sign, "不确定"), SIGNS)
+        add(7, "A1", prompt, SIGN_ZH.get(sign, "indeterminate"), SIGNS)
     for name, value in zip(WIND_COMPONENTS, level_wind):
-        add(7, "A1", f"γ_tp = 0 且弹性角为正时 {name} 的符号", _small_sign(value, (ALPHA_E_SYM, BETA_E_SYM)), SIGNS)
+        add(7, "A1", f"When γ_tp = 0 and the elastic angles are positive, the sign of {name}", _small_sign(value, (ALPHA_E_SYM, BETA_E_SYM)), SIGNS)
 
-    inside = "要求分子和分母都必须为正，角度正负只能写在分式外面"
+    inside = "The numerator and the denominator must both be positive. The sign may be written only outside the quotient"
     for symbol, theory_name in (("Δα_e", ALPHA), ("Δβ_e", BETA)):
         parts = quotient_parts(theory_name)
-        add(8, "A1", f"写在分式外面的 {symbol} 符号。{inside}", parts["outer"], SIGNS)
-        add(8, "A1", f"根据所选风轴分量的符号，{symbol} 分子的符号。{inside}", parts["num_sign"], SIGNS)
-        add(8, "A1", f"{symbol} 的分子应使用的风轴分量。{inside}", parts["num_axis"], WIND_COMPONENTS)
-        add(8, "A1", f"根据所选风轴分量的符号，{symbol} 分母的符号。{inside}", parts["den_sign"], SIGNS)
-        add(8, "A1", f"{symbol} 的分母应使用的风轴分量。{inside}", parts["den_axis"], WIND_COMPONENTS)
+        add(8, "A1", f"The angle sign of {symbol}, written outside the quotient. {inside}", parts["outer"], SIGNS)
+        add(8, "A1", f"From the sign of the chosen wind-frame component, the numerator sign of {symbol}. {inside}", parts["num_sign"], SIGNS)
+        add(8, "A1", f"The wind-frame component in the numerator of {symbol}. {inside}", parts["num_axis"], WIND_COMPONENTS)
+        add(8, "A1", f"From the sign of the chosen wind-frame component, the denominator sign of {symbol}. {inside}", parts["den_sign"], SIGNS)
+        add(8, "A1", f"The wind-frame component in the denominator of {symbol}. {inside}", parts["den_axis"], WIND_COMPONENTS)
     for symbol, theory_name in (("Δα_e", ALPHA), ("Δβ_e", BETA)):
         parts = quotient_parts(theory_name)
-        prompt = f"代入后的 {symbol}。分子和分母都为正，负号写在整个分式之前"
+        prompt = f"{symbol} after substitution. The numerator and the denominator are both positive, and a minus sign is written only before the whole quotient"
         if symbol == "Δα_e":
-            prompt += "。这个空只能填风轴分量 XFD、YFD、ZFD 的分式，不能直接写含 α_e、β_e 或 γ_e 的弹性角式"
+            prompt += ". This blank must be a quotient of the wind-frame components XFD, YFD, and ZFD. Do not write an elastic-angle expression that contains α_e, β_e, or γ_e"
         add(8, "A2", prompt, parts["formula"])
-    add(8, "A2", "用弹性角表示的 Δα_e", _text(delta_alpha))
-    add(8, "A2", "用弹性角表示的 Δβ_e", _text(delta_beta))
+    add(8, "A2", "In α_e and β_e, Δα_e", _text(delta_alpha))
+    add(8, "A2", "In α_e and β_e, Δβ_e", _text(delta_beta))
     roll_sign = model.increments[DELTA_GAMMA].increment_sign
     if roll_sign == POSITIVE:
         delta_gamma = "γ_e"
@@ -423,10 +423,10 @@ def generate(spec: dict) -> dict:
         delta_gamma = "-γ_e"
     else:
         raise DefinitionError("Δγ_e has no sign.")
-    add(8, "A1", "弹性滚转产生的 Δγ_e。不随安装角变化，符号由弹性滚转与理论滚转绕绝对轴向正方向（前方）是否同向决定", delta_gamma)
+    add(8, "A1", "The roll increment produced by the balance elastic angle does not change with γ_tp. Its sign is whether the elastic roll and the theoretical roll have the same sense about the positive absolute axis (forward)", delta_gamma)
 
-    add(9, "A1", "气流偏心使实际迎角增大时 Δα_V 的符号", flow_sign(ALPHA_V, ALPHA), SIGNS)
-    add(9, "A1", "气流偏心使实际侧滑角增大时 Δβ_V 的符号", flow_sign(BETA_V, BETA), SIGNS)
+    add(9, "A1", "The sign of the compensation Δα_V, positive when it increases the actual angle of attack", flow_sign(ALPHA_V, ALPHA), SIGNS)
+    add(9, "A1", "The sign of the compensation Δβ_V, positive when it increases the actual sideslip", flow_sign(BETA_V, BETA), SIGNS)
 
     return {
         "task": "balance_elastic_angle_to_wind_frame",
@@ -457,15 +457,15 @@ def _single_axis_term(expr) -> tuple[int, str]:
 
 
 def _sign_number(sign: str) -> int:
-    if sign == "正":
+    if sign == "positive":
         return 1
-    if sign == "负":
+    if sign == "negative":
         return -1
-    raise DefinitionError(f"A wind component sign must be 正 or 负, got {sign}.")
+    raise DefinitionError(f"A wind component sign must be positive or negative, got {sign}.")
 
 
 def _signed_factor(sign: str, axis: str) -> str:
-    if sign == "正":
+    if sign == "positive":
         return f"({axis})"
     return f"(-{axis})"
 
@@ -480,13 +480,13 @@ def _positive_quotient(numerator, denominator, value_signs: dict, outer: str) ->
     den_coefficient, den_axis = _single_axis_term(denominator)
     num_sign = value_signs[num_axis]
     den_sign = value_signs[den_axis]
-    if outer not in ("正", "负"):
-        raise DefinitionError(f"The wind-angle sign must be 正 or 负, got {outer}.")
+    if outer not in ("positive", "negative"):
+        raise DefinitionError(f"The wind-angle sign must be positive or negative, got {outer}.")
     geometric = num_coefficient * _sign_number(num_sign) * den_coefficient * _sign_number(den_sign)
     if geometric != _sign_number(outer):
         raise DefinitionError("The outside angle sign does not match the positive wind-component quotient.")
     formula = f"{_signed_factor(num_sign, num_axis)}/{_signed_factor(den_sign, den_axis)}"
-    if outer == "负":
+    if outer == "negative":
         formula = f"-{formula}"
     return {
         "outer": outer,
@@ -508,18 +508,18 @@ def _component_name(formula) -> str:
 
 
 def _render(payload: dict) -> str:
-    lines = ["# 天平系到风轴系评测答案", ""]
+    lines = ["# balance frame to wind frame answers", ""]
     step = None
     for item in payload["items"]:
         if item["step"] != step:
             step = item["step"]
-            lines.append(f"## 步骤 {step}")
+            lines.append(f"## Step {step}")
             lines.append("")
         options = ""
         if item["options"]:
             options = "（" + "/".join(item["options"]) + "）"
         lines.append(
-            f"- ID {item['manuscript_id']} [{item['label']}] {item['prompt']}{options}：{item['answer']}"
+            f"- ID {item['manuscript_id']} [{item['label']}] {item['prompt']}{options}: {item['answer']}"
         )
     lines.append("")
     return "\n".join(lines)
@@ -529,67 +529,67 @@ def _check_standard() -> None:
     payload = generate(STANDARD_SPEC)
     by_id = {item["manuscript_id"]: item["answer"] for item in payload["items"]}
     assert len(payload["items"]) == 64
-    assert by_id["1"] == "天平系向风轴系"
+    assert by_id["1"] == "balance frame to wind frame"
     assert by_id["2"] == "XFD"
     assert by_id["3"] == "XTP"
     assert [by_id[str(index)] for index in range(4, 10)] == ["YFD", "ZFD", "XFD", "YTP", "ZYP", "XTP"]
     assert by_id["10"] == "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"
-    assert by_id["11"] == "天平系"
-    assert by_id["12"] == "风轴系"
-    assert by_id["13"] == "轴向"
+    assert by_id["11"] == "balance frame"
+    assert by_id["12"] == "wind frame"
+    assert by_id["13"] == "axial"
     assert by_id["14"] == "XTP"
-    assert by_id["15"] == "正"
+    assert by_id["15"] == "positive"
     assert [by_id["17"], by_id["18"]] == ["RP_TP_FD", "R_γ_tp"]
     assert by_id["19"] == "[1, 0, 0]"
-    assert by_id["20"] == "上方"
-    assert by_id["21"] == "左侧"
-    assert by_id["22"] == "顺时针"
+    assert by_id["20"] == "upward"
+    assert by_id["21"] == "left"
+    assert by_id["22"] == "clockwise"
     assert by_id["23"] == "ZYP"
     assert by_id["24"] == "YTP"
     assert by_id["25"] == "XTP"
-    assert by_id["26"] == "正"
-    assert by_id["27"] == "正"
-    assert by_id["28"] == "负"
+    assert by_id["26"] == "positive"
+    assert by_id["27"] == "positive"
+    assert by_id["28"] == "negative"
     assert by_id["29"] == "[1, α_e, -β_e]"
     assert by_id["30"] == "1"
     assert by_id["33"] == "YFD"
     assert by_id["34"] == "ZFD"
-    assert by_id["35"] == "正装"
-    assert by_id["36"] == "下方"
-    assert by_id["37"] == "右侧"
-    assert by_id["38"] == "相同"
-    assert by_id["39"] == "下方"
-    assert by_id["40"] == "右侧"
-    assert by_id["41"] == "正"
-    assert by_id["42"] == "正"
-    assert by_id["43"] == "正"
-    assert by_id["44"] == "正"
-    assert by_id["45"] == "正"
-    assert by_id["46"] == "正"
-    assert by_id["47"] == "负"
-    assert [by_id[str(index)] for index in range(48, 53)] == ["正", "正", "YFD", "正", "XFD"]
-    assert [by_id[str(index)] for index in range(53, 58)] == ["正", "负", "ZFD", "正", "XFD"]
+    assert by_id["35"] == "upright"
+    assert by_id["36"] == "downward"
+    assert by_id["37"] == "right"
+    assert by_id["38"] == "same"
+    assert by_id["39"] == "downward"
+    assert by_id["40"] == "right"
+    assert by_id["41"] == "positive"
+    assert by_id["42"] == "positive"
+    assert by_id["43"] == "positive"
+    assert by_id["44"] == "positive"
+    assert by_id["45"] == "positive"
+    assert by_id["46"] == "positive"
+    assert by_id["47"] == "negative"
+    assert [by_id[str(index)] for index in range(48, 53)] == ["positive", "positive", "YFD", "positive", "XFD"]
+    assert [by_id[str(index)] for index in range(53, 58)] == ["positive", "negative", "ZFD", "positive", "XFD"]
     assert by_id["58"] == "(YFD)/(XFD)"
     assert by_id["59"] == "(-ZFD)/(XFD)"
     assert by_id["60"] == "α_e*cos(γ_tp) - β_e*sin(γ_tp)"
     assert by_id["61"] == "α_e*sin(γ_tp) + β_e*cos(γ_tp)"
     assert by_id["62"] == "γ_e"
-    assert by_id["63"] == "正"
-    assert by_id["64"] == "正"
+    assert by_id["63"] == "positive"
+    assert by_id["64"] == "positive"
 
     inverted = json.loads(json.dumps(STANDARD_SPEC))
     inverted["placement"] = PLACE_INVERTED
     flipped = {item["manuscript_id"]: item["answer"] for item in generate(inverted)["items"]}
     assert flipped["10"] == by_id["10"]
-    assert flipped["35"] == "反装"
-    assert flipped["36"] == "上方"
-    assert flipped["37"] == "左侧"
-    assert flipped["38"] == "相同"
-    assert flipped["41"] == "正"
-    assert flipped["42"] == "负"
-    assert flipped["43"] == "负"
-    assert flipped["44"] == "正"
-    assert flipped["48"] == "负"
+    assert flipped["35"] == "inverted"
+    assert flipped["36"] == "upward"
+    assert flipped["37"] == "left"
+    assert flipped["38"] == "same"
+    assert flipped["41"] == "positive"
+    assert flipped["42"] == "negative"
+    assert flipped["43"] == "negative"
+    assert flipped["44"] == "positive"
+    assert flipped["48"] == "negative"
     assert flipped["50"] == "YFD"
     assert flipped["58"] == "-(YFD)/(XFD)"
     assert flipped["60"] == "-α_e*cos(γ_tp) + β_e*sin(γ_tp)"
@@ -598,13 +598,13 @@ def _check_standard() -> None:
     opposite = json.loads(json.dumps(STANDARD_SPEC))
     opposite["gamma_tp"] = {"sense": SENSE_OPPOSITE}
     turned = {item["manuscript_id"]: item["answer"] for item in generate(opposite)["items"]}
-    assert turned["15"] == "逆"
+    assert turned["15"] == "reverse"
     assert turned["60"] == "α_e*cos(γ_tp) + β_e*sin(γ_tp)"
 
     opposed = json.loads(json.dumps(STANDARD_SPEC))
     opposed["alpha_v"] = {"airspeed_toward": "body_up", "sign": "positive"}
     opposed_flow = {item["manuscript_id"]: item["answer"] for item in generate(opposed)["items"]}
-    assert opposed_flow["63"] == "负"
+    assert opposed_flow["63"] == "negative"
 
     rearward_balance = json.loads(json.dumps(STANDARD_SPEC))
     rearward_balance["balance_frame"] = {
@@ -617,24 +617,24 @@ def _check_standard() -> None:
     }
     assert rearward_balance_answers["3"] == "-XTP"
     assert rearward_balance_answers["9"] == "-XTP"
-    assert rearward_balance_answers["15"] == "逆"
-    assert rearward_balance_answers["22"] == "顺时针"
-    assert rearward_balance_answers["38"] == "相同"
-    assert rearward_balance_answers["44"] == "正"
+    assert rearward_balance_answers["15"] == "reverse"
+    assert rearward_balance_answers["22"] == "clockwise"
+    assert rearward_balance_answers["38"] == "same"
+    assert rearward_balance_answers["44"] == "positive"
     assert rearward_balance_answers["62"] == "γ_e"
 
     roll_up = json.loads(json.dumps(STANDARD_SPEC))
     roll_up["gamma_e"] = {"lateral_moves": "balance_up", "sign": "positive"}
     roll_up["gamma"] = {"right_wing_toward": "body_up", "sign": "positive"}
     roll_up_answers = {item["manuscript_id"]: item["answer"] for item in generate(roll_up)["items"]}
-    assert roll_up_answers["38"] == "相反"
-    assert roll_up_answers["41"] == "负"
+    assert roll_up_answers["38"] == "opposite"
+    assert roll_up_answers["41"] == "negative"
     assert roll_up_answers["62"] == "γ_e"
 
     elastic_up = json.loads(json.dumps(STANDARD_SPEC))
     elastic_up["gamma_e"] = {"lateral_moves": "balance_up", "sign": "positive"}
     elastic_up_answers = {item["manuscript_id"]: item["answer"] for item in generate(elastic_up)["items"]}
-    assert elastic_up_answers["44"] == "负"
+    assert elastic_up_answers["44"] == "negative"
     assert elastic_up_answers["62"] == "-γ_e"
 
 

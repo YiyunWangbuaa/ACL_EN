@@ -34,15 +34,15 @@ _BODY = {"XTZ", "YTZ", "ZTZ"}
 _WIND = {"XFD", "YFD", "ZFD"}
 _BALANCE = {"XTP", "YTP", "ZYP"}
 _FRAME_AXES = {
-    "中间体轴系": _BODY,
-    "机体系": _BODY,
-    "体轴系": _BODY,
-    "风轴系": _WIND,
-    "天平系": _BALANCE,
+    "intermediate body-axis frame": _BODY,
+    "body-axis frame": _BODY,
+    "body-axis frame": _BODY,
+    "wind frame": _WIND,
+    "balance frame": _BALANCE,
 }
-# 法向、轴向、侧向在绝对方向上的正方向：上、前、右。forward × right = down。
-_ROLE_VECTOR = {"法向": (0, 0, -1), "轴向": (1, 0, 0), "侧向": (0, 1, 0)}
-# 法向、轴向、侧向三个空。答案是指向该绝对正方向的有向坐标轴。
+# Positive normal, axial, and lateral directions: upward, forward, and right. forward × right = down.
+_ROLE_VECTOR = {"normal": (0, 0, -1), "axial": (1, 0, 0), "lateral": (0, 1, 0)}
+# Three blanks: normal, axial, and lateral. The answer is the directed coordinate axis that points along that absolute positive direction.
 _TRIADS = {
     "TZ": ("5", "6", "7", _BODY),
     "FD": ("2", "3", "4", _WIND),
@@ -63,7 +63,7 @@ class Execution:
 
 
 def _signed_angle(symbol, turn: str, negative: str):
-    if turn == "正":
+    if turn == "positive":
         return symbol
     if turn == negative:
         return -symbol
@@ -103,7 +103,7 @@ def _signed_axis(text: str, allowed: set[str]) -> tuple[str, int]:
     negative = raw.startswith("-")
     name = raw[1:] if negative else raw
     if name not in allowed:
-        raise ValueError(f"“{raw}”不是该坐标系的坐标轴。")
+        raise ValueError(f"{raw!r} is not a coordinate axis of this frame.")
     return name, -1 if negative else 1
 
 
@@ -122,21 +122,21 @@ def _dot(left: tuple[int, int, int], right: tuple[int, int, int]) -> int:
 def _left_from_roles(normal: str, axial: str, lateral: str, allowed: set[str]) -> bool:
     """Left-handed when the stated X, Y, Z are not a right-handed basis."""
     vectors: dict[str, tuple[int, int, int]] = {}
-    for text, role in ((normal, "法向"), (axial, "轴向"), (lateral, "侧向")):
+    for text, role in ((normal, "normal"), (axial, "axial"), (lateral, "lateral")):
         name, sign = _signed_axis(text, allowed)
         letter = name[:1]
         if letter in vectors:
-            raise ValueError("三根坐标轴必须恰好是 X、Y、Z 各一根。")
+            raise ValueError("The three coordinate axes must be exactly one X, one Y, and one Z.")
         base = _ROLE_VECTOR[role]
         vectors[letter] = tuple(sign * item for item in base)
     if set(vectors) != {"X", "Y", "Z"}:
-        raise ValueError("三根坐标轴必须恰好是 X、Y、Z 各一根。")
+        raise ValueError("The three coordinate axes must be exactly one X, one Y, and one Z.")
     triple = _dot(vectors["X"], _cross(vectors["Y"], vectors["Z"]))
     if triple == 1:
         return False
     if triple == -1:
         return True
-    raise ValueError("三元组构不成左手系或右手系。")
+    raise ValueError("The triple is neither left-handed nor right-handed.")
 
 
 def recognized_left_handed(texts: dict[str, str], family: str) -> bool:
@@ -144,7 +144,7 @@ def recognized_left_handed(texts: dict[str, str], family: str) -> bool:
     normal_id, axial_id, lateral_id, allowed = _TRIADS[family]
     missing = [item for item in (normal_id, axial_id, lateral_id) if not str(texts.get(item, "")).strip()]
     if missing:
-        raise ValueError("三元组没有写全，手性无法确定。")
+        raise ValueError("The triple is incomplete, so the handedness cannot be determined.")
     return _left_from_roles(texts[normal_id], texts[axial_id], texts[lateral_id], allowed)
 
 
@@ -155,7 +155,7 @@ def _resolved_left_handed(model: BodyFrameModel, axis_name: str, texts: dict[str
     if family is None:
         return False
     if texts is None:
-        return Execution("contradictory", reason="没有模型写下的三元组，手性无法确定。")
+        return Execution("contradictory", reason="The model did not write the triple, so the handedness cannot be determined.")
     try:
         return recognized_left_handed(texts, family)
     except ValueError as exc:
@@ -174,12 +174,12 @@ def attitude_target(
     family = _FRAME_AXES.get(str(frame).strip())
     axis_name = str(axis_name).strip()
     if family is None:
-        return Execution("contradictory", reason=f"坐标系“{frame}”不在中间体轴系、风轴系、天平系中。")
+        return Execution("contradictory", reason=f"Frame {frame!r} is not the intermediate body-axis frame, the wind frame, or the balance frame.")
     if axis_name not in family:
-        return Execution("contradictory", reason=f"坐标轴 {axis_name} 不属于所声明的{frame}。")
-    angle = _signed_angle(symbol, str(turn).strip(), "负")
+        return Execution("contradictory", reason=f"Coordinate axis {axis_name} does not belong to the declared {frame}.")
+    angle = _signed_angle(symbol, str(turn).strip(), "negative")
     if angle is None:
-        return Execution("contradictory", reason=f"转向“{turn}”不能确定旋转角的符号。")
+        return Execution("contradictory", reason=f"Turn {turn!r} does not determine the sign of the rotation angle.")
     left = _resolved_left_handed(model, axis_name, texts)
     if isinstance(left, Execution):
         return left
@@ -211,28 +211,28 @@ def roll_target(
     hand_body = str(hand_body).strip()
     axis_name = str(axis_name).strip()
     turn = str(turn).strip()
-    if hand_balance not in {"正", "负"} or hand_body not in {"正", "负"}:
-        return Execution("contradictory", reason="安装角或机体滚转的正方向不是正或负。")
-    if turn not in {"正", "逆"}:
-        return Execution("contradictory", reason=f"转向“{turn}”不是正或逆。")
+    if hand_balance not in {"positive", "negative"} or hand_body not in {"positive", "negative"}:
+        return Execution("contradictory", reason="The positive direction of the installation angle or the airframe roll is neither positive nor negative.")
+    if turn not in {"positive", "reverse"}:
+        return Execution("contradictory", reason=f"Turn {turn!r} is neither positive nor reverse.")
     if axis_name not in _BALANCE:
-        return Execution("contradictory", reason=f"滚转轴 {axis_name} 不是天平坐标轴。")
+        return Execution("contradictory", reason=f"Roll axis {axis_name} is not a balance coordinate axis.")
     parsed = [_balance_sign(item) for item in (normal, axial, lateral)]
     if any(item is None for item in parsed):
-        return Execution("contradictory", reason="天平轴绑定不是该坐标系的坐标轴。")
+        return Execution("contradictory", reason="The balance-axis binding is not a coordinate axis of this frame.")
     letters = [item[0][0] for item in parsed]
     if set(letters) != {"X", "Y", "Z"}:
-        return Execution("contradictory", reason="三根天平轴必须恰好是 X、Y、Z 各一根。")
+        return Execution("contradictory", reason="The three balance axes must be exactly one X, one Y, and one Z.")
     declared, pointing = parsed[1]
     if axis_name != declared:
-        return Execution("contradictory", reason=f"滚转只在所声明的轴“{declared}”上成立，当前写的是“{axis_name}”。")
-    body = 1 if hand_body == "正" else -1
-    installation = 1 if hand_balance == "正" else -1
-    implied = "正" if pointing * body == 1 else "逆"
+        return Execution("contradictory", reason=f"Roll holds only on the declared axis {declared!r}; the text says {axis_name!r}.")
+    body = 1 if hand_body == "positive" else -1
+    installation = 1 if hand_balance == "positive" else -1
+    implied = "positive" if pointing * body == 1 else "reverse"
     if turn != implied:
         return Execution(
             "contradictory",
-            reason=f"由手性和轴向指向推出的转向是{implied}，与声明的{turn}矛盾。",
+            reason=f"Handedness and the axial direction imply turn {implied}, which contradicts the declared {turn}.",
         )
     theta = sp.simplify(pointing * (body * GAMMA_M_SYM - installation * GAMMA_TP_SYM))
     try:
@@ -258,10 +258,10 @@ def generated_answers(spec: dict) -> dict[str, str]:
 
     found = {}
     for process, payload in (
-        ("风轴系到体轴系", wind_generate(spec)),
-        ("天平系到体轴系", balance_generate(spec)),
-        ("天平系到风轴系", balance_wind_generate(spec)),
-        ("力矩参考点", reference_generate(spec)),
+        ("wind frame to body-axis frame", wind_generate(spec)),
+        ("balance frame to body-axis frame", balance_generate(spec)),
+        ("balance frame to wind frame", balance_wind_generate(spec)),
+        ("moment reference point", reference_generate(spec)),
     ):
         for item in payload["items"]:
             found[_public_id(process, str(item["manuscript_id"]))] = str(item["answer"])
@@ -281,21 +281,21 @@ def _check_recognized_chirality(model: BodyFrameModel, gold: dict[str, str]) -> 
     faithful = dict(gold)
     faithful["6"] = _toggle_sign(faithful["6"])
     if recognized_left_handed(faithful, "TZ") == (model.chirality == "left"):
-        raise RuntimeError("翻转体轴三元组的一个符号后，手性仍与金标相同。")
+        raise RuntimeError("Flipping one sign of the body-axis triple left the handedness equal to the gold.")
     gold_matrix = attitude_target(model, ALPHA_SYM, frame, axis, turn, gold)
     model_matrix = attitude_target(model, ALPHA_SYM, frame, axis, turn, faithful)
     if not gold_matrix.ok or not model_matrix.ok or sympy_equal(gold_matrix.matrix, model_matrix.matrix):
-        raise RuntimeError("按模型三元组重算的迎角矩阵没有离开金标手性。")
+        raise RuntimeError("The angle-of-attack matrix recomputed from the model triple did not leave the gold handedness.")
     broken = dict(gold)
     broken["5"] = broken["6"]
     rejected = attitude_target(model, ALPHA_SYM, frame, axis, turn, broken)
     if rejected.ok:
-        raise RuntimeError("重复的体轴坐标轴仍推出了矩阵。")
+        raise RuntimeError("Repeated body-axis coordinates still produced a matrix.")
     missing = dict(gold)
     missing["5"] = ""
     absent = attitude_target(model, ALPHA_SYM, frame, axis, turn, missing)
     if absent.ok:
-        raise RuntimeError("缺了体轴三元组的一空仍推出了矩阵。")
+        raise RuntimeError("A missing body-axis triple blank still produced a matrix.")
 
 
 def check_executor(specs: dict[str, dict], answers: dict[str, dict[str, str]]) -> None:
@@ -312,7 +312,7 @@ def check_executor(specs: dict[str, dict], answers: dict[str, dict[str, str]]) -
         gold = answers[sample_id]
         derived = attitude_target(model, symbol, gold[frame_id], gold[axis_id], gold[turn_id], gold)
         if not derived.ok or not sympy_equal(derived.matrix, gold[target_id]):
-            raise RuntimeError(f"{sample_id} ID{target_id} 的金标契约没有推出金标矩阵：{derived}")
+            raise RuntimeError(f"The gold contract of {sample_id} ID{target_id} did not produce the gold matrix: {derived}")
     body = _model(specs["body-rule"])
     for frame_id, axis_id, turn_id, symbol, target_id in (
         ("23", "24", "25", ALPHA_SYM, "26"),
@@ -322,25 +322,25 @@ def check_executor(specs: dict[str, dict], answers: dict[str, dict[str, str]]) -
         gold = answers["body-rule"]
         derived = attitude_target(body, symbol, gold[frame_id], gold[axis_id], gold[turn_id], gold)
         if not derived.ok or not sympy_equal(derived.matrix, gold[target_id]):
-            raise RuntimeError(f"body-rule ID{target_id} 的金标契约没有推出金标矩阵。")
+            raise RuntimeError(f"The gold contract of body-rule ID{target_id} did not produce the gold matrix.")
     standard_texts = answers["standard-default"]
     for family, attr in (("TZ", "chirality"), ("FD", "wind_chirality"), ("TP", "balance_chirality")):
         got = recognized_left_handed(standard_texts, family)
         want = getattr(standard, attr) == "left"
         if got != want:
-            raise RuntimeError(f"标准稿 {family} 的三元组手性与稿面 {attr} 不一致。")
-    wind_path = attitude_target(standard, ALPHA_SYM, "风轴系", "ZFD", "正", standard_texts)
+            raise RuntimeError(f"The triple handedness of standard manuscript {family} disagrees with the manuscript attribute {attr}.")
+    wind_path = attitude_target(standard, ALPHA_SYM, "wind frame", "ZFD", "positive", standard_texts)
     if not wind_path.ok:
-        raise RuntimeError("风轴系路径应当能推出矩阵。")
-    balance_path = attitude_target(standard, BETA_SYM, "天平系", "YTP", "正", standard_texts)
+        raise RuntimeError("The wind-frame path should produce a matrix.")
+    balance_path = attitude_target(standard, BETA_SYM, "balance frame", "YTP", "positive", standard_texts)
     if not balance_path.ok:
-        raise RuntimeError("天平系路径应当能推出矩阵。")
-    clash = attitude_target(standard, BETA_SYM, "中间体轴系", "YFD", "正", standard_texts)
+        raise RuntimeError("The balance-frame path should produce a matrix.")
+    clash = attitude_target(standard, BETA_SYM, "intermediate body-axis frame", "YFD", "positive", standard_texts)
     if clash.ok:
-        raise RuntimeError("中间体轴系配风轴坐标轴应判为矛盾。")
-    unsure = attitude_target(standard, BETA_SYM, "中间体轴系", "YTZ", "不确定", standard_texts)
+        raise RuntimeError("An intermediate body-axis frame paired with a wind-frame axis should be contradictory.")
+    unsure = attitude_target(standard, BETA_SYM, "intermediate body-axis frame", "YTZ", "indeterminate", standard_texts)
     if unsure.ok:
-        raise RuntimeError("不确定的转向应判为矛盾。")
+        raise RuntimeError("An indeterminate turn should be contradictory.")
     _check_recognized_chirality(standard, standard_texts)
     for sample_id in ("standard-default", "roll-rule"):
         gold = answers[sample_id]
@@ -350,12 +350,12 @@ def check_executor(specs: dict[str, dict], answers: dict[str, dict[str, str]]) -
             gold["89"], gold["90"], gold["91"],
         )
         if not derived.ok or not sympy_equal(derived.matrix, gold["88"]):
-            raise RuntimeError(f"{sample_id} 的滚转契约没有推出金标矩阵：{derived}")
+            raise RuntimeError(f"The roll contract of {sample_id} did not produce the gold matrix: {derived}")
     standard_gold = answers["standard-default"]
     opposed = roll_target(
-        standard, "正", "负", standard_gold["86"], "正",
+        standard, "positive", "negative", standard_gold["86"], "positive",
         standard_gold["89"], standard_gold["90"], standard_gold["91"],
     )
     if opposed.ok:
-        raise RuntimeError("机体滚转取负而转向仍声明为正，应判为矛盾。")
+        raise RuntimeError("A negative airframe roll whose turn is still declared positive should be contradictory.")
     print("executor check ok")

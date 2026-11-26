@@ -26,7 +26,7 @@ from domains.observation import annotate_trajectory, diagnose  # noqa: E402
 def _view(name, nodes, parents, gold, questions, roots, rule, reference=None):
     def question(node):
         row = dict(questions[node])
-        row.setdefault("stem", f"节点{node}的定义")
+        row.setdefault("stem", f"definition of node {node}")
         return row
 
     return DomainView(
@@ -58,9 +58,9 @@ def _fid(view, klass: str, node: str) -> str:
 
 def _chain():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": [], "format": "表达式"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": [], "format": "expression"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def rule(node, assignment):
@@ -71,7 +71,7 @@ def _chain():
         return None
 
     return _view(
-        "碰集链",
+        "hitting-set chain",
         ("A", "B", "C"),
         {"A": (), "B": ("A",), "C": ("B",)},
         {"A": "yes", "B": "1", "C": "1"},
@@ -83,15 +83,15 @@ def _chain():
 
 def _pair():
     questions = {
-        "D": {"options": [], "format": "表达式"},
-        "E": {"options": [], "format": "表达式"},
+        "D": {"options": [], "format": "expression"},
+        "E": {"options": [], "format": "expression"},
     }
 
     def rule(node, assignment):
         return None
 
     return _view(
-        "碰集双局部",
+        "hitting-set two locals",
         ("D", "E"),
         {"D": (), "E": ()},
         {"D": "1", "E": "2"},
@@ -165,8 +165,8 @@ def test_chain_is_ambiguous_and_repair_stays_separate():
     assert e1a in propagated_faults
     assert _fid(view, ALG, "B") not in propagated_faults
     causal = next(item for item in report["chain_attributions"] if item["source"] == "A" and item["target"] == "C")
-    assert causal["strength"] == "因果"
-    assert causal["chain_class"] == "可归因错误"
+    assert causal["strength"] == "causal"
+    assert causal["chain_class"] == "attributable"
     part = next(item for item in report["candidate_partitions"] if item["target"] == "C")
     assert e1a in part["candidates"]
     assert e1a in part["causal"]
@@ -198,8 +198,8 @@ def test_fields_split_local_consistency():
     propagated = "[[0, 0, 0], [0, 1, 0], [0, 0, 1]]"
     observed = "[[0, 9, 0], [0, 1, 0], [0, 0, 1]]"
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": [], "format": "矩阵"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": [], "format": "matrix"},
     }
 
     def rule(node, assignment):
@@ -208,7 +208,7 @@ def test_fields_split_local_consistency():
         return None
 
     view = _view(
-        "碰集字段",
+        "hitting-set fields",
         ("A", "B"),
         {"A": (), "B": ("A",)},
         {"A": "yes", "B": identity},
@@ -250,7 +250,7 @@ def test_clean_and_gold_prefix_do_not_invent_faults():
     assert_report(clean)
     assert clean["status"] == "consistent"
     assert clean["conflicts"] == []
-    assert clean["targets"][0]["chain_class"] == "一致性正确"
+    assert clean["targets"][0]["chain_class"] == "consistent"
     assert clean["targets"][0]["chain_strength"] == ""
     gold = explain(view, {"A": "no", "B": "0", "C": "0"}, ("C",), prefix="gold")
     assert_report(gold)
@@ -260,9 +260,9 @@ def test_clean_and_gold_prefix_do_not_invent_faults():
 
 def test_contradiction_is_propagation_union_local_exe():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "D": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "D": {"options": [], "format": "expression"},
     }
 
     def rule(node, assignment):
@@ -272,11 +272,11 @@ def test_contradiction_is_propagation_union_local_exe():
 
     def reference(node, assignment):
         if node == "B":
-            return Contradiction("选项与父节点冲突")
+            return Contradiction("option conflicts with the parent")
         return rule(node, assignment)
 
     view = _view(
-        "矛盾并集",
+        "contradiction union",
         ("A", "B", "D"),
         {"A": (), "B": ("A",), "D": ("A",)},
         {"A": "yes", "B": "1", "D": "1"},
@@ -305,7 +305,7 @@ def test_contradiction_is_propagation_union_local_exe():
     algebra = next(case for case in cases if case.node == "D")
     assert root.final_class == "ROOT_ERROR"
     assert stuck.final_class == "UNRESOLVED"
-    assert stuck.note == "局部矛盾"
+    assert stuck.note == "local contradiction"
     assert ("A",) in stuck.candidate_fault_sets
     assert ("B",) in stuck.candidate_fault_sets
     assert algebra.final_class == "NEW_LOCAL_ERROR"
@@ -314,11 +314,11 @@ def test_contradiction_is_propagation_union_local_exe():
 
 def test_missing_phi_is_not_a_contradiction():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
     }
     view = _view(
-        "无规则",
+        "no rule",
         ("A", "B"),
         {"A": (), "B": ("A",)},
         {"A": "yes", "B": "1"},
@@ -334,20 +334,20 @@ def test_missing_phi_is_not_a_contradiction():
 
 def test_contradiction_correct_has_no_symptom_and_flags_the_target():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
         if node == "B":
-            return Contradiction("选项与父节点冲突")
+            return Contradiction("option conflicts with the parent")
         if node == "C":
             return assignment.get("B") or "0"
         return "yes"
 
     view = _view(
-        "矛盾正确",
+        "contradiction correct",
         ("A", "B", "C"),
         {"A": (), "B": ("A",), "C": ("B",)},
         {"A": "yes", "B": "1", "C": "1"},
@@ -372,20 +372,20 @@ def test_contradiction_correct_has_no_symptom_and_flags_the_target():
 
 def test_inherited_contradiction_does_not_rewrite_a_defined_child():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
         if node == "B":
-            return Contradiction("选项与父节点冲突")
+            return Contradiction("option conflicts with the parent")
         if node == "C":
             return "0" if assignment.get("B") == "0" else "1"
         return None
 
     view = _view(
-        "继承",
+        "inherited",
         ("A", "B", "C"),
         {"A": (), "B": ("A",), "C": ("B",)},
         {"A": "yes", "B": "1", "C": "1"},
@@ -402,26 +402,26 @@ def test_inherited_contradiction_does_not_rewrite_a_defined_child():
     target = report["targets"][0]
     assert target["reading"] == "faithful_wrong"
     assert target["reliability"] == "inherited"
-    assert target["answer_class"] == "不可归因错误"
+    assert target["answer_class"] == "unattributable"
     assert target["candidate_mode"] == "upstream"
     from domains.conflict_diagnosis import target_note
 
-    assert "不可归因错误" in target_note(report["targets"])
+    assert "unattributable" in target_note(report["targets"])
 
 
 def test_formula_domain_contradiction_keeps_the_local_fault():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "D": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "D": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
         if node == "D":
-            return Contradiction("定义域为空")
+            return Contradiction("empty domain")
         return None
 
     view = _view(
-        "公式矛盾",
+        "formula contradiction",
         ("A", "D"),
         {"A": (), "D": ("A",)},
         {"A": "yes", "D": "1"},
@@ -441,22 +441,22 @@ def test_formula_domain_contradiction_keeps_the_local_fault():
 
 def test_gold_parents_tell_parent_contradiction_from_local():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
         if node == "B":
             if assignment.get("A") == "yes":
                 return "1"
-            return Contradiction("由父节点引起")
+            return Contradiction("caused by a parent")
         if node == "C":
-            return Contradiction("节点自身")
+            return Contradiction("the node itself")
         return None
 
     view = _view(
-        "矛盾来源",
+        "contradiction source",
         ("A", "B", "C"),
         {"A": (), "B": ("A",), "C": ("B",)},
         {"A": "yes", "B": "1", "C": "1"},
@@ -478,9 +478,9 @@ def test_gold_parents_tell_parent_contradiction_from_local():
 
 def test_absorbed_gold_keeps_the_upstream_fault():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
@@ -491,7 +491,7 @@ def test_absorbed_gold_keeps_the_upstream_fault():
         return None
 
     view = _view(
-        "金标不能切断",
+        "gold cannot cut the chain",
         ("A", "B", "C"),
         {"A": (), "B": ("A",), "C": ("B",)},
         {"A": "yes", "B": "1", "C": "1"},
@@ -508,10 +508,10 @@ def test_absorbed_gold_keeps_the_upstream_fault():
     e1a = _fid(view, DIR, "A")
     assert e1a in by_node["B"]["faults"]
     assert e1a in by_node["C"]["faults"]
-    assert report["targets"][0]["answer_class"] == "可追溯答案遮蔽"
+    assert report["targets"][0]["answer_class"] == "traceable_masking"
     masked = next(item for item in report["chain_attributions"] if item["source"] == "A" and item["target"] == "C")
-    assert masked["strength"] == "因果"
-    assert masked["chain_class"] == "可追溯答案遮蔽"
+    assert masked["strength"] == "causal"
+    assert masked["chain_class"] == "traceable_masking"
     part = next(item for item in report["candidate_partitions"] if item["target"] == "C")
     assert e1a in part["causal"]
     cases = annotate_trajectory(view, {"A": "no", "B": "1", "C": "1"}, ("C",))
@@ -522,9 +522,9 @@ def test_absorbed_gold_keeps_the_upstream_fault():
 
 def test_accidental_gold_stays_causal():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
@@ -535,7 +535,7 @@ def test_accidental_gold_stays_causal():
         return None
 
     view = _view(
-        "局部不一致仍可确定推演",
+        "local inconsistency still propagates",
         ("A", "B", "C"),
         {"A": (), "B": ("A",), "C": ("B",)},
         {"A": "yes", "B": "1", "C": "1"},
@@ -547,10 +547,10 @@ def test_accidental_gold_stays_causal():
     report = explain(view, {"A": "no", "B": "1", "C": "1"}, ("C",))
     assert_report(report)
     kept = next(item for item in report["chain_attributions"] if item["source"] == "A" and item["target"] == "C")
-    assert kept["strength"] == "因果"
-    assert kept["chain_class"] == "可追溯答案遮蔽"
-    assert report["targets"][0]["chain_strength"] == "因果"
-    assert report["targets"][0]["chain_class"] == "可追溯答案遮蔽"
+    assert kept["strength"] == "causal"
+    assert kept["chain_class"] == "traceable_masking"
+    assert report["targets"][0]["chain_strength"] == "causal"
+    assert report["targets"][0]["chain_class"] == "traceable_masking"
     part = next(item for item in report["candidate_partitions"] if item["target"] == "C")
     e1a = _fid(view, DIR, "A")
     assert e1a in part["causal"]
@@ -559,10 +559,10 @@ def test_accidental_gold_stays_causal():
 
 def test_one_unfaithful_side_path_stays_causal():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "D": {"options": ["0", "1"], "format": "无"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "D": {"options": ["0", "1"], "format": "choice"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
@@ -573,7 +573,7 @@ def test_one_unfaithful_side_path_stays_causal():
         return None
 
     view = _view(
-        "旁路局部偏差",
+        "side-path local deviation",
         ("A", "B", "D", "C"),
         {"A": (), "B": ("A",), "D": ("A",), "C": ("B", "D")},
         {"A": "yes", "B": "1", "D": "1", "C": "1"},
@@ -585,10 +585,10 @@ def test_one_unfaithful_side_path_stays_causal():
     report = explain(view, {"A": "no", "B": "0", "D": "1", "C": "0"}, ("C",))
     assert_report(report)
     kept = next(item for item in report["chain_attributions"] if item["source"] == "A" and item["target"] == "C")
-    assert kept["strength"] == "因果"
-    assert kept["chain_class"] == "可归因错误"
-    assert report["targets"][0]["chain_strength"] == "因果"
-    assert report["targets"][0]["chain_class"] == "可归因错误"
+    assert kept["strength"] == "causal"
+    assert kept["chain_class"] == "attributable"
+    assert report["targets"][0]["chain_strength"] == "causal"
+    assert report["targets"][0]["chain_class"] == "attributable"
     part = next(item for item in report["candidate_partitions"] if item["target"] == "C")
     e1a = _fid(view, DIR, "A")
     assert e1a in part["causal"]
@@ -597,7 +597,7 @@ def test_one_unfaithful_side_path_stays_causal():
 
 def test_local_value_break_is_a_causal_candidate():
     questions = {
-        "B": {"options": [], "format": "表达式"},
+        "B": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
@@ -605,7 +605,7 @@ def test_local_value_break_is_a_causal_candidate():
         return "1"
 
     view = _view(
-        "局部偏差是因",
+        "local deviation is a cause",
         ("B",),
         {"B": ()},
         {"B": "1"},
@@ -624,20 +624,20 @@ def test_local_value_break_is_a_causal_candidate():
 
 def test_contradiction_on_the_chain_is_associative():
     questions = {
-        "A": {"options": ["yes", "no"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
         if node == "B":
-            return Contradiction("父节点无定义")
+            return Contradiction("parent is undefined")
         if node == "C":
             return assignment.get("B") or "0"
         return None
 
     view = _view(
-        "矛盾链是关联",
+        "contradiction chain is associative",
         ("A", "B", "C"),
         {"A": (), "B": ("A",), "C": ("B",)},
         {"A": "yes", "B": "1", "C": "1"},
@@ -649,8 +649,9 @@ def test_contradiction_on_the_chain_is_associative():
     report = explain(view, {"A": "no", "B": "0", "C": "0"}, ("C",))
     assert_report(report)
     linked = next(item for item in report["chain_attributions"] if item["source"] == "A" and item["target"] == "C")
-    assert linked["strength"] == "关联"
-    assert linked["chain_class"] == "不可归因错误"
+    assert linked["strength"] == "associative"
+    assert linked["chain_class"] == "unattributable"
+    assert report["targets"][0]["chain_class"] == "unattributable"
     part = next(item for item in report["candidate_partitions"] if item["target"] == "C")
     e1a = _fid(view, DIR, "A")
     assert e1a in part["associative"]
@@ -673,9 +674,9 @@ def test_recognition_enters_contract_cognition_without_being_a_parent():
     assert texts["D"] == "gold"
 
     questions = {
-        "A": {"options": ["right", "left"], "format": "无"},
-        "B": {"options": ["0", "1"], "format": "无"},
-        "C": {"options": [], "format": "表达式"},
+        "A": {"options": ["right", "left"], "format": "choice"},
+        "B": {"options": ["0", "1"], "format": "choice"},
+        "C": {"options": [], "format": "expression"},
     }
 
     def reference(node, assignment):
@@ -686,7 +687,7 @@ def test_recognition_enters_contract_cognition_without_being_a_parent():
         return None
 
     view = _view(
-        "契约认知跨节点",
+        "contract cognition across nodes",
         ("A", "B", "C"),
         {"A": (), "B": ("A",), "C": ("B",)},
         {"A": "right", "B": "1", "C": "R"},
@@ -698,7 +699,60 @@ def test_recognition_enters_contract_cognition_without_being_a_parent():
     report = explain(view, {"A": "left", "B": "1", "C": "L"}, ("C",))
     assert_report(report)
     assert report["states"]["C"] == "wrong_but_locally_consistent"
-    assert report["targets"][0]["chain_class"] == "可归因错误"
+    assert report["targets"][0]["chain_class"] == "attributable"
+
+
+def test_unresolved_ancestor_does_not_cover_a_closed_node():
+    questions = {
+        "A": {"options": ["yes", "no"], "format": "choice"},
+        "B": {"options": [], "format": "expression"},
+        "C": {"options": [], "format": "expression"},
+    }
+
+    def reference(node, assignment):
+        if node == "C":
+            return "1"
+        return None
+
+    view = _view(
+        "unresolved ancestor does not cover a closed node",
+        ("A", "B", "C"),
+        {"A": (), "B": ("A",), "C": ("B",)},
+        {"A": "yes", "B": "1", "C": "1"},
+        questions,
+        ("A",),
+        reference,
+        reference,
+    )
+    report = explain(view, {"A": "no", "B": "1", "C": "1"}, ("C",))
+    assert_report(report)
+    target = report["targets"][0]
+    assert target["chain_class"] == "consistent"
+    assert target["chain_strength"] == "causal"
+    assert {"source": "A", "strength": "unresolved"} in target["side_paths"]
+    opened = next(item for item in report["chain_attributions"] if item["source"] == "A" and item["target"] == "C")
+    assert opened["strength"] == "unresolved"
+
+
+def test_wrong_choice_without_a_rule_is_its_own_fault():
+    from domains.conflict_diagnosis import _apply_chains, _five_class
+
+    readings = [{
+        "node": "ID23",
+        "reading": "no_rule",
+        "matches_gold": False,
+        "process_faults": [],
+    }]
+    _apply_chains(readings, [{
+        "target": "23",
+        "source": "23",
+        "strength": "unresolved",
+        "chain_class": "unresolved",
+    }])
+    assert readings[0]["chain_class"] == "attributable"
+    assert readings[0]["chain_strength"] == "causal"
+    assert readings[0]["side_paths"] == []
+    assert _five_class(readings[0]) == "attributable"
 
 
 def test_shape_failure_is_not_a_contradiction():
@@ -710,9 +764,9 @@ def test_shape_failure_is_not_a_contradiction():
             self.reason = reason
 
     assert from_execution(Execution("derived", "1")) == "1"
-    assert from_execution(Execution("contradictory", reason="载荷总矩阵不是 3×3。")) is None
-    assert from_execution(Execution("contradictory", reason="ID12 没有计算器")) is None
-    got = from_execution(Execution("contradictory", reason="反正弦的自变量超出定义域。"))
+    assert from_execution(Execution("contradictory", reason="total load matrix is not 3×3.")) is None
+    assert from_execution(Execution("contradictory", reason="ID12 no calculator")) is None
+    got = from_execution(Execution("contradictory", reason="The arcsine argument is outside the domain."))
     assert isinstance(got, Contradiction)
 
 

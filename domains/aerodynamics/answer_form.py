@@ -8,25 +8,25 @@ from domains.aerodynamics.pipeline_scope import NODE_IDS
 from domains.aerodynamics.signed_lists import EQUIVALENT_PAIRS, INEQUIVALENT_PAIRS
 
 
-def parse_answer(text: str, fmt: str = "无") -> str:
+def parse_answer(text: str, fmt: str = "choice") -> str:
     raw = str(text).strip()
     if not raw:
-        raise ValueError("空答案")
-    if fmt == "无" and len(raw) == 1 and raw.isalpha():
+        raise ValueError("empty answer")
+    if fmt == "choice" and len(raw) == 1 and raw.isalpha():
         return raw.upper()
     return normalize(raw)
 
 
-def answers_equal(left: str, right: str, fmt: str = "无") -> bool:
+def answers_equal(left: str, right: str, fmt: str = "choice") -> bool:
     a = str(left).strip()
     b = str(right).strip()
     if a == b:
         return True
-    if fmt == "无" and len(a) == 1 and len(b) == 1:
+    if fmt == "choice" and len(a) == 1 and len(b) == 1:
         return a.upper() == b.upper()
     if normalize(a) == normalize(b):
         return True
-    if fmt in {"向量", "矩阵", "表达式"} or any(ch in a + b for ch in "[]*"):
+    if fmt in {"vector", "matrix", "expression"} or any(ch in a + b for ch in "[]*"):
         return bool(sympy_equal(a, b))
     return False
 
@@ -36,14 +36,18 @@ def check_answer_form() -> None:
     for node in NODE_IDS:
         row = rows[node]
         parse_answer(row["answer"], row["format"])
-        parse_answer(row["answer_text"], row["format"] if not row["options"] else "表达式")
+        parse_answer(row["answer_text"], row["format"] if not row["options"] else "expression")
     for left, right in EQUIVALENT_PAIRS:
-        if not answers_equal(left, right, "表达式"):
-            raise RuntimeError(f"应等价：{left!r} vs {right!r}")
+        if not answers_equal(left, right, "expression"):
+            raise RuntimeError(f"Should be equivalent: {left!r} vs {right!r}")
     for left, right in INEQUIVALENT_PAIRS:
-        if answers_equal(left, right, "表达式"):
-            raise RuntimeError(f"不应等价：{left!r} vs {right!r}")
-    print(f"阶段2 答案形式：金标解析 {len(NODE_IDS)}/{len(NODE_IDS)}，等价对 {len(EQUIVALENT_PAIRS)}，不等价对 {len(INEQUIVALENT_PAIRS)}。", flush=True)
+        if answers_equal(left, right, "expression"):
+            raise RuntimeError(f"Should not be equivalent: {left!r} vs {right!r}")
+    print(
+        f"Stage 2 answer form: gold parsed {len(NODE_IDS)}/{len(NODE_IDS)}, "
+        f"equivalent pairs {len(EQUIVALENT_PAIRS)}, inequivalent pairs {len(INEQUIVALENT_PAIRS)}.",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

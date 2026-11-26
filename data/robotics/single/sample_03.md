@@ -1,435 +1,435 @@
-# 数据 03 q2 正方向相反
+# Data 03 q2 sense reversed
 
-单定义扰动：关节转角 q2
+Single-definition perturbation: joint angle q2
 
-本文件是机器人学领域的运动学子过程审阅稿。主题是机器人末端携带飞机外形工具的姿态控制，以及对指定特征点做工作空间边界可达性分析。三自由度球腕固定在机器人基座上，末端通过安装杆刚性连接飞机外形工具。机器人按基座系中的任务方向计算工具姿态和三个任务姿态角，再计算工具特征点的位置，并判断工具顶点、工具右侧翼尖和工具左侧翼尖是否可能到达工作单元边界。这个判断不覆盖整个工具。飞机外形只作为末端工具的几何外形。
+This is the kinematics review manuscript for robotics. The task is attitude control of an aircraft-shaped tool carried by the robot, and a boundary-reachability check of designated points. A three-degree-of-freedom spherical wrist is fixed to the robot base, and a mount rigidly joins the aircraft-shaped tool to the wrist. From the task direction in the base frame, the robot computes the tool attitude and the three task angles, then the positions of the tool points, and decides whether the nose, the right tip, and the left tip can reach the cell boundary. The decision does not cover the whole tool. The aircraft shape is only the geometry of the end tool.
 
-本文件包含两条独立样本。正运动学样本由关节角推出工具姿态和三个任务姿态角，再计算工具特征点、平移和指定特征点的工作空间边界可达性。逆运动学样本单独送入，只给出目标任务姿态角和零位安装关系，不给出关节角，也不给出正运动学的计算过程。两条样本的定义和正文互不可见。
+This file contains two independent samples. The forward sample goes from the joint angles to the tool attitude and the three task angles, then to the tool points, the translation, and the boundary reachability of the designated points. The inverse sample is injected alone. It gives only the target task angles and the zero-pose installation. It does not give the joint angles or the forward calculation. The declaration and the text of the two samples are not visible to each other.
 
-审阅说明、标签、答案、层间对应和生成注记都不送入模型。输出格式规范没有标准答案，作为公共提示送入。送入模型的还有当前样本的定义声明、物理常识、当前子过程名，以及从该子过程开头直到当前句号的正文。当前句之前的空写成答案原文，不写字母。当前句里的空保持为待填槽。每句只有一个待填槽。句号之后的正文不送入。待填槽不含标签和答案。标签只用于计分。
+Review notes, labels, answers, the cross-layer table, and the generation notes are not sent to the model. The output-format rules have no gold answer and are sent as a shared prompt. The model also receives the declaration of the current sample, the background, the current subprocess name, and the text from the start of that subprocess through the period of the current sentence. Blanks before the current sentence are filled with the answer text, not with the letter. The blank in the current sentence stays open. Each sentence has one open blank. Text after the period is not sent. A blank does not contain the label or the answer. The label is used only for scoring.
 
-待填槽在审阅稿中写成 {ID:编号, 选项:A：选项1；B：选项2, 输出格式:格式名, 标签:标签, 答案:标准答案}。没有选项时，选项写无。模型看不到标签和答案。模型把当前句的空写成一个 JSON 对象，键是编号字符串，值是字符串。选择题的值是字母，例如 {"1":"B"}。矩阵、向量、任务姿态角、公式、关节角和表达式都是字符串。不输出句子原文，不解释。
+In the review manuscript a blank is written {ID:number, options:A: first; B: second, format:format name, label:label, answer:gold}. When there are no options, write none. The model does not see the label or the answer. The model writes the blanks of the current sentence as one JSON object. The key is the number as a string and the value is a string. A choice value is a letter, for example {"1":"B"}. A matrix, a vector, task angles, a formula, joint angles, and an expression are strings. Do not output the original sentence and do not explain.
 
-评分分开看三件事：JSON 与字段格式是否合规；数学表达式是否等价；数值、符号、向量或矩阵是否正确。等价表达式算数理正确。本例工具滚转任务角写成 arcsin(1/2) 或 atan2(1, sqrt(3)) 都对。不要只因反三角函数的写法不同就记成数理错误。
+Scoring looks at three things separately: whether the JSON and the field format are valid; whether the mathematical expressions are equivalent; and whether the number, sign, vector, or matrix is correct. An equivalent expression is mathematically correct. In this example the tool-roll task angle may be written arcsin(1/2) or atan2(1, sqrt(3)) or as an equivalent inverse trigonometric form. Do not mark a mathematical error only because the inverse trigonometric function is written differently.
 
-正运动学样本编号为 1–140，有五个子过程。后一个子过程看不到前面子过程的正文。工具右侧翼尖前缘分两层：先写工具系坐标，再写基座系坐标。工具系原点的平移单独成层，先算工具顶点到球腕原点的距离，再算平移向量。基座系这一层在本层开头给出工具坐标和平移向量，不从上一层的填空里读取。指定特征点的工作空间边界可达性单独成层。它只求工具顶点的三个可达区间，并用工具顶点、工具右侧翼尖、工具左侧翼尖到球腕原点的距离判定这三个端点是否可能到达边界。这个判据不是整个工具的碰撞结论。正运动学样本不再包含由任务姿态角反求关节角。
+The forward sample is numbered 1 through 140 and has five subprocesses. A later subprocess does not see the text of an earlier one. The right-tip leading edge is split into two layers: first the tool-frame coordinate, then the base-frame coordinate. The translation of the tool origin is its own layer: first the nose-to-wrist distance, then the translation. The base-frame layer states the tool coordinate and the translation at its own start and does not read them from the previous blanks. Boundary reachability of the designated points is its own layer. It finds the three reachable intervals of the nose and uses the distances from the nose, the right tip, and the left tip to the wrist origin to decide whether these three points can reach the boundary. That test is not a collision conclusion for the whole tool. The forward sample does not also recover the joint angles from the task angles.
 
-逆运动学样本编号从 1 重新开始，只有一个子过程。它与正运动学样本配对，但送入时必须独立。正运动学定义里的关节角是正问题的已知量。逆运动学定义里不写这组关节角，也不写 D 的数值。不要把正运动学里出现过的关节角，当成独立逆解能力。
+The inverse sample restarts its numbering at 1 and has one subprocess. It is paired with the forward sample, but it must be injected independently. The joint angles in the forward declaration are known quantities of the forward problem. The inverse declaration does not write those joint angles or a numerical D. Do not treat a joint angle that appeared in the forward sample as an independent inverse skill.
 
-## 输出格式规范
+## Output format
 
-- 无：选择题。值只写选项字母。示例：A
-- 矩阵：一行 3×3 矩阵，形如 [[a, b, c], [d, e, f], [g, h, i]]。逗号后恰好一个空格。元素可以是整数、分式、sqrt(3)，或 cos(q1)、sin(q1)、cos(q2)、sin(q2)、cos(q3)、sin(q3)。括号内不留空格。负号写在元素前。不要换行，不要使用 LaTeX，不要写度数。示例：[[cos(q1), -sin(q1), 0], [sin(q1), cos(q1), 0], [0, 0, 1]]
-- 向量：一行三个分量，形如 [a, b, c]。逗号后恰好一个空格。分量顺序是该系坐标轴 X、Y、Z。分量可以含 sqrt、整数、分式，以及 L、L_mount、x_r、b、Λ、Γ、tan、sin、cos、cos(q2)、sin(q2)。乘号用 *。不要换行。示例：[L + L_mount, 0, 0]
-- 任务姿态角：按工具俯仰任务角、工具侧向任务角、工具滚转任务角的顺序写三项，相邻两项之间是逗号加一个空格。可以使用 arctan、arcsin、atan2 和 sqrt。不写约等，不写度数。示例：arctan(2/3), arcsin(1/5), atan2(-1, sqrt(3))
-- 公式：按 q1、q2、q3 的顺序写三项，分号后恰好一个空格。函数只使用 atan2 和 sqrt。矩阵元素写成 h11 这种形式，行号在前，列号在后。平方写成 ^2。乘号用 *。不写 q1=。示例：atan2(h21, h11); atan2(-h31, sqrt(h11^2 + h21^2)); atan2(h32, h33)
-- 关节角：按 q1、q2、q3 的顺序写成 [a, b, c]，单位是度，不写角度符号。逗号后恰好一个空格。示例：[10, -20, 30]
-- 距离：一行长度。只使用 L 与 L_mount，加号两侧各一个空格。不写单位。示例：L + L_mount
-- 范围：闭区间 [min, max]。逗号后恰好一个空格。负号写在下界或上界之前。下界和上界可以含 L、L_mount、sqrt(3)、分式和乘号 *。不写单位，不写度数。示例：[-(L + L_mount), L + L_mount]
-- 表达式：一行。乘号用 *。方括号表示列向量。D*[a, b, c] 表示矩阵 D 左乘该列向量。可以保留矩阵名 D，可以含 sqrt、^2、max 和比较号。比较号写成 > 或 >=，两侧各一个空格。不要展开 D，不要换行，不要使用 LaTeX。示例：L + L_mount >= L_cell/2
+- choice: multiple choice. Write only the option letter. Example: A
+- matrix: one 3×3 matrix, as [[a, b, c], [d, e, f], [g, h, i]]. Put exactly one space after each comma. An entry may be an integer, a fraction, sqrt(3), or cos(q1), sin(q1), cos(q2), sin(q2), cos(q3), sin(q3). Do not leave a space inside parentheses. Write the minus sign before the entry. Do not break the line, do not use LaTeX, and do not write degrees. Example: [[cos(q1), -sin(q1), 0], [sin(q1), cos(q1), 0], [0, 0, 1]]
+- vector: three components on one line, as [a, b, c]. Put exactly one space after each comma. The order is X, Y, Z of that frame. A component may contain sqrt, an integer, a fraction, and L, L_mount, x_r, b, Λ, Γ, tan, sin, cos, cos(q2), or sin(q2). Use * for multiplication. Do not break the line. Example: [L + L_mount, 0, 0]
+- task-angles: write the tool pitch, the tool lateral angle, and the tool roll, in that order, with a comma and one space between items. arctan, arcsin, atan2, and sqrt are allowed. Do not write an approximation or a degree. Example: arctan(2/3), arcsin(1/5), atan2(-1, sqrt(3))
+- formula: write three items in the order q1, q2, q3, with exactly one space after each semicolon. Use only atan2 and sqrt. Write a matrix entry as h11, row index first and column index second. Write a square as ^2. Use * for multiplication. Do not write q1=. Example: atan2(h21, h11); atan2(-h31, sqrt(h11^2 + h21^2)); atan2(h32, h33)
+- joint-angles: write [a, b, c] in the order q1, q2, q3, in degrees, without a degree sign. Put exactly one space after each comma. Example: [10, -20, 30]
+- distance: one length. Use only L and L_mount, with one space on each side of the plus sign. Do not write a unit. Example: L + L_mount
+- interval: a closed interval [min, max]. Put exactly one space after the comma. Write the minus sign before the lower or upper bound. The bounds may contain L, L_mount, sqrt(3), a fraction, and *. Do not write a unit or a degree. Example: [-(L + L_mount), L + L_mount]
+- expression: one line. Use * for multiplication. Square brackets denote a column. D*[a, b, c] means matrix D times that column on the left. The name D may be kept. sqrt, ^2, max, and a comparison are allowed. Write > or >= with one space on each side. Do not expand D, do not break the line, and do not use LaTeX. Example: L + L_mount >= L_cell/2
 
-# 正运动学样本
+# Forward kinematics
 
-## 定义声明
+## Declaration
 
-固定约定
-- 向量用列向量表示，变换矩阵左乘列向量。父坐标系中的分量等于姿态矩阵乘子坐标系中的分量。坐标分量按该系 X、Y、Z 的顺序书写。
-- 绝对方向与坐标轴分开声明。后文写前方、后方、上方、下方、右侧、左侧，以及轴向正方向、法向正方向、侧向正方向，都是绝对方向，不是坐标轴 X、Y、Z 的正方向。
-- 球腕姿态旋转采用动轴内旋。三个角度按绝对方向轴的旋转顺序依次记为 q1、q2、q3。关节矩阵记为 R(q1)、R(q2)、R(q3)。最先转动的矩阵写在乘积最左侧。Rz、Ry、Rx 分别表示绕坐标轴 Z、Y、X 的旋转，行和列按 X、Y、Z 排列。这三个记号不携带绝对方向。关节角的正方向绑定在所绕的绝对方向轴上，与该绝对正方向的右手定则相同或相反以可变定义为准，不随坐标轴反向而翻转。绝对方向轴的旋转顺序是可变定义，固定约定不指定先后。
-- 定义声明不给出 Rx、Ry、Rz 的元素。元素由转动后绝对方向的去向、坐标轴是否与该绝对正方向同向、以及该绝对方向上的右手定则共同确定。
-- 关节范围绑定在绝对方向轴上，不随旋转顺序改到另一根轴上。法向轴的转角范围是 -60° 到 60°，在这个范围内余弦为正。侧向轴和轴向轴的转角范围都是 -90° 到 90°。
-- 计算时零位安装只由安装矩阵 S 表示，不再另乘安装矩阵。
-- 本例忽略变形，按刚体、准静态运动学计算。
-- 工具俯仰任务角和工具侧向任务角只由工具系中的任务方向分量计算。工具滚转任务角按工具任务姿态角中的零参考，由工具前方、工具上方和基座参考上方向计算。三个角并列，合称工具任务姿态角。关节角本身不是任务姿态角。
+Fixed conventions
+- Vectors are columns, and a transform matrix multiplies a column on the left. Components in the parent frame equal the attitude matrix times components in the child frame. Components are written in the X, Y, Z order of that frame.
+- Absolute directions and coordinate axes are declared separately. Forward, rearward, up, down, right, left, and axial, normal, and lateral positive are absolute directions, not the positive senses of axes X, Y, and Z.
+- Wrist rotations use an intrinsic moving-axis sequence. The three angles follow the absolute-axis order and are written q1, q2, q3. The joint matrices are R(q1), R(q2), and R(q3). The first rotation is written on the left. Rz, Ry, and Rx rotate about coordinate axes Z, Y, and X, with rows and columns in X, Y, Z order. These names do not carry an absolute direction. The positive sense of a joint angle agrees or disagrees with the right-hand rule about that absolute direction according to the variable definition, and it does not flip when a coordinate axis is reversed. The absolute-axis order is a variable definition. The fixed conventions do not set that order.
+- The declaration does not give the entries of Rx, Ry, or Rz. The entries are fixed by where the absolute directions go after the rotation, whether each axis agrees with that absolute positive direction, and the right-hand rule about that direction.
+- Joint ranges stay on the absolute axes and do not move to another axis when the order changes. The normal axis runs from -60° to 60°, where the cosine is positive. The lateral and axial axes run from -90° to 90°.
+- In the calculation the zero-pose installation is represented only by S. Do not multiply by another installation matrix.
+- This example ignores deformation and uses rigid, quasistatic kinematics.
+- Tool pitch and the tool lateral angle are computed only from the task-direction components in the tool frame. Tool roll uses the zero reference of the task angles and is computed from tool forward, tool up, and the base reference-up direction. The three angles together are the tool task angles. A joint angle is not a task angle.
 
-绝对方向
-球腕的前方、上方、右侧固连在球腕上，随球腕转动。后文称球腕物理前方、球腕物理上方、球腕物理右侧。基座的前方、上方、右侧固定在机器人基座上。球腕处于初始位置时，球腕物理前方、物理上方、物理右侧分别与基座前方、上方、右侧重合。关节转动之后，球腕物理方向离开这一重合。工具的绝对方向相对工具本身，不随这个初始重合而改写。
-基座、球腕、工具各有三根方向轴。三套轴的正方向定义相同：轴向正方向是前方，法向正方向是上方，侧向正方向是右侧。六个方向是这三根轴上的两个指向。
-下文凡写轴向正方向、法向正方向、侧向正方向，以及工具轴向的正方向、基座任务主方向，都是这三根轴的正方向，不是坐标轴 X、Y、Z 的正方向。球腕物理轴向、球腕物理法向、球腕物理侧向也是这三根轴，只是固连在球腕上。坐标轴声明只是指定每根坐标轴沿哪根轴、指向哪一侧，可以与正方向相同，也可以相反。
-三个系共用同一套指向关系：前方 × 右侧 = 下方。沿前方看去，右侧在右手侧。基座下方铅垂向下。工具和球腕的上下是各自固连方向，不称为铅垂向下。这个指向关系不随定义改变。
-工具的三轴六方向相对工具本身：
-- 轴向：连接工具尾部与工具头部。正方向朝前，指向工具头部。后方指向工具尾部。
-- 法向：工具的上下轴。正方向朝上。下方是其反方向。
-- 侧向：工具的左右轴。正方向朝右。左侧是其反方向。
-球腕的三轴六方向是球腕物理方向，相对球腕本身：
-- 轴向：球腕物理前后轴。正方向是球腕物理前方。后方是其反方向。
-- 法向：球腕物理上下轴。正方向是球腕物理上方。下方是其反方向。
-- 侧向：球腕物理左右轴。正方向是球腕物理右侧。左侧是其反方向。
-三轴球腕的三根关节轴并不始终固连在同一套末端方向上。第 i 关节所称的法向、侧向、轴向，是该关节动作前中间随动参考系中的对应方向。球腕末端系只用来描述关节全部转完之后的最终姿态。
-基座的三轴六方向相对基座，固定不动：
-- 轴向：基座任务主轴。正方向朝前，是任务主方向。后方是其反方向。
-- 法向：基座铅垂轴。正方向朝上，上方铅垂向上。下方铅垂向下。
-- 侧向：基座水平横轴。正方向朝右。左侧是其反方向。
+Absolute directions
+The wrist's forward, up, and right are fixed to the wrist and turn with it. They are called the wrist's physical forward, physical up, and physical right. The base's forward, up, and right are fixed to the robot base. At the initial pose, the wrist's physical forward, up, and right coincide with the base's forward, up, and right. After the joints turn, the wrist's physical directions leave that coincidence. The tool's absolute directions are relative to the tool and are not rewritten by this initial coincidence.
+The base, the wrist, and the tool each have three direction axes. The three sets use the same positive senses: axial positive is forward, normal positive is up, and lateral positive is right. The six directions are the two senses of these three axes.
+Axial positive, normal positive, lateral positive, the positive tool axis, and the base task direction are the positive senses of these three axes, not the positive senses of coordinate axes X, Y, and Z. The wrist's physical axial, normal, and lateral directions are the same three axes, fixed to the wrist. An axis declaration only assigns each coordinate axis to one of these axes and to one sense. That sense may agree with the positive direction or oppose it.
+The three frames share one orientation rule: forward × right = down. Looking along forward, right is the right-hand side. Base down is vertically downward. Up and down of the tool and the wrist are directions fixed to each body and are not called vertically downward. This rule does not change with the definition.
+The tool's three axes and six directions, relative to the tool:
+- Axial: the axis joining the tool rear to the tool nose. The positive sense is forward, toward the nose. Rearward points toward the rear.
+- Normal: the tool's up-down axis. The positive sense is up. Down is the opposite sense.
+- Lateral: the tool's left-right axis. The positive sense is right. Left is the opposite sense.
+The wrist's three axes and six directions are the wrist's physical directions, relative to the wrist:
+- Axial: the wrist's physical fore-aft axis. The positive sense is the wrist's physical forward. Rearward is the opposite sense.
+- Normal: the wrist's physical up-down axis. The positive sense is the wrist's physical up. Down is the opposite sense.
+- Lateral: the wrist's physical left-right axis. The positive sense is the wrist's physical right. Left is the opposite sense.
+The three joint axes of the spherical wrist are not always fixed to one set of end directions. The normal, lateral, and axial names of joint i are the corresponding directions in the moving frame before that joint acts. The wrist frame describes only the final attitude after every joint has turned.
+The base's three axes and six directions, fixed to the base:
+- Axial: the base task axis. The positive sense is forward, the task direction. Rearward is the opposite sense.
+- Normal: the base vertical axis. The positive sense is up, upward is vertically up, and downward is vertically down.
+- Lateral: the base's horizontal transverse axis. The positive sense is right. Left is the opposite sense.
 
-场景
-三转动关节球腕的三根轴线交于固定点 O。O 是球腕末端系原点，也是机器人基座系中的固定参考点。球腕中心不移动。球腕末端连接一根工具安装杆，安装杆从飞机外形工具的底部插入工具内部，工具刚性安装在安装杆上。机器人运动时，球腕带动安装杆和飞机外形工具一起转动。工具系原点位于工具顶点，不在质心，也不在球腕原点。转动之后，工具顶点离开机器人基座参考点，两点之间的位置要按工具姿态另行计算。机器人基座原点位于工作单元横截面的中心。工作单元沿基座 X_B 延伸，横截面为正方形。末端机构不能穿过工作单元边界。后文的边界可达性只检查三个指定特征点。
+Scene
+The three axes of the spherical wrist meet at a fixed point O. O is the wrist origin and the fixed reference point of the base frame. The wrist center does not translate. The wrist carries a tool mount, which enters the aircraft-shaped tool from its base, and the tool is fixed rigidly to the mount. As the robot moves, the wrist turns the mount and the tool together. The tool origin is at the tool nose, not at the center of mass and not at the wrist origin. After the rotation, the nose leaves the base reference point, and the position between the two points is computed from the tool attitude. The robot base origin is at the center of the cell cross-section. The cell extends along base X_B and the cross-section is a square. The end mechanism must not cross the cell boundary. The later reachability check inspects only three designated points.
 
-可变定义
-下列七项可以单独改写，绝对方向正文不随它们改变：基座系、球腕末端系、工具系、绝对方向轴旋转顺序、关节转角正方向、零位安装、工具任务姿态角正方向。本条给出的是默认声明。绝对方向轴旋转顺序是人为规定的扰动，只改动轴内旋的先后，不改各轴的正方向和转角范围。
+Variable definitions
+The following seven items can be rewritten one at a time, and the absolute-direction text does not change with them: the base frame, the wrist frame, the tool frame, the absolute-axis order, the positive sense of the joint angles, the zero-pose installation, and the positive sense of the tool task angles. This item gives the default declaration. The absolute-axis order is a prescribed perturbation. It changes only the intrinsic sequence and does not change the positive sense or the range of any axis.
 
-基座系（右手系）
-基座系是固定在机器人底座上的右手坐标系。X_B 为任务主方向，Y_B 为参考上方向，Z_B 为参考侧向。
-- X_B：沿任务主方向，指向基座前方（声明给出）。
-- Y_B：沿基座法向，指向基座上方（声明给出）。
-- Z_B：沿基座侧向，指向基座右侧（由手性推断）。
+Base frame (right-handed)
+The base frame is a right-handed frame fixed to the robot base. X_B is the task direction, Y_B is reference up, and Z_B is reference lateral.
+- X_B: along the task direction, pointing base-forward (as declared).
+- Y_B: along the base normal, pointing base-up (as declared).
+- Z_B: along the base lateral direction, pointing base-right (inferred from chirality).
 
-球腕末端系（右手系）
-- X_W：沿球腕物理轴向，指向球腕物理前方（声明给出）。
-- Y_W：沿球腕物理法向，指向球腕物理上方（声明给出）。
-- Z_W：沿球腕物理侧向，指向球腕物理右侧（由手性推断）。
-关节角都为 0、且尚未计入安装矩阵时，X_W、Y_W、Z_W 分别与 X_B、Y_B、Z_B 同向。
+Wrist frame (right-handed)
+- X_W: along the wrist's physical axis, pointing physically forward (as declared).
+- Y_W: along the wrist's physical normal, pointing physically up (as declared).
+- Z_W: along the wrist's physical lateral direction, pointing physically right (inferred from chirality).
+When every joint angle is 0 and the installation matrix is not yet included, X_W, Y_W, and Z_W have the same sense as X_B, Y_B, and Z_B.
 
-工具系（右手系）
-工具系固定在飞机外形末端工具上。
-- X_T：沿工具轴向，指向工具前方（声明给出）。
-- Y_T：沿工具法向，指向工具上方（声明给出）。
-- Z_T：沿工具侧向，指向工具右侧（由手性推断）。
-工具系原点在工具顶点。
+Tool frame (right-handed)
+The tool frame is fixed to the aircraft-shaped end tool.
+- X_T: along the tool axis, pointing tool-forward (as declared).
+- Y_T: along the tool normal, pointing tool-up (as declared).
+- Z_T: along the tool lateral direction, pointing tool-right (inferred from chirality).
+The tool-frame origin is at the tool nose.
 
-原点与安装杆
-- 球腕末端系原点与基座参考点重合，都是 O。O 不随关节角移动。
-- 工具系原点在工具顶点。
-- L 是工具沿 X_T 方向的轴向长度，从工具顶点量到工具底部。
-- 安装杆插入工具的那一段位于工具轴向长度之内。
-- L_mount 是工具底部到球腕原点的安装距离，不含已经插入工具的那一段。
-- O 位于工具底部后方。沿工具前方，顺序是 O、工具底部、工具顶点。三点沿工具轴向共线。
-- 球腕转动后，工具系原点相对基座参考点产生平移。平移向量是工具系原点在基座系中的位置，随姿态变化。定义不给出顶点到 O 的距离和平移向量的成品，由过程算出。
+Origin and mount
+- The wrist origin coincides with the base reference point. Both are O. O does not move with the joint angles.
+- The tool-frame origin is at the tool nose.
+- L is the tool's axial length along X_T, measured from the tool nose to the tool base.
+- The part of the mount inserted into the tool lies inside the tool axial length.
+- L_mount is the installation distance from the tool base to the wrist origin. It does not include the part already inserted into the tool.
+- O lies behind the tool base. Along tool forward the order is O, the tool base, the tool nose. The three points are collinear on the tool axis.
+- After the wrist turns, the tool origin translates relative to the base reference point. The translation is the position of the tool origin in the base frame and changes with the attitude. The declaration does not give the nose-to-O distance or the finished translation. The process computes them.
 
-工作单元
-- 机器人基座原点位于工作单元横截面中心。
-- 工作单元沿基座 X_B 方向延伸，横截面是正方形，边长为 L_cell。正方形的边与基座上方、右侧平行。上下边界和左右边界使用同一边长。
-- 工作单元边界限制基座 Y_B 和 Z_B 方向的位置，不限制 X_B 方向。
-- 指定特征点的边界可达性只检查工具顶点、工具右侧翼尖、工具左侧翼尖。工具右侧翼尖是工具右侧翼尖前缘。工具左侧翼尖与工具右侧翼尖的前后、高低相同，左右相反。
-- 安装杆、工具表面和其他部位不参加检测。检测扫过声明的关节范围，不用单独某一组关节角代替整个范围。因此结论只覆盖这三个特征点，不是整个工具的碰撞结论。
-- 这三个特征点接触边界即算到达边界。定义不给出边界距离、顶点可达区间和最终判据，由过程算出。
+Work cell
+- The robot base origin is at the center of the cell cross-section.
+- The cell extends along base X_B. Its cross-section is a square of side L_cell. The sides of the square are parallel to base up and base right. The vertical and lateral boundaries use the same side length.
+- The cell boundary limits position along base Y_B and Z_B. It does not limit X_B.
+- Boundary reachability checks only the tool nose, the right tip, and the left tip. The right tip is the right-tip leading edge. The left tip matches the right tip in fore-aft and vertical position and is opposite in the lateral direction.
+- The mount, the tool surface, and other parts are not checked. The check sweeps the declared joint range and does not replace that range by one joint triple. The conclusion covers only these three points and is not a collision conclusion for the whole tool.
+- Touching the boundary counts as reaching it. The declaration does not give the boundary distance, the nose intervals, or the final test. The process computes them.
 
-绝对方向轴旋转顺序
-这是可变定义，也是扰动项。它规定动轴内旋时先转哪根绝对方向轴，不规定坐标轴 X、Y、Z 的名称顺序。三根轴各出现一次。
-本例顺序是法向、侧向、轴向。
-- q1 最先转，绕球腕绝对法向轴。该轴的正方向是上方。
-- q2 其次转，绕球腕绝对侧向轴。该轴的正方向是右侧。
-- q3 最后转，绕球腕绝对轴向轴。该轴的正方向是前方。
-因此本例 q1 使用法向轴的范围，q2 使用侧向轴的范围，q3 使用轴向轴的范围。
+Rotation order of the absolute-direction axes
+This is a variable definition and a perturbation. It states which absolute-direction axis turns first in the intrinsic sequence. It does not rename axes X, Y, and Z. Each of the three axes appears once.
+The order in this example is normal, lateral, axial.
+- q1 turns first, about the wrist's absolute normal axis. That axis is positive up.
+- q2 turns second, about the wrist's absolute lateral axis. That axis is positive right.
+- q3 turns last, about the wrist's absolute axial axis. That axis is positive forward.
+In this example q1 uses the normal-axis range, q2 the lateral-axis range, and q3 the axial-axis range.
 
-关节转角正方向
-这是可变定义。正方向以下列三项为准，不按坐标轴 X、Y、Z 的指向另行规定。
-- 绕法向轴时，正方向与绕上方的右手定则相同。
-- 绕侧向轴时，正方向与绕右侧的右手定则相反。
-- 绕轴向轴时，正方向与绕前方的右手定则相同。
+Positive sense of the joint angles
+This is a variable definition. The positive sense is the three items below, not a separate rule based on axes X, Y, and Z.
+- About the normal axis, the positive sense agrees with the right-hand rule about up.
+- About the lateral axis, the positive sense is opposite the right-hand rule about right.
+- About the axial axis, the positive sense agrees with the right-hand rule about forward.
 
-矩阵
-- R 是球腕末端系相对基座系的姿态。它把球腕末端系分量映射到基座系分量。
-- S 是工具系相对球腕末端系的固定安装矩阵。它把工具系分量映射到球腕末端系分量。
-- D 是工具系相对基座系的姿态。它把工具系分量映射到基座系分量。
+Matrices
+- R is the attitude of the wrist frame relative to the base frame. It maps wrist components into base components.
+- S is the fixed installation of the tool frame in the wrist frame. It maps tool components into wrist components.
+- D is the attitude of the tool frame relative to the base frame. It maps tool components into base components.
 
-零位安装
-关节角都为 0 时，工具前方与基座 +X_B 重合，工具上方与基座 +Z_B 重合。由于三个方向需要构成右手系，工具右侧与基座 -Y_B 重合。
+Zero-pose installation
+When every joint angle is 0, tool forward coincides with base +X_B and tool up coincides with base +Z_B. Because the three directions must form a right-handed frame, tool right coincides with base -Y_B.
 
-任务方向
-机器人任务要求工具参考方向与基座系 +X_B 方向进行比较。任务方向向量固定在基座系中，指向基座 +X_B。任务方向在 X_B、Y_B、Z_B 上的分量由基座系声明决定。
+Task direction
+The robot task compares a tool reference direction with base +X_B. The task-direction vector is fixed in the base frame and points along base +X_B. Its components on X_B, Y_B, and Z_B follow the base-frame declaration.
 
-工具任务姿态角
-工具俯仰任务角、工具侧向任务角、工具滚转任务角并列，合称工具任务姿态角。三者的正方向是可变定义。记任务方向在工具系中的分量为 [d_x, d_y, d_z]，顺序是 X_T、Y_T、Z_T。
-- 工具俯仰任务角 α_T：任务方向在工具纵向对称面内的投影与工具前方之间的有向夹角。任务方向指向工具下方时为正。α_T=atan2(-d_y, d_x)。
-- 工具侧向任务角 β_T：任务方向相对于工具纵向对称面的有向偏角。任务方向指向工具右侧时为正。β_T=atan2(d_z, sqrt(d_x^2 + d_y^2))。
-- 工具滚转任务角 γ_T：记工具前方单位向量为 t，工具上方单位向量为 n，基座参考上方向单位向量为 e_Y。本例基座上方沿 Y_B，e_Y=[0, 1, 0]。u=(e_Y-(e_Y·t)*t)/||e_Y-(e_Y·t)*t||。令 r=t×u。γ_T=atan2(n·r, n·u)。正方向与绕工具前方的右手定则相同，反方向为负。当工具前方与基座参考上方向平行时，该滚转任务角未定义。单独变换工具滚转任务角时，旋转轴是工具轴向。
+Tool task angles
+The tool pitch, lateral, and roll task angles together are called the tool task angles. Their positive senses are a variable definition. Write the task direction in the tool frame as [d_x, d_y, d_z], in the order X_T, Y_T, Z_T.
+- Tool-pitch task angle α_T: the signed angle between tool forward and the projection of the task direction onto the tool plane of symmetry. The angle is positive when the task direction points downward. α_T=atan2(-d_y, d_x).
+- Tool-lateral task angle β_T: the signed angle of the task direction away from the tool plane of symmetry. The angle is positive when the task direction points to the right. β_T=atan2(d_z, sqrt(d_x^2 + d_y^2)).
+- Tool-roll task angle γ_T: let t be the unit vector of tool forward, n the unit vector of tool up, and e_Y the unit vector of the base reference-up direction. In this example base up is along Y_B, so e_Y=[0, 1, 0]. u=(e_Y-(e_Y·t)*t)/||e_Y-(e_Y·t)*t||. Let r=t×u. γ_T=atan2(n·r, n·u). The positive sense is the same as the right-hand rule about tool forward, and the opposite sense is negative. The roll task angle is undefined when tool forward is parallel to the base reference-up direction. Changing only the tool-roll task angle rotates about the tool axis.
 
-末端工具外形
-飞机外形只作为末端工具的几何外形。位置参考点是工具右侧翼尖前缘点，用于姿态验证和边界碰撞检测。工具翼尖后缘点、工具左侧翼尖前缘点和工具翼根前缘点都不是参考点。
-外形参数如下。
-- b：左右翼尖前缘在 Z_T 方向的间距。左右翼尖前缘的前后、高低相同，因此两点之间的距离也是 b。从对称面到一侧翼尖的侧向坐标是 b/2。这个侧向坐标不随上反角改变。
-- Λ：工具前缘在 X_T 与 Z_T 平面内的后掠角。工具右侧翼尖前缘位于工具翼根前缘后方时为正。前后偏移等于该侧向坐标乘 tan(Λ)，再取负号。
-- Γ：上反角。工具翼尖相对工具翼根的法向偏移与侧向偏移之比为 tan(Γ)。工具右侧翼尖高于工具翼根前缘时为正。增大上反角会增大斜向长度，侧向间距保持为 b。
-- x_r：工具翼根前缘沿工具轴向的坐标，从工具顶点量起，指向工具前方为正。它写入绝对轴向正方向所对应的那根工具坐标轴。工具翼根前缘的绝对法向坐标和绝对侧向坐标都是 0。
-工具右侧翼尖前缘点的前后位置使用前缘后掠角和侧向坐标。它的高低使用上反角和侧向坐标。前后、左右、高低分别沿绝对轴向、绝对侧向、绝对法向，再按坐标轴声明落入 X_T、Y_T、Z_T。
+Tool geometry
+The aircraft shape is only the geometry of the end tool. The position reference is the right-tip leading edge, used for attitude checks and boundary contact. The trailing edge, the left-tip leading edge, and the wing-root leading edge are not the reference.
+The shape parameters are as follows.
+- b: the spacing of the left and right leading edges along Z_T. Those two edges match in fore-aft and vertical position, so the distance between them is also b. The lateral coordinate from the plane of symmetry to one tip is b/2. That lateral coordinate does not change with the dihedral.
+- Λ: the sweep of the tool leading edge in the X_T-Z_T plane. The angle is positive when the right-tip leading edge lies behind the wing-root leading edge. The fore-aft offset equals that lateral coordinate times tan(Λ), and then changes sign.
+- Γ: the dihedral. It is the ratio of the tip's normal offset to its lateral offset from the wing root, tan(Γ). The angle is positive when the right tip is above the wing-root leading edge. Increasing the dihedral increases the slant length and leaves the lateral spacing equal to b.
+- x_r: the coordinate of the wing-root leading edge along the tool axis, measured from the tool nose. It is positive forward. It is written on the tool axis that corresponds to the absolute axial positive direction. The absolute normal and absolute lateral coordinates of the wing-root leading edge are both 0.
+The fore-aft position of the right-tip leading edge uses the sweep and the lateral coordinate. Its vertical position uses the dihedral and the lateral coordinate. Fore-aft, lateral, and vertical follow the absolute axial, lateral, and normal directions, and then fall on X_T, Y_T, and Z_T according to the axis declaration.
 
-本例关节角
-q1=0°，q2=30°，q3=-60°。法向轴为 0°，侧向轴为 30°，轴向轴为 -60°。
+Joint angles of this example
+q1=0°, q2=30°, and q3=-60°. The normal axis is 0°, the lateral axis is 30°, and the axial axis is -60°.
 
-## 物理常识
+## Background
 
-轴向正方向、法向正方向、侧向正方向分别是前方、上方、右侧。工具轴向的正方向、基座任务主方向都是这个绝对前方，不是坐标轴 X、Y、Z 的正方向。球腕物理前方、物理上方、物理右侧固连在球腕上，初始位置与基座前方、上方、右侧重合，转动后离开这一重合。坐标轴可以与正方向相同，也可以相反。前方 × 右侧 = 下方，这个关系不随坐标轴声明改变。单独变换工具俯仰任务角时，旋转轴是绝对侧向轴。单独变换工具侧向任务角时，旋转轴是绝对法向轴。单独变换工具滚转任务角时，旋转轴是绝对轴向轴。工具滚转任务角从基座参考上方向在垂直于工具前方的平面上的投影量起，正方向与绕工具前方的右手定则相同，反方向为负。工具前方与基座参考上方向平行时，工具滚转任务角未定义。关节角的正方向以关节转角正方向的定义为准，不随坐标轴反向而翻转。动轴内旋的先后由绝对方向轴旋转顺序规定，本例是法向、侧向、轴向。关节范围绑定在绝对方向轴上：法向轴是 -60° 到 60°，侧向轴和轴向轴都是 -90° 到 90°。工具任务姿态角的正方向以可变定义为准。零位时工具前方与基座 +X_B 重合，工具上方与基座 +Z_B 重合，工具右侧与基座 -Y_B 重合。球腕关节转动通过工具安装杆带动飞机外形工具作刚体转动。本例忽略变形。任务方向向量指向基座 +X_B。同一个物理向量在不同坐标系中的分量不同。向量用列向量表示，姿态矩阵左乘列向量，把子坐标系的分量映射到父坐标系。父坐标系的分量映射回子坐标系时，使用该姿态矩阵的转置。工具俯仰任务角在任务方向指向工具下方时为正，并等于 atan2(-d_y, d_x)。工具侧向任务角在任务方向指向工具右侧时为正，并等于 atan2(d_z, sqrt(d_x^2 + d_y^2))。工具滚转任务角的零参考和正负以工具任务姿态角的定义为准。前缘后掠使工具翼尖相对工具翼根靠后。上反使工具翼尖相对工具翼根升高。左右翼尖间距按侧向间距定义时，上反不减小侧向投影，斜向长度随上反角增大。球腕末端系原点与基座参考点重合。工具系原点在工具顶点。O 在工具底部后方，沿前方依次是 O、底部、顶点。工具顶点到球腕原点要沿工具轴向把工具轴向长度和底部到球腕的安装距离接起来。安装杆插入工具的部分已经在工具轴向长度里。姿态变化后，工具系原点在基座系中的位置由姿态矩阵乘这个轴向偏移得到，两个原点不再重合。工作单元沿基座 X_B 延伸，横截面是正方形。它的边界限制上下和左右，不限制轴向。三个指定特征点接触边界即算到达边界。这不是整个工具的碰撞结论。
+Axial positive, normal positive, and lateral positive are forward, up, and right. The positive tool axis and the base task direction are this absolute forward, not the positive senses of axes X, Y, and Z. The wrist's physical forward, up, and right are fixed to the wrist. At the initial pose they coincide with base forward, up, and right, and they leave that coincidence after the joints turn. A coordinate axis may agree with the positive direction or oppose it. Forward × right = down, and this relation does not change with the axis declaration. Pitch alone rotates about the absolute lateral axis. The lateral task angle alone rotates about the absolute normal axis. Roll alone rotates about the absolute axial axis. Tool roll is measured from the projection of the base reference-up direction onto the plane perpendicular to tool forward. Its positive sense is the same as the right-hand rule about tool forward, and the opposite sense is negative. Tool roll is undefined when tool forward is parallel to the base reference-up direction. The positive sense of a joint angle follows the declared joint-angle sign, and it does not flip when a coordinate axis is reversed. The intrinsic moving-axis order is the absolute-direction order, here normal, lateral, axial. Joint ranges are bound to the absolute axes: the normal axis is -60° to 60°, and the lateral and axial axes are -90° to 90°. The positive senses of the task angles follow the variable definition. At the zero pose, tool forward coincides with base +X_B, tool up with base +Z_B, and tool right with base -Y_B. The wrist turns the aircraft-shaped tool as a rigid body through the mount. This example ignores deformation. The task direction points along base +X_B. The same physical vector has different components in different frames. Vectors are columns, and an attitude matrix multiplies a column on the left, mapping the child frame into the parent frame. The transpose maps the parent frame back into the child frame. Tool pitch is positive when the task direction points downward, and it equals atan2(-d_y, d_x). The tool lateral angle is positive when the task direction points to the right, and it equals atan2(d_z, sqrt(d_x^2 + d_y^2)). The zero reference and sign of tool roll follow the task-angle definition. Leading-edge sweep places the tip behind the root. Dihedral makes the tip higher than the root. When the tip spacing is a lateral spacing, dihedral does not shrink the lateral projection, and the slant length grows with the dihedral. The wrist origin coincides with the base reference point. The tool origin is at the tool nose. O is behind the tool base, and the order along forward is O, base, nose. The nose-to-wrist distance joins the tool axial length to the mount length from the base to the wrist. The inserted part of the mount is already inside the axial length. After the attitude changes, the tool origin in the base frame is the attitude matrix times this axial offset, and the two origins no longer coincide. The cell extends along base X_B and its cross-section is a square. Its boundary limits the vertical and lateral directions and does not limit the axial direction. A checked point reaches the boundary when it touches the boundary. This is not a collision conclusion for the whole tool.
 
-## 完整过程
+## Full process
 
 
-下面每个槽都带标签和标准答案，便于直接审阅。这是审阅字段，不是模型在待填空上看到的字段。
+Every slot below carries a label and the gold answer so the manuscript can be reviewed. Those fields are not what the model sees in the blank.
 
-### 工具姿态与任务姿态角
+### Tool attitude and task angles
 
-基座系、球腕末端系和工具系都是右手系。
-每个系先声明轴向坐标轴和法向坐标轴的指向，侧向坐标轴由手性推断。
-1.基座系的绝对法向正方向（上方）对应{ID:1, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:B}。
-2.基座系的绝对轴向正方向（前方）对应{ID:2, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:A}。
-3.基座系的绝对侧向正方向（右侧）对应{ID:3, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:C}。
-4.球腕末端系的物理上方对应{ID:4, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:E}。
-5.球腕末端系的物理前方对应{ID:5, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:D}。
-6.球腕末端系的物理右侧对应{ID:6, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:F}。
-7.工具系的绝对法向正方向（上方）对应{ID:7, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:H}。
-8.工具系的绝对轴向正方向（前方）对应{ID:8, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:G}。
-9.工具系的绝对侧向正方向（右侧）对应{ID:9, 选项:A：X_B；B：Y_B；C：Z_B；D：X_W；E：Y_W；F：Z_W；G：X_T；H：Y_T；I：Z_T；J：-X_B；K：-Y_B；L：-Z_B；M：-X_W；N：-Y_W；O：-Z_W；P：-X_T；Q：-Y_T；R：-Z_T, 输出格式:无, 标签:C1, 答案:I}。
-下面每个关节的去向，都相对于该关节动作前的随动参考系，不是相对转动结束后的基座固定方向。
-10.本例绝对方向轴旋转顺序的第一根是{ID:10, 选项:A：轴向；B：法向；C：侧向, 输出格式:无, 标签:C1, 答案:B}。
-11.第一根绝对方向轴对应的当前球腕坐标轴是{ID:11, 选项:A：X_W；B：Y_W；C：Z_W, 输出格式:无, 标签:C2, 答案:B}。
-12.q1 的正方向与绕这根绝对方向的右手定则{ID:12, 选项:A：相同；B：相反, 输出格式:无, 标签:C1, 答案:A}。
-13.在该关节动作前的随动参考系里，q1>0 时，球腕物理前方转向{ID:13, 选项:A：上方；B：下方；C：左侧；D：右侧, 输出格式:无, 标签:A1, 答案:C}。
-14.R(q1) 的行和列按球腕坐标轴 X、Y、Z 排列。元素由本根关节轴、正方向和去向确定，定义不给出成品，R(q1)={ID:14, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(q1), 0, sin(q1)], [0, 1, 0], [-sin(q1), 0, cos(q1)]]}。
-15.本例绝对方向轴旋转顺序的第二根是{ID:15, 选项:A：轴向；B：法向；C：侧向, 输出格式:无, 标签:C1, 答案:C}。
-16.第二根绝对方向轴对应的当前球腕坐标轴是{ID:16, 选项:A：X_W；B：Y_W；C：Z_W, 输出格式:无, 标签:C2, 答案:C}。
-17.q2 的正方向与绕这根绝对方向的右手定则{ID:17, 选项:A：相同；B：相反, 输出格式:无, 标签:C1, 答案:B}。
-18.在该关节动作前的随动参考系里，q2>0 时，球腕物理前方转向{ID:18, 选项:A：上方；B：下方；C：左侧；D：右侧, 输出格式:无, 标签:A1, 答案:B}。
-19.R(q2) 的行和列按球腕坐标轴 X、Y、Z 排列。元素由本根关节轴、正方向和去向确定，定义不给出成品，R(q2)={ID:19, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(q2), sin(q2), 0], [-sin(q2), cos(q2), 0], [0, 0, 1]]}。
-20.本例绝对方向轴旋转顺序的第三根是{ID:20, 选项:A：轴向；B：法向；C：侧向, 输出格式:无, 标签:C1, 答案:A}。
-21.第三根绝对方向轴对应的当前球腕坐标轴是{ID:21, 选项:A：X_W；B：Y_W；C：Z_W, 输出格式:无, 标签:C2, 答案:A}。
-22.q3 的正方向与绕这根绝对方向的右手定则{ID:22, 选项:A：相同；B：相反, 输出格式:无, 标签:C1, 答案:A}。
-23.在该关节动作前的随动参考系里，q3>0 时，球腕物理上方转向{ID:23, 选项:A：上方；B：下方；C：左侧；D：右侧, 输出格式:无, 标签:A1, 答案:D}。
-24.R(q3) 的行和列按球腕坐标轴 X、Y、Z 排列。元素由本根关节轴、正方向和去向确定，定义不给出成品，R(q3)={ID:24, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[1, 0, 0], [0, cos(q3), -sin(q3)], [0, sin(q3), cos(q3)]]}。
-25.零位时工具前方指向{ID:25, 选项:A：任务主方向；B：基座上方；C：基座右侧；D：基座下方, 输出格式:无, 标签:C1, 答案:A}。
-26.零位时工具上方所重合的基座绝对方向是{ID:26, 选项:A：上方；B：下方；C：右侧；D：左侧, 输出格式:无, 标签:C1, 答案:C}。
-零位时球腕物理方向与基座方向重合。
-27.工具上方因此与球腕的物理方向{ID:27, 选项:A：前方；B：上方；C：右侧；D：下方, 输出格式:无, 标签:C2, 答案:C}重合。
-工具前方与基座前方重合。
-工具上方与基座右侧重合。
-28.按工具前方 × 工具上方 = 工具右侧，工具右侧指向基座的绝对方向{ID:28, 选项:A：上方；B：下方；C：左侧；D：右侧, 输出格式:无, 标签:A1, 答案:B}。
-29.工具右侧因此与球腕的物理方向{ID:29, 选项:A：前方；B：上方；C：右侧；D：下方, 输出格式:无, 标签:C2, 答案:D}重合。
-S 的列按 X_T、Y_T、Z_T 排列，行按 X_W、Y_W、Z_W 排列。
-30.工具前方轴在球腕坐标中的列是{ID:30, 选项:A：[1, 0, 0]；B：[0, 1, 0]；C：[0, 0, 1]；D：[0, -1, 0], 输出格式:无, 标签:A2, 答案:A}。
-31.工具上方轴在球腕坐标中的列是{ID:31, 选项:A：[1, 0, 0]；B：[0, 0, 1]；C：[0, 1, 0]；D：[0, -1, 0], 输出格式:无, 标签:A2, 答案:B}。
-32.工具右侧轴在球腕坐标中的列是{ID:32, 选项:A：[0, 1, 0]；B：[0, -1, 0]；C：[0, 0, 1]；D：[1, 0, 0], 输出格式:无, 标签:A2, 答案:B}。
-33.因此安装矩阵 S 为{ID:33, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[1, 0, 0], [0, 0, -1], [0, 1, 0]]}。
-34.由 S 的元素，它等于绕球腕坐标轴{ID:34, 选项:A：X_W；B：Y_W；C：Z_W, 输出格式:无, 标签:A2, 答案:A}的旋转。
-35.该转角是{ID:35, 选项:A：0°；B：90°；C：-90°；D：180°, 输出格式:无, 标签:A2, 答案:B}。
-36.三个关节矩阵按动轴内旋相乘，最先转动的放在最左侧，球腕姿态 R(q) 为{ID:36, 选项:A：R(q1)*R(q2)*R(q3)；B：R(q3)*R(q2)*R(q1)；C：R(q2)*R(q1)*R(q3), 输出格式:无, 标签:C2, 答案:A}。
-37.工具相对球腕的安装矩阵为 S，球腕相对基座系的姿态为 R，工具相对基座系的姿态矩阵 D 为{ID:37, 选项:A：R*S；B：S*R, 输出格式:无, 标签:A2, 答案:A}。
-38.代入 q1=0° 后，R(q1) 是{ID:38, 选项:A：单位阵；B：R(q2)；C：R(q3), 输出格式:无, 标签:A2, 答案:A}。
-R(q3) 与 S 绕同一根坐标轴。
+The base frame, the wrist frame, and the tool frame are right-handed.
+Each frame first declares the axial and normal axes. The lateral axis is inferred from chirality.
+1. The absolute normal direction (up) of the base frame corresponds to {ID:1, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:B}.
+2. The absolute axial direction (forward) of the base frame corresponds to {ID:2, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:A}.
+3. The absolute lateral direction (right) of the base frame corresponds to {ID:3, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:C}.
+4. Physical up of the wrist frame corresponds to {ID:4, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:E}.
+5. Physical forward of the wrist frame corresponds to {ID:5, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:D}.
+6. Physical right of the wrist frame corresponds to {ID:6, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:F}.
+7. The absolute normal direction (up) of the tool frame corresponds to {ID:7, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:H}.
+8. The absolute axial direction (forward) of the tool frame corresponds to {ID:8, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:G}.
+9. The absolute lateral direction (right) of the tool frame corresponds to {ID:9, options:A: X_B; B: Y_B; C: Z_B; D: X_W; E: Y_W; F: Z_W; G: X_T; H: Y_T; I: Z_T; J: -X_B; K: -Y_B; L: -Z_B; M: -X_W; N: -Y_W; O: -Z_W; P: -X_T; Q: -Y_T; R: -Z_T, format:choice, label:C1, answer:I}.
+Where each joint sends a direction is measured in the moving frame before that joint acts, not in the base frame after the rotation.
+10. The first absolute-direction axis in this rotation order is {ID:10, options:A: axial; B: normal; C: lateral, format:choice, label:C1, answer:B}.
+11. The current wrist axis corresponding to the first absolute-direction axis is {ID:11, options:A: X_W; B: Y_W; C: Z_W, format:choice, label:C2, answer:B}.
+12. The positive sense of q1 and the right-hand rule about this absolute direction are {ID:12, options:A: same; B: opposite, format:choice, label:C1, answer:A}.
+13. In the moving frame before this joint acts, when q1 is positive the wrist's physical forward direction turns {ID:13, options:A: upward; B: downward; C: left; D: right, format:choice, label:A1, answer:C}.
+14. Rows and columns of R(q1) follow the wrist axes X, Y, Z. The entries follow this joint axis, its positive sense, and where the directions go. The declaration does not give the finished matrix. R(q1)= {ID:14, options:none, format:matrix, label:A2, answer:[[cos(q1), 0, sin(q1)], [0, 1, 0], [-sin(q1), 0, cos(q1)]]}.
+15. The second absolute-direction axis in this rotation order is {ID:15, options:A: axial; B: normal; C: lateral, format:choice, label:C1, answer:C}.
+16. The current wrist axis corresponding to the second absolute-direction axis is {ID:16, options:A: X_W; B: Y_W; C: Z_W, format:choice, label:C2, answer:C}.
+17. The positive sense of q2 and the right-hand rule about this absolute direction are {ID:17, options:A: same; B: opposite, format:choice, label:C1, answer:B}.
+18. In the moving frame before this joint acts, when q2 is positive the wrist's physical forward direction turns {ID:18, options:A: upward; B: downward; C: left; D: right, format:choice, label:A1, answer:B}.
+19. Rows and columns of R(q2) follow the wrist axes X, Y, Z. The entries follow this joint axis, its positive sense, and where the directions go. The declaration does not give the finished matrix. R(q2)= {ID:19, options:none, format:matrix, label:A2, answer:[[cos(q2), sin(q2), 0], [-sin(q2), cos(q2), 0], [0, 0, 1]]}.
+20. The third absolute-direction axis in this rotation order is {ID:20, options:A: axial; B: normal; C: lateral, format:choice, label:C1, answer:A}.
+21. The current wrist axis corresponding to the third absolute-direction axis is {ID:21, options:A: X_W; B: Y_W; C: Z_W, format:choice, label:C2, answer:A}.
+22. The positive sense of q3 and the right-hand rule about this absolute direction are {ID:22, options:A: same; B: opposite, format:choice, label:C1, answer:A}.
+23. In the moving frame before this joint acts, when q3 is positive the wrist's physical up direction turns {ID:23, options:A: upward; B: downward; C: left; D: right, format:choice, label:A1, answer:D}.
+24. Rows and columns of R(q3) follow the wrist axes X, Y, Z. The entries follow this joint axis, its positive sense, and where the directions go. The declaration does not give the finished matrix. R(q3)= {ID:24, options:none, format:matrix, label:A2, answer:[[1, 0, 0], [0, cos(q3), -sin(q3)], [0, sin(q3), cos(q3)]]}.
+25. At the zero pose, tool forward points {ID:25, options:A: task forward direction; B: base up; C: base right; D: base down, format:choice, label:C1, answer:A}.
+26. At the zero pose, tool up coincides with the base absolute direction {ID:26, options:A: upward; B: downward; C: right; D: left, format:choice, label:C1, answer:C}.
+At the zero pose the wrist's physical directions coincide with the base directions.
+27. Tool up therefore coincides with the wrist's physical direction {ID:27, options:A: forward; B: upward; C: right; D: downward, format:choice, label:C2, answer:C}.
+Tool forward coincides with base forward.
+Tool up coincides with base right.
+28. By tool forward × tool up = tool right, tool right points along the base absolute direction {ID:28, options:A: upward; B: downward; C: left; D: right, format:choice, label:A1, answer:B}.
+29. Tool right therefore coincides with the wrist's physical direction {ID:29, options:A: forward; B: upward; C: right; D: downward, format:choice, label:C2, answer:D}.
+The columns of S follow X_T, Y_T, Z_T, and the rows follow X_W, Y_W, Z_W.
+30. The tool forward axis is this column of the wrist coordinates {ID:30, options:A: [1, 0, 0]; B: [0, 1, 0]; C: [0, 0, 1]; D: [0, -1, 0], format:choice, label:A2, answer:A}.
+31. The tool up axis is this column of the wrist coordinates {ID:31, options:A: [1, 0, 0]; B: [0, 0, 1]; C: [0, 1, 0]; D: [0, -1, 0], format:choice, label:A2, answer:B}.
+32. The tool right axis is this column of the wrist coordinates {ID:32, options:A: [0, 1, 0]; B: [0, -1, 0]; C: [0, 0, 1]; D: [1, 0, 0], format:choice, label:A2, answer:B}.
+33. The installation matrix S is therefore {ID:33, options:none, format:matrix, label:A2, answer:[[1, 0, 0], [0, 0, -1], [0, 1, 0]]}.
+34. From the entries of S, it equals a rotation about wrist axis {ID:34, options:A: X_W; B: Y_W; C: Z_W, format:choice, label:A2, answer:A}.
+35. That angle is {ID:35, options:A: 0°; B: 90°; C: -90°; D: 180°, format:choice, label:A2, answer:B}.
+36. The three joint matrices multiply as an intrinsic moving-axis sequence, with the first rotation on the left. The wrist attitude R(q) is {ID:36, options:A: R(q1)*R(q2)*R(q3); B: R(q3)*R(q2)*R(q1); C: R(q2)*R(q1)*R(q3), format:choice, label:C2, answer:A}.
+37. S is the tool installation in the wrist, R is the wrist attitude in the base frame, and the tool attitude D in the base frame is {ID:37, options:A: R*S; B: S*R, format:choice, label:A2, answer:A}.
+38. After substituting q1=0°, R(q1) is {ID:38, options:A: the identity; B: R(q2); C: R(q3), format:choice, label:A2, answer:A}.
+R(q3) and S rotate about the same axis.
 q3=-60°。
-39.该轴上 q3 与前面得到的安装转角的合成转角是{ID:39, 选项:A：30°；B：-30°；C：-150°；D：90°, 输出格式:无, 标签:A2, 答案:A}。
-40.q2=30°，且 R(q1) 是单位阵，R(q2) 与上一合成转角相乘后，工具姿态矩阵是{ID:40, 选项:A：绕 Z 的 30° 乘绕 X 的 30°；B：绕 Y 的 30° 乘绕 X 的 30°；C：绕 Z 的 30° 乘绕 X 的 -60°；D：绕 Z 的 -30° 乘绕 X 的 30°, 输出格式:无, 标签:A2, 答案:D}。
-在计算总矩阵前，按刚选定的符号写出每个分矩阵的展开式。
-41.上面得到的 R(q1) 展开为{ID:41, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(q1), 0, sin(q1)], [0, 1, 0], [-sin(q1), 0, cos(q1)]]}。
-42.上面得到的 R(q2) 展开为{ID:42, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(q2), sin(q2), 0], [-sin(q2), cos(q2), 0], [0, 0, 1]]}。
-43.上面得到的 R(q3) 展开为{ID:43, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[1, 0, 0], [0, cos(q3), -sin(q3)], [0, sin(q3), cos(q3)]]}。
-44.上面得到的 S 展开为{ID:44, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[1, 0, 0], [0, 0, -1], [0, 1, 0]]}。
-45.由此算出的 D 为{ID:45, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[sqrt(3)/2, sqrt(3)/4, -1/4], [-1/2, 3/4, -sqrt(3)/4], [0, 1/2, sqrt(3)/2]]}。
-46.任务方向指向基座 +X_B，按 X_B、Y_B、Z_B 的顺序，基座系中的任务方向单位向量是{ID:46, 选项:无, 输出格式:向量, 标签:C1, 答案:[1, 0, 0]}。
-47.D 把工具系的分量映射到基座系，把该任务方向从基座系变到工具系，应当使用{ID:47, 选项:A：D乘基座系任务方向坐标；B：D的转置乘基座系任务方向坐标, 输出格式:无, 标签:A2, 答案:B}。
-48.按 X_T、Y_T、Z_T 的顺序，任务方向单位向量在工具系中的三个分量为{ID:48, 选项:无, 输出格式:向量, 标签:A2, 答案:[sqrt(3)/2, sqrt(3)/4, -1/4]}。
-49.第二分量是 Y_T 上的分量，Y_T 的正方向是绝对方向{ID:49, 选项:A：前方；B：后方；C：上方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:C1, 答案:C}。
-50.该分量为负表示任务方向指向绝对方向{ID:50, 选项:A：前方；B：后方；C：上方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:A1, 答案:D}。
-51.第三分量是 Z_T 上的分量，Z_T 的正方向是绝对方向{ID:51, 选项:A：前方；B：后方；C：上方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:C1, 答案:E}。
-52.该分量为正表示任务方向指向绝对方向{ID:52, 选项:A：前方；B：后方；C：上方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:A1, 答案:E}。
-53.因此任务方向相对工具指向{ID:53, 选项:A：下方且右侧；B：上方且左侧；C：下方且左侧, 输出格式:无, 标签:A1, 答案:B}。
-54.按工具任务姿态角的可变定义，工具俯仰任务角为正时，任务方向指向工具的绝对方向{ID:54, 选项:A：前方；B：后方；C：上方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:C1, 答案:D}。
-55.工具侧向任务角为正时，任务方向指向工具的绝对方向{ID:55, 选项:A：前方；B：后方；C：上方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:C1, 答案:E}。
-56.工具滚转任务角为负时，转向与绕工具前方的右手定则{ID:56, 选项:A：相同；B：相反, 输出格式:无, 标签:C1, 答案:B}。
-57.单独变换工具滚转任务角时，旋转轴是工具的绝对{ID:57, 选项:A：轴向；B：法向；C：侧向, 输出格式:无, 标签:C1, 答案:A}。
-58.该正方向与绕这根绝对轴的右手定则{ID:58, 选项:A：相同；B：相反, 输出格式:无, 标签:C1, 答案:A}。
-59.本例任务方向指向工具上方，工具俯仰任务角的符号为{ID:59, 选项:A：正；B：负, 输出格式:无, 标签:A1, 答案:B}。
-60.本例任务方向指向工具左侧，工具侧向任务角的符号为{ID:60, 选项:A：正；B：负, 输出格式:无, 标签:A1, 答案:B}。
-61.工具右侧翼尖沿工具绝对侧向正方向，它在基座系中的坐标是 D 的第{ID:61, 选项:A：一列；B：二列；C：三列, 输出格式:无, 标签:A1, 答案:C}列。
-62.该列在基座绝对法向正方向上的分量符号为{ID:62, 选项:A：正；B：负, 输出格式:无, 标签:A1, 答案:B}。
-63.因此工具右侧翼尖偏向基座的绝对方向{ID:63, 选项:A：上方；B：下方, 输出格式:无, 标签:A1, 答案:B}。
-64.按工具滚转任务角的零参考和正方向，本例工具滚转任务角的符号为{ID:64, 选项:A：正；B：负, 输出格式:无, 标签:A1, 答案:A}。
-65.按声明写出工具俯仰任务角、工具侧向任务角和工具滚转任务角{ID:65, 选项:无, 输出格式:任务姿态角, 标签:A2, 答案:-arctan(1/2), -arcsin(1/4), arcsin(1/2)}。
+39. On this axis, the combination of q3 and the installation angle already obtained is {ID:39, options:A: 30°; B: -30°; C: -150°; D: 90°, format:choice, label:A2, answer:A}.
+40. With q2=30° and R(q1) the identity, the tool attitude after multiplying R(q2) by the previous combined angle is {ID:40, options:A: 30° about Z times 30° about X; B: 30° about Y times 30° about X; C: 30° about Z times -60° about X; D: -30° about Z times 30° about X, format:choice, label:A2, answer:D}.
+Before the product, expand each factor with the symbols just chosen.
+41. The R(q1) just obtained expands to {ID:41, options:none, format:matrix, label:A2, answer:[[cos(q1), 0, sin(q1)], [0, 1, 0], [-sin(q1), 0, cos(q1)]]}.
+42. The R(q2) just obtained expands to {ID:42, options:none, format:matrix, label:A2, answer:[[cos(q2), sin(q2), 0], [-sin(q2), cos(q2), 0], [0, 0, 1]]}.
+43. The R(q3) just obtained expands to {ID:43, options:none, format:matrix, label:A2, answer:[[1, 0, 0], [0, cos(q3), -sin(q3)], [0, sin(q3), cos(q3)]]}.
+44. The S just obtained expands to {ID:44, options:none, format:matrix, label:A2, answer:[[1, 0, 0], [0, 0, -1], [0, 1, 0]]}.
+45. The D computed this way is {ID:45, options:none, format:matrix, label:A2, answer:[[sqrt(3)/2, sqrt(3)/4, -1/4], [-1/2, 3/4, -sqrt(3)/4], [0, 1/2, sqrt(3)/2]]}.
+46. The task direction points along base +X_B. In the order X_B, Y_B, Z_B, its unit vector in the base frame is {ID:46, options:none, format:vector, label:C1, answer:[1, 0, 0]}.
+47. D maps tool components into the base frame. To map this task direction from the base frame into the tool frame, use {ID:47, options:A: D times the base-frame task direction; B: the transpose of D times the base-frame task direction, format:choice, label:A2, answer:B}.
+48. In the order X_T, Y_T, Z_T, the three tool-frame components of the task-direction unit vector are {ID:48, options:none, format:vector, label:A2, answer:[sqrt(3)/2, sqrt(3)/4, -1/4]}.
+49. The second component is the Y_T component, and the positive sense of Y_T is the absolute direction {ID:49, options:A: forward; B: rearward; C: upward; D: downward; E: right; F: left, format:choice, label:C1, answer:C}.
+50. A negative component means the task direction points along the absolute direction {ID:50, options:A: forward; B: rearward; C: upward; D: downward; E: right; F: left, format:choice, label:A1, answer:D}.
+51. The third component is the Z_T component, and the positive sense of Z_T is the absolute direction {ID:51, options:A: forward; B: rearward; C: upward; D: downward; E: right; F: left, format:choice, label:C1, answer:E}.
+52. A positive component means the task direction points along the absolute direction {ID:52, options:A: forward; B: rearward; C: upward; D: downward; E: right; F: left, format:choice, label:A1, answer:E}.
+53. The task direction relative to the tool therefore points {ID:53, options:A: down and right; B: up and left; C: down and left, format:choice, label:A1, answer:B}.
+54. By the variable definition of the task angles, when tool pitch is positive the task direction points along the tool absolute direction {ID:54, options:A: forward; B: rearward; C: upward; D: downward; E: right; F: left, format:choice, label:C1, answer:D}.
+55. When the tool lateral task angle is positive, the task direction points along the tool absolute direction {ID:55, options:A: forward; B: rearward; C: upward; D: downward; E: right; F: left, format:choice, label:C1, answer:E}.
+56. When the tool-roll task angle is negative, the turn and the right-hand rule about tool forward are {ID:56, options:A: same; B: opposite, format:choice, label:C1, answer:B}.
+57. When only the tool-roll task angle changes, the rotation axis is the tool's absolute {ID:57, options:A: axial; B: normal; C: lateral, format:choice, label:C1, answer:A}.
+58. This positive sense and the right-hand rule about this absolute axis are {ID:58, options:A: same; B: opposite, format:choice, label:C1, answer:A}.
+59. In this example the task direction points tool-up, so the sign of the tool-pitch task angle is {ID:59, options:A: positive; B: negative, format:choice, label:A1, answer:B}.
+60. In this example the task direction points tool-left, so the sign of the tool-lateral task angle is {ID:60, options:A: positive; B: negative, format:choice, label:A1, answer:B}.
+61. The right tip follows the tool's absolute lateral direction, and its base-frame coordinate is column {ID:61, options:A: column 1; B: column 2; C: column 3, format:choice, label:A1, answer:C} of D.
+62. The sign of this column's component along the base absolute normal is {ID:62, options:A: positive; B: negative, format:choice, label:A1, answer:B}.
+63. The right tip therefore deflects toward the base absolute direction {ID:63, options:A: upward; B: downward, format:choice, label:A1, answer:B}.
+64. By the zero reference and positive sense of the tool-roll task angle, its sign in this example is {ID:64, options:A: positive; B: negative, format:choice, label:A1, answer:A}.
+65. Write the tool pitch, lateral, and roll task angles as declared {ID:65, options:none, format:task-angles, label:A2, answer:-arctan(1/2), -arcsin(1/4), arcsin(1/2)}.
 
-### 工具右侧翼尖前缘在工具系
+### Right-tip leading edge in the tool frame
 
-这一层只求工具右侧翼尖前缘点在工具系中的坐标，不把它映到基座系。
+This layer asks only for the right-tip leading edge in the tool frame. It does not map that point into the base frame.
 
-66.工具系的绝对轴向正方向（前方）对应{ID:66, 选项:A：X_T；B：Y_T；C：Z_T；D：-X_T；E：-Y_T；F：-Z_T, 输出格式:无, 标签:C1, 答案:A}。
-67.工具系的绝对法向正方向（上方）对应{ID:67, 选项:A：X_T；B：Y_T；C：Z_T；D：-X_T；E：-Y_T；F：-Z_T, 输出格式:无, 标签:C1, 答案:B}。
-68.工具系的绝对侧向正方向（右侧）对应{ID:68, 选项:A：X_T；B：Y_T；C：Z_T；D：-X_T；E：-Y_T；F：-Z_T, 输出格式:无, 标签:C1, 答案:C}。
-69.本例位置参考点取{ID:69, 选项:A：工具右侧翼尖前缘点；B：工具右侧翼尖后缘点；C：工具左侧翼尖前缘点；D：工具翼根前缘点, 输出格式:无, 标签:C1, 答案:A}。
-70.计算工具翼尖前缘相对工具翼根前缘的前后位置时，使用的外形参数是{ID:70, 选项:A：前缘后掠角Λ；B：上反角Γ；C：左右翼尖间距b；D：工具翼根前缘坐标x_r, 输出格式:无, 标签:C1, 答案:A}。
-71.该参数为正时，工具翼尖前缘相对工具翼根前缘指向的绝对方向是{ID:71, 选项:A：前方；B：后方, 输出格式:无, 标签:C1, 答案:B}。
-72.前后偏移写入工具绝对轴向正方向对应的坐标轴{ID:72, 选项:A：X_T；B：Y_T；C：Z_T；D：-X_T；E：-Y_T；F：-Z_T, 输出格式:无, 标签:C2, 答案:A}。
-73.该轴向坐标轴的正方向是绝对方向{ID:73, 选项:A：前方；B：上方；C：后方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:A1, 答案:A}。
-74.前后偏移使该轴向分量{ID:74, 选项:A：增大；B：减小, 输出格式:无, 标签:A1, 答案:B}。
-75.前后位置的表达式是{ID:75, 选项:A：(b/2)*tan(Λ)；B：-(b/2)*tan(Λ)；C：(b/2)*tan(Γ)；D：-b*tan(Λ), 输出格式:无, 标签:A2, 答案:B}。
-76.工具翼根前缘自身的纵向坐标使用{ID:76, 选项:A：x_r；B：左右翼尖间距b；C：前缘后掠角Λ；D：上反角Γ, 输出格式:无, 标签:C1, 答案:A}。
-77.工具右侧翼尖的左右位置写入工具绝对侧向正方向对应的坐标轴{ID:77, 选项:A：X_T；B：Y_T；C：Z_T；D：-X_T；E：-Y_T；F：-Z_T, 输出格式:无, 标签:C2, 答案:C}。
-78.该侧向坐标轴的正方向是绝对方向{ID:78, 选项:A：前方；B：后方；C：上方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:A1, 答案:E}。
-79.左右坐标使用的外形参数是{ID:79, 选项:A：左右翼尖间距b；B：左右翼尖间距b与上反角Γ；C：前缘后掠角Λ；D：工具翼根前缘坐标x_r, 输出格式:无, 标签:C1, 答案:A}。
-80.左右坐标的表达式是{ID:80, 选项:A：(b/2)*cos(Γ)；B：(b/2)*sin(Γ)；C：b/2；D：(b/2)*tan(Γ), 输出格式:无, 标签:A2, 答案:C}。
-81.工具右侧翼尖的高低位置写入工具绝对法向正方向对应的坐标轴{ID:81, 选项:A：X_T；B：Y_T；C：Z_T；D：-X_T；E：-Y_T；F：-Z_T, 输出格式:无, 标签:C2, 答案:B}。
-82.该法向坐标轴的正方向是绝对方向{ID:82, 选项:A：前方；B：后方；C：上方；D：下方；E：右侧；F：左侧, 输出格式:无, 标签:A1, 答案:C}。
-83.上反角为正时，工具翼尖相对工具翼根指向的绝对方向是{ID:83, 选项:A：上方；B：下方, 输出格式:无, 标签:C1, 答案:A}。
-84.高低位置的表达式是{ID:84, 选项:A：(b/2)*sin(Γ)；B：-(b/2)*sin(Γ)；C：(b/2)*tan(Γ)；D：-(b/2)*cos(Γ), 输出格式:无, 标签:A2, 答案:C}。
-85.按 X_T、Y_T、Z_T 的顺序，工具右侧翼尖前缘点在工具系中的坐标为{ID:85, 选项:无, 输出格式:向量, 标签:A2, 答案:[x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]}。
+66. The absolute axial direction (forward) of the tool frame corresponds to {ID:66, options:A: X_T; B: Y_T; C: Z_T; D: -X_T; E: -Y_T; F: -Z_T, format:choice, label:C1, answer:A}.
+67. The absolute normal direction (up) of the tool frame corresponds to {ID:67, options:A: X_T; B: Y_T; C: Z_T; D: -X_T; E: -Y_T; F: -Z_T, format:choice, label:C1, answer:B}.
+68. The absolute lateral direction (right) of the tool frame corresponds to {ID:68, options:A: X_T; B: Y_T; C: Z_T; D: -X_T; E: -Y_T; F: -Z_T, format:choice, label:C1, answer:C}.
+69. The position reference of this example is {ID:69, options:A: right-tip leading edge; B: right-tip trailing edge; C: left-tip leading edge; D: wing-root leading-edge point, format:choice, label:C1, answer:A}.
+70. The shape parameter used for the fore-aft position of the tip leading edge relative to the root leading edge is {ID:70, options:A: leading-edge sweep Λ; B: dihedral Γ; C: tip spacing b; D: wing-root coordinate x_r, format:choice, label:C1, answer:A}.
+71. When this parameter is positive, the tip leading edge relative to the root leading edge points in the absolute direction {ID:71, options:A: forward; B: rearward, format:choice, label:C1, answer:B}.
+72. The fore-aft offset is written on the tool axis that corresponds to the absolute axial positive direction {ID:72, options:A: X_T; B: Y_T; C: Z_T; D: -X_T; E: -Y_T; F: -Z_T, format:choice, label:C2, answer:A}.
+73. The positive sense of this axial axis is the absolute direction {ID:73, options:A: forward; B: upward; C: rearward; D: downward; E: right; F: left, format:choice, label:A1, answer:A}.
+74. The fore-aft offset makes this axial component {ID:74, options:A: increases; B: decreases, format:choice, label:A1, answer:B}.
+75. The fore-aft expression is {ID:75, options:A: (b/2)*tan(Λ); B: -(b/2)*tan(Λ); C: (b/2)*tan(Γ); D: -b*tan(Λ), format:choice, label:A2, answer:B}.
+76. The longitudinal coordinate of the wing-root leading edge uses {ID:76, options:A: x_r; B: tip spacing b; C: leading-edge sweep Λ; D: dihedral Γ, format:choice, label:C1, answer:A}.
+77. The lateral position of the right tip is written on the tool axis corresponding to the absolute lateral positive direction {ID:77, options:A: X_T; B: Y_T; C: Z_T; D: -X_T; E: -Y_T; F: -Z_T, format:choice, label:C2, answer:C}.
+78. The positive sense of this lateral axis is the absolute direction {ID:78, options:A: forward; B: rearward; C: upward; D: downward; E: right; F: left, format:choice, label:A1, answer:E}.
+79. The shape parameter used for the lateral coordinate is {ID:79, options:A: tip spacing b; B: tip spacing b and dihedral Γ; C: leading-edge sweep Λ; D: wing-root coordinate x_r, format:choice, label:C1, answer:A}.
+80. The lateral-coordinate expression is {ID:80, options:A: (b/2)*cos(Γ); B: (b/2)*sin(Γ); C: b/2; D: (b/2)*tan(Γ), format:choice, label:A2, answer:C}.
+81. The vertical position of the right tip is written on the tool axis corresponding to the absolute normal positive direction {ID:81, options:A: X_T; B: Y_T; C: Z_T; D: -X_T; E: -Y_T; F: -Z_T, format:choice, label:C2, answer:B}.
+82. The positive sense of this normal axis is the absolute direction {ID:82, options:A: forward; B: rearward; C: upward; D: downward; E: right; F: left, format:choice, label:A1, answer:C}.
+83. When the dihedral is positive, the wing tip relative to the wing root points in the absolute direction {ID:83, options:A: upward; B: downward, format:choice, label:C1, answer:A}.
+84. The vertical-position expression is {ID:84, options:A: (b/2)*sin(Γ); B: -(b/2)*sin(Γ); C: (b/2)*tan(Γ); D: -(b/2)*cos(Γ), format:choice, label:A2, answer:C}.
+85. In the order X_T, Y_T, Z_T, the right-tip leading edge in the tool frame is {ID:85, options:none, format:vector, label:A2, answer:[x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]}.
 
-### 工具系原点的平移
+### Translation of the tool origin
 
-这一层先算工具顶点到球腕原点的距离，再算工具系原点在基座系中的平移向量。不使用工具翼尖坐标。
+This layer first finds the distance from the tool nose to the wrist origin, then the translation of the tool origin in the base frame. It does not use the wing-tip coordinate.
 
-86.工具系的原点建立在{ID:86, 选项:A：工具顶点；B：工具质心；C：球腕原点；D：工具底部, 输出格式:无, 标签:C1, 答案:A}。
-87.球腕末端系原点与{ID:87, 选项:A：基座系原点；B：工具顶点；C：工具质心；D：工具底部, 输出格式:无, 标签:C1, 答案:A}重合。
-88.工具轴向长度 L 量的是{ID:88, 选项:A：工具顶点到工具底部；B：工具底部到球腕原点；C：工具顶点到球腕原点, 输出格式:无, 标签:C1, 答案:A}。
-89.安装距离 L_mount 量的是{ID:89, 选项:A：工具底部到球腕原点；B：工具顶点到工具底部；C：工具安装杆插入工具内部的长度, 输出格式:无, 标签:C1, 答案:A}。
-90.工具安装杆端部从工具底部插入工具内部的那一段{ID:90, 选项:A：已经含在工具轴向长度 L 内，不再另加；B：要加在 L 和 L_mount 之外；C：要从 L 中减去, 输出格式:无, 标签:C1, 答案:A}。
-91.沿工具前方，球腕原点、工具底部、工具顶点的顺序是{ID:91, 选项:A：O、底部、顶点；B：顶点、底部、O；C：底部、O、顶点, 输出格式:无, 标签:C1, 答案:A}。
-92.因此工具顶点到球腕原点的距离为{ID:92, 选项:无, 输出格式:距离, 标签:A2, 答案:L + L_mount}。
-93.从球腕原点指向工具顶点的方向是工具绝对方向{ID:93, 选项:A：前方；B：后方；C：上方；D：下方, 输出格式:无, 标签:C1, 答案:A}。
-94.该偏移写入的工具坐标轴是{ID:94, 选项:A：X_T；B：Y_T；C：Z_T；D：-X_T；E：-Y_T；F：-Z_T, 输出格式:无, 标签:C2, 答案:A}。
-95.另外两个分量为{ID:95, 选项:A：0；B：L；C：L_mount；D：L + L_mount, 输出格式:无, 标签:C2, 答案:A}。
-96.按 X_T、Y_T、Z_T 的顺序，从球腕原点到工具系原点的工具系分量为{ID:96, 选项:无, 输出格式:向量, 标签:A2, 答案:[L + L_mount, 0, 0]}。
-97.球腕具有姿态角后，该工具系向量映到基座系应当使用{ID:97, 选项:A：D乘该向量；B：D的转置乘该向量；C：R乘该向量；D：不乘姿态矩阵, 输出格式:无, 标签:A2, 答案:A}。
-98.不展开 D，方括号表示列向量，工具系原点在基座系中的平移向量为{ID:98, 选项:无, 输出格式:表达式, 标签:A2, 答案:D*[L + L_mount, 0, 0]}。
+86. The tool-frame origin is placed at {ID:86, options:A: tool nose; B: tool center of mass; C: wrist origin; D: tool base, format:choice, label:C1, answer:A}.
+87. The wrist-frame origin coincides with {ID:87, options:A: base origin; B: tool nose; C: tool center of mass; D: tool base, format:choice, label:C1, answer:A}.
+88. The tool axial length L measures {ID:88, options:A: tool nose to the tool base; B: tool base to the wrist origin; C: tool nose to the wrist origin, format:choice, label:C1, answer:A}.
+89. The mount length L_mount measures {ID:89, options:A: tool base to the wrist origin; B: tool nose to the tool base; C: the length of the mount inserted into the tool, format:choice, label:C1, answer:A}.
+90. The part of the mount that enters the tool from the tool base {ID:90, options:A: already included in the axial length L, and is not added again; B: add it outside L and L_mount; C: subtract it from L, format:choice, label:C1, answer:A}.
+91. Along tool forward, the order of the wrist origin, the tool base, and the tool nose is {ID:91, options:A: O, base, nose; B: nose, base, O; C: base, O, nose, format:choice, label:C1, answer:A}.
+92. The distance from the tool nose to the wrist origin is therefore {ID:92, options:none, format:distance, label:A2, answer:L + L_mount}.
+93. The direction from the wrist origin to the tool nose is the tool absolute direction {ID:93, options:A: forward; B: rearward; C: upward; D: downward, format:choice, label:C1, answer:A}.
+94. The tool axis that receives this offset is {ID:94, options:A: X_T; B: Y_T; C: Z_T; D: -X_T; E: -Y_T; F: -Z_T, format:choice, label:C2, answer:A}.
+95. The other two components are {ID:95, options:A: 0; B: L; C: L_mount; D: L + L_mount, format:choice, label:C2, answer:A}.
+96. In the order X_T, Y_T, Z_T, the tool-frame components from the wrist origin to the tool origin are {ID:96, options:none, format:vector, label:A2, answer:[L + L_mount, 0, 0]}.
+97. After the wrist takes its attitude, mapping this tool-frame vector into the base frame uses {ID:97, options:A: D times that vector; B: the transpose of D times that vector; C: R times that vector; D: do not multiply by the attitude matrix, format:choice, label:A2, answer:A}.
+98. Without expanding D, and with square brackets for a column, the translation of the tool origin in the base frame is {ID:98, options:none, format:expression, label:A2, answer:D*[L + L_mount, 0, 0]}.
 
-### 工具右侧翼尖前缘在基座系
+### Right-tip leading edge in the base frame
 
-这一层只求基座系坐标。工具右侧翼尖前缘点在工具系中、按 X_T、Y_T、Z_T 顺序的坐标是 [x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]。工具系原点不在基座系原点。工具系原点在基座系中的平移向量是 D*[L + L_mount, 0, 0]。方括号表示列向量。
+This layer asks only for base-frame coordinates. The right-tip leading edge in the tool frame, in the order X_T, Y_T, Z_T, is [x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]. The tool origin is not the base origin. Its translation in the base frame is D*[L + L_mount, 0, 0]. Square brackets denote a column.
 
-99.该工具坐标映到基座系时应当使用{ID:99, 选项:A：D乘工具坐标；B：D的转置乘工具坐标；C：R乘工具坐标, 输出格式:无, 标签:A2, 答案:A}。
-100.基座系位置还要把平移向量与这个旋转结果{ID:100, 选项:A：相加；B：只保留旋转结果；C：只保留平移向量, 输出格式:无, 标签:A2, 答案:A}。
-101.不展开 D，按 X_B、Y_B、Z_B 的顺序，工具右侧翼尖前缘点在基座系中的位置为{ID:101, 选项:无, 输出格式:表达式, 标签:A2, 答案:D*[L + L_mount, 0, 0] + D*[x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]}。
+99. Mapping this tool coordinate into the base frame uses {ID:99, options:A: D times the tool coordinate; B: the transpose of D times the tool coordinate; C: R times the tool coordinate, format:choice, label:A2, answer:A}.
+100. The base-frame position also combines the translation with this rotated result by {ID:100, options:A: add; B: keep only the rotated result; C: keep only the translation, format:choice, label:A2, answer:A}.
+101. Without expanding D, and in the order X_B, Y_B, Z_B, the right-tip leading edge in the base frame is {ID:101, options:none, format:expression, label:A2, answer:D*[L + L_mount, 0, 0] + D*[x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]}.
 
-### 指定特征点的工作空间边界可达性
+### Boundary reachability of the designated points
 
-这一层只分析三个指定特征点：工具顶点、工具右侧翼尖和工具左侧翼尖。它求工具顶点在声明关节范围内的三个基座坐标可达区间，并判定这三个端点是否可能到达工作单元边界。接触边界即算到达边界。这个结果不是整个工具的碰撞结论。不把工具翼尖的上下、左右展开成闭区间。球腕原点在横截面中心。工具右侧翼尖取工具右侧翼尖前缘，它在工具系中的坐标是 [x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]。工具顶点相对球腕原点的工具系分量是 [L + L_mount, 0, 0]。这一层看不到前面子过程的填空，也不用本例这一组关节角代替整个范围。判据只覆盖这三个端点。
+This layer analyzes only three designated points: the tool nose, the right tip, and the left tip. It finds the three reachable base-coordinate intervals of the nose inside the declared joint range, and it decides whether these three points can reach the cell boundary. Touching the boundary counts as reaching it. The result is not a collision conclusion for the whole tool. The vertical and lateral coordinates of the tips are not expanded into closed intervals. The wrist origin is at the center of the cross-section. The right tip is the right-tip leading edge, and its tool-frame coordinate is [x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]. The nose relative to the wrist origin has tool-frame components [L + L_mount, 0, 0]. This layer cannot see the blanks of earlier subprocesses, and it does not replace the whole range by this example's one joint triple. The test covers only these three points.
 
-102.工作单元边界限制的绝对方向是{ID:102, 选项:A：上方与下方、右侧与左侧；B：前方与后方、上方与下方；C：前方与后方、右侧与左侧, 输出格式:无, 标签:C1, 答案:A}。
-103.沿基座任务主方向{ID:103, 选项:A：不设边界；B：在前方设边界；C：在后方设边界, 输出格式:无, 标签:C1, 答案:A}。
-104.上下边界限制的基座坐标轴是{ID:104, 选项:A：X_B；B：Y_B；C：Z_B, 输出格式:无, 标签:C1, 答案:B}。
-105.左右边界限制的基座坐标轴是{ID:105, 选项:A：X_B；B：Y_B；C：Z_B, 输出格式:无, 标签:C1, 答案:C}。
-106.横截面边长为 L_cell，球腕原点在横截面中心，中心到一面边界的距离是{ID:106, 选项:无, 输出格式:表达式, 标签:A2, 答案:L_cell/2}。
-107.两侧边界位于这个距离的{ID:107, 选项:A：正负两侧；B：只在正侧；C：只在负侧, 输出格式:无, 标签:A1, 答案:A}。
-108.工具右侧翼尖相对球腕原点的工具系向量，由工具顶点偏移与工具右侧翼尖前缘坐标{ID:108, 选项:A：相加；B：相减；C：只保留工具翼尖坐标, 输出格式:无, 标签:A2, 答案:A}得到。
-109.按 X_T、Y_T、Z_T 的顺序，该向量为{ID:109, 选项:无, 输出格式:向量, 标签:A2, 答案:[L + L_mount + x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]}。
-110.工具左侧翼尖与工具右侧翼尖相比，{ID:110, 选项:A：前后与高低相同，左右取反；B：三个分量都取反；C：前后取反，左右相同, 输出格式:无, 标签:A1, 答案:A}。
-111.按 X_T、Y_T、Z_T 的顺序，工具左侧翼尖向量为{ID:111, 选项:无, 输出格式:向量, 标签:A2, 答案:[L + L_mount + x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), -b/2]}。
-112.这三个工具系向量映到基座系应当使用{ID:112, 选项:A：D乘该向量；B：D的转置乘该向量；C：R乘该向量；D：不乘姿态矩阵, 输出格式:无, 标签:A2, 答案:A}。
-q3 与安装转角绕同一根坐标轴，安装转角是 +90°。
-113.扫过范围时的合成角 θ 取{ID:113, 选项:A：q3+90°；B：q3-90°；C：q3；D：q1+90°, 输出格式:无, 标签:A2, 答案:A}。
-114.q3 从 -90° 到 90°，θ 的范围是{ID:114, 选项:A：0°到180°；B：-90°到90°；C：-180°到0°；D：0°到90°, 输出格式:无, 标签:A2, 答案:A}。
-115.记 v=R(q2)*R(θ)*r，v 是乘积中的中间向量，分量按 X、Y、Z 排列，尚未左乘 R(q1)，q1 的矩阵写在最左侧，绕基座坐标轴{ID:115, 选项:A：X_B；B：Y_B；C：Z_B, 输出格式:无, 标签:C2, 答案:B}。
-116.左乘 R(q1) 之后，端点的基座上下坐标与 q1{ID:116, 选项:A：无关；B：有关, 输出格式:无, 标签:A1, 答案:A}。
-117.因此该上下坐标等于 v 的第{ID:117, 选项:A：一；B：二；C：三, 输出格式:无, 标签:A2, 答案:B}个分量。
-118.工具顶点的工具系向量不被 R(θ) 改变，再左乘 R(q2) 后，中间向量为{ID:118, 选项:无, 输出格式:向量, 标签:A2, 答案:[(L + L_mount)*cos(q2), -(L + L_mount)*sin(q2), 0]}。
-119.左乘 R(q1) 不改变这个第二分量，顶点的基座上下坐标等于{ID:119, 选项:A：(L + L_mount)*sin(q2)；B：(L + L_mount)*cos(q1)；C：-(L + L_mount)*sin(q1)；D：-(L + L_mount)*sin(q2), 输出格式:无, 标签:A2, 答案:D}。
-120.q2 是侧向轴，范围是 -90° 到 90°，sin(q2) 能取到的值覆盖{ID:120, 选项:A：-1到1；B：-1/2到1/2；C：-sqrt(3)/2到sqrt(3)/2, 输出格式:无, 标签:A2, 答案:A}。
-121.q1 是法向轴，范围是 -60° 到 60°，cos(q1) 的最小值是{ID:121, 选项:A：1/2；B：0；C：sqrt(3)/2；D：1, 输出格式:无, 标签:A2, 答案:A}。
-122.q2 在 -90° 到 90° 内，cos(q2){ID:122, 选项:A：不为负；B：不为正；C：恒为 1, 输出格式:无, 标签:A1, 答案:A}。
-123.sin(q1) 的最大绝对值是{ID:123, 选项:A：sqrt(3)/2；B：1/2；C：1；D：0, 输出格式:无, 标签:A2, 答案:A}。
-124.顶点的基座轴向坐标是{ID:124, 选项:A：(L + L_mount)*cos(q1)*cos(q2)；B：(L + L_mount)*cos(q2)；C：(L + L_mount)*sin(q2), 输出格式:无, 标签:A2, 答案:A}。
-125.左右坐标是{ID:125, 选项:A：-(L + L_mount)*sin(q1)*cos(q2)；B：(L + L_mount)*sin(q2)；C：-(L + L_mount)*sin(q2), 输出格式:无, 标签:A2, 答案:A}。
-126.轴向可达范围是{ID:126, 选项:无, 输出格式:范围, 标签:A2, 答案:[0, L + L_mount]}。
-127.上下可达范围是{ID:127, 选项:无, 输出格式:范围, 标签:A2, 答案:[-(L + L_mount), L + L_mount]}。
-128.左右可达范围是{ID:128, 选项:无, 输出格式:范围, 标签:A2, 答案:[-(L + L_mount)*sqrt(3)/2, (L + L_mount)*sqrt(3)/2]}。
-129.顶点上下方向的最大绝对值比左右方向的最大绝对值{ID:129, 选项:A：更大；B：更小；C：相等, 输出格式:无, 标签:A1, 答案:A}。
-130.当逐步增大顶点到球腕中心的距离时，首先达到的边界碰撞阈值对应{ID:130, 选项:A：上下边界；B：左右边界；C：轴向两端, 输出格式:无, 标签:A1, 答案:A}。
-131.接触边界即算发生边界碰撞，顶点可能发生边界碰撞的条件是{ID:131, 选项:无, 输出格式:表达式, 标签:A2, 答案:L + L_mount >= L_cell/2}。
-132.在声明的关节范围内，端点基座上下坐标绝对值的最大可达值等于{ID:132, 选项:A：该端点到球腕原点的距离；B：该距离的一半；C：该距离乘 sqrt(3)/2, 输出格式:无, 标签:A2, 答案:A}。
-可以选取 θ，使 R(θ) 后的第三分量为 0，再用 q2 在 -90° 到 90° 内把向量转到 Y_B 的正方向或负方向。
-q1 绕 Y_B，不改变上下坐标。
-因此这个最大可达值等于该端点到球腕原点的距离。
-133.端点到球腕原点的距离达到或超过中心到边界的距离，是存在接触边界姿态的{ID:133, 选项:A：充要条件；B：只是充分条件；C：只是必要不充分, 输出格式:无, 标签:A2, 答案:A}。
-134.轴向可达区间{ID:134, 选项:A：不参与；B：同样参与, 输出格式:无, 标签:C1, 答案:A}边界碰撞判断。
-135.三个端点中只要有一个端点到球腕原点的距离达到或超过边界距离，判定为{ID:135, 选项:A：可能发生边界碰撞；B：不可能发生边界碰撞, 输出格式:无, 标签:C2, 答案:A}。
-136.某端点到球腕原点的距离小于边界距离时，该端点{ID:136, 选项:A：不可能发生边界碰撞；B：可能发生边界碰撞, 输出格式:无, 标签:A2, 答案:A}。
-137.工具右侧翼尖的工具系向量的后两个分量平方和是{ID:137, 选项:A：(b/2)^2；B：(b/2)^2*(1 + (tan(Γ))^2)；C：b^2；D：(b/2)^2*(tan(Γ))^2, 输出格式:无, 标签:A2, 答案:B}。
-138.工具右侧翼尖到球腕原点的距离是{ID:138, 选项:无, 输出格式:表达式, 标签:A2, 答案:sqrt((L + L_mount + x_r - (b/2)*tan(Λ))^2 + (b/2)^2*(1 + (tan(Γ))^2))}。
-139.工具左侧翼尖的这个距离与工具右侧翼尖{ID:139, 选项:A：相同；B：相反；C：相差 L, 输出格式:无, 标签:A1, 答案:A}。
-140.该判据只覆盖三个检测端点，在声明的关节范围内，至少有一个端点接触或越过边界的条件是{ID:140, 选项:无, 输出格式:表达式, 标签:A2, 答案:max(L + L_mount, sqrt((L + L_mount + x_r - (b/2)*tan(Λ))^2 + (b/2)^2*(1 + (tan(Γ))^2))) >= L_cell/2}。
+102. The absolute directions limited by the cell boundary are {ID:102, options:A: up with down, and right with left; B: forward with rearward, and up with down; C: forward with rearward, and right with left, format:choice, label:C1, answer:A}.
+103. Along the base task direction, {ID:103, options:A: no boundary; B: place the boundary forward; C: place the boundary rearward, format:choice, label:C1, answer:A}.
+104. The base axis limited by the vertical boundaries is {ID:104, options:A: X_B; B: Y_B; C: Z_B, format:choice, label:C1, answer:B}.
+105. The base axis limited by the lateral boundaries is {ID:105, options:A: X_B; B: Y_B; C: Z_B, format:choice, label:C1, answer:C}.
+106. The cross-section side is L_cell and the wrist origin is at its center, so the distance from the center to one face is {ID:106, options:none, format:expression, label:A2, answer:L_cell/2}.
+107. The two side boundaries lie at {ID:107, options:A: both the positive and negative sides; B: only on the positive side; C: only on the negative side, format:choice, label:A1, answer:A}.
+108. The tool-frame vector of the right tip relative to the wrist origin is obtained from the nose offset and the right-tip leading-edge coordinate by {ID:108, options:A: add; B: subtract; C: keep only the wing-tip coordinate, format:choice, label:A2, answer:A}.
+109. In the order X_T, Y_T, Z_T, that vector is {ID:109, options:none, format:vector, label:A2, answer:[L + L_mount + x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]}.
+110. Compared with the right tip, the left tip has {ID:110, options:A: fore-aft and vertical unchanged, lateral reversed; B: negate all three components; C: fore-aft reversed, lateral unchanged, format:choice, label:A1, answer:A}.
+111. In the order X_T, Y_T, Z_T, the left-tip vector is {ID:111, options:none, format:vector, label:A2, answer:[L + L_mount + x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), -b/2]}.
+112. Mapping these three tool-frame vectors into the base frame uses {ID:112, options:A: D times that vector; B: the transpose of D times that vector; C: R times that vector; D: do not multiply by the attitude matrix, format:choice, label:A2, answer:A}.
+q3 and the installation angle rotate about the same axis, and the installation angle is +90°.
+113. While sweeping the range, the combined angle θ is {ID:113, options:A: q3+90°; B: q3-90°; C: q3; D: q1+90°, format:choice, label:A2, answer:A}.
+114. As q3 runs from -90° to 90°, the range of θ is {ID:114, options:A: 0° to 180°; B: -90° to 90°; C: -180° to 0°; D: 0° to 90°, format:choice, label:A2, answer:A}.
+115. Let v=R(q2)*R(θ)*r. v is the intermediate vector of the product, with components in X, Y, Z order, before left-multiplication by R(q1). The q1 matrix is on the far left and rotates about base axis {ID:115, options:A: X_B; B: Y_B; C: Z_B, format:choice, label:C2, answer:B}.
+116. After left-multiplying by R(q1), the vertical base coordinate of the point and q1 are {ID:116, options:A: unrelated; B: related, format:choice, label:A1, answer:A}.
+117. That vertical coordinate therefore equals component {ID:117, options:A: one; B: two; C: three, format:choice, label:A2, answer:B} of v.
+118. R(θ) does not change the tool-frame vector of the nose. After left-multiplying by R(q2), the intermediate vector is {ID:118, options:none, format:vector, label:A2, answer:[(L + L_mount)*cos(q2), -(L + L_mount)*sin(q2), 0]}.
+119. Left-multiplying by R(q1) does not change this second component, so the vertical base coordinate of the nose equals {ID:119, options:A: (L + L_mount)*sin(q2); B: (L + L_mount)*cos(q1); C: -(L + L_mount)*sin(q1); D: -(L + L_mount)*sin(q2), format:choice, label:A2, answer:D}.
+120. q2 is the lateral axis, on -90° to 90°, and the values sin(q2) can take cover {ID:120, options:A: -1 to 1; B: -1/2 to 1/2; C: -sqrt(3)/2 to sqrt(3)/2, format:choice, label:A2, answer:A}.
+121. q1 is the normal axis, on -60° to 60°, and the minimum of cos(q1) is {ID:121, options:A: 1/2; B: 0; C: sqrt(3)/2; D: 1, format:choice, label:A2, answer:A}.
+122. On -90° to 90°, cos(q2) is {ID:122, options:A: not negative; B: not positive; C: always 1, format:choice, label:A1, answer:A}.
+123. The greatest absolute value of sin(q1) is {ID:123, options:A: sqrt(3)/2; B: 1/2; C: 1; D: 0, format:choice, label:A2, answer:A}.
+124. The axial base coordinate of the nose is {ID:124, options:A: (L + L_mount)*cos(q1)*cos(q2); B: (L + L_mount)*cos(q2); C: (L + L_mount)*sin(q2), format:choice, label:A2, answer:A}.
+125. The lateral coordinate is {ID:125, options:A: -(L + L_mount)*sin(q1)*cos(q2); B: (L + L_mount)*sin(q2); C: -(L + L_mount)*sin(q2), format:choice, label:A2, answer:A}.
+126. The axial reachable interval is {ID:126, options:none, format:interval, label:A2, answer:[0, L + L_mount]}.
+127. The vertical reachable interval is {ID:127, options:none, format:interval, label:A2, answer:[-(L + L_mount), L + L_mount]}.
+128. The lateral reachable interval is {ID:128, options:none, format:interval, label:A2, answer:[-(L + L_mount)*sqrt(3)/2, (L + L_mount)*sqrt(3)/2]}.
+129. The greatest absolute vertical coordinate of the nose, compared with its greatest absolute lateral coordinate, is {ID:129, options:A: larger; B: smaller; C: equal, format:choice, label:A1, answer:A}.
+130. As the nose-to-wrist distance grows, the first boundary-contact threshold corresponds to {ID:130, options:A: vertical boundaries; B: lateral boundaries; C: both axial ends, format:choice, label:A1, answer:A}.
+131. Touching the boundary counts as contact. The nose can meet the boundary when {ID:131, options:none, format:expression, label:A2, answer:L + L_mount >= L_cell/2}.
+132. Inside the declared joint range, the greatest reachable absolute vertical base coordinate of the point equals {ID:132, options:A: the distance from that point to the wrist origin; B: half of that distance; C: that distance times sqrt(3)/2, format:choice, label:A2, answer:A}.
+A θ can be chosen so that the third component after R(θ) is 0, and q2 on -90° to 90° then turns the vector toward the positive or negative sense of Y_B.
+q1 rotates about Y_B and does not change the vertical coordinate.
+This greatest reachable value therefore equals the distance from that point to the wrist origin.
+133. A point at least as far from the wrist origin as the center-to-boundary distance is, for a boundary-touching attitude, {ID:133, options:A: necessary and sufficient; B: sufficient only; C: necessary but not sufficient, format:choice, label:A2, answer:A}.
+134. The axial reachable interval {ID:134, options:A: does not enter; B: also enters, format:choice, label:C1, answer:A} the boundary-contact test.
+135. If any one of the three points is at least the boundary distance from the wrist origin, the decision is {ID:135, options:A: a boundary contact is possible; B: a boundary contact is impossible, format:choice, label:C2, answer:A}.
+136. When a point is closer to the wrist origin than the boundary distance, that point {ID:136, options:A: a boundary contact is impossible; B: a boundary contact is possible, format:choice, label:A2, answer:A}.
+137. The sum of squares of the last two components of the right tip's tool-frame vector is {ID:137, options:A: (b/2)^2; B: (b/2)^2*(1 + (tan(Γ))^2); C: b^2; D: (b/2)^2*(tan(Γ))^2, format:choice, label:A2, answer:B}.
+138. The distance from the right tip to the wrist origin is {ID:138, options:none, format:expression, label:A2, answer:sqrt((L + L_mount + x_r - (b/2)*tan(Λ))^2 + (b/2)^2*(1 + (tan(Γ))^2))}.
+139. This distance of the left tip and the right tip are {ID:139, options:A: same; B: opposite; C: differs by L, format:choice, label:A1, answer:A}.
+140. The test covers only the three checked points. Inside the declared joint range, at least one point meets or crosses the boundary when {ID:140, options:none, format:expression, label:A2, answer:max(L + L_mount, sqrt((L + L_mount + x_r - (b/2)*tan(Λ))^2 + (b/2)^2*(1 + (tan(Γ))^2))) >= L_cell/2}.
 
-# 逆运动学样本
+# Inverse kinematics
 
-本样本单独送入。定义中不出现正运动学样本的关节角，也不出现 D 的数值。
+This sample is injected alone. Its declaration does not contain the forward-kinematics joint angles or a numerical D.
 
-## 定义声明
+## Declaration
 
-固定约定
-- 向量用列向量表示，变换矩阵左乘列向量。父坐标系中的分量等于姿态矩阵乘子坐标系中的分量。坐标分量按该系 X、Y、Z 的顺序书写。
-- 基座系：X_B 指向基座前方，也就是任务主方向。Y_B 指向基座上方。Z_B 指向基座右侧。
-- 球腕末端系：X_W 指向球腕物理前方，Y_W 指向球腕物理上方，Z_W 指向球腕物理右侧。球腕物理方向固连在球腕上。初始位置时，它们分别与基座前方、上方、右侧重合。
-- 工具系：X_T 指向工具前方，Y_T 指向工具上方，Z_T 指向工具右侧。工具系固定在飞机外形末端工具上。
-- 球腕姿态旋转采用动轴内旋。绝对方向轴旋转顺序是可变定义。本例顺序是法向、侧向、轴向，角度依次为 q1、q2、q3。最先转动的矩阵写在最左侧。
-- 关节矩阵记为 R(q1)、R(q2)、R(q3)。q2 的正方向与绕所对应绝对正方向的右手定则相反，q1、q3 相同。定义不给出这三个矩阵的元素。R=R(q1)*R(q2)*R(q3)。
-- 各关节所称的法向、侧向、轴向，是该关节动作前中间随动参考系中的对应方向。球腕末端系描述最终姿态。三根关节轴并不始终固连在同一套末端方向上。
-- 关节范围绑定在绝对方向轴上。法向轴 q1 的范围是 -60° 到 60°，余弦为正。侧向轴 q2 和轴向轴 q3 的范围都是 -90° 到 90°。
-- 当前球腕逆解使用非奇异分支 -90°<q2<90°。完整机械限位仍允许 q2=±90°，但边界奇异姿态不纳入唯一逆解任务。
-- 关节角都为 0 时，工具前方与基座 +X_B 重合，工具上方与基座 +Z_B 重合。由于三个方向需要构成右手系，工具右侧与基座 -Y_B 重合。S 是工具系相对球腕末端系的安装矩阵。
-- D 是工具系相对基座系的姿态。它把工具系分量映射到基座系分量。
-- 任务方向向量指向基座 +X_B。按 X_B、Y_B、Z_B 的顺序，基座系中的任务方向单位向量是 [1, 0, 0]。它变到工具系后，等于 D 的转置乘这个列向量，也就是 D 的第一行。
-- 本样本不给出关节角，也不给出 D 的数值。
+Fixed conventions
+- Vectors are columns, and a transform matrix multiplies a column on the left. Components in the parent frame equal the attitude matrix times components in the child frame. Components are written in the X, Y, Z order of that frame.
+- Base frame: X_B points base-forward, the task direction. Y_B points base-up. Z_B points base-right.
+- Wrist frame: X_W points physically forward, Y_W points physically up, and Z_W points physically right. These physical directions are fixed to the wrist. At the initial pose they coincide with base forward, up, and right.
+- Tool frame: X_T points tool-forward, Y_T points tool-up, and Z_T points tool-right. The tool frame is fixed to the aircraft-shaped end tool.
+- Wrist rotations use an intrinsic moving-axis sequence. The absolute-axis order is a variable definition. The order here is normal, lateral, axial, and the angles are q1, q2, q3. The first rotation is written on the left.
+- The joint matrices are R(q1), R(q2), and R(q3). The positive sense of q2 is opposite the right-hand rule about its absolute direction, and q1 and q3 agree with it. The declaration does not give their entries. R=R(q1)*R(q2)*R(q3).
+- The normal, lateral, and axial names of each joint are the corresponding directions in the moving frame before that joint acts. The wrist frame describes the final attitude. The three joint axes are not always fixed to one set of end directions.
+- Joint ranges are bound to the absolute axes. Normal-axis q1 runs from -60° to 60°, where the cosine is positive. Lateral-axis q2 and axial-axis q3 both run from -90° to 90°.
+- The inverse for this wrist uses the nonsingular branch -90°<q2<90°. The full mechanical limit still allows q2=±90°, but singular boundary poses are not part of the unique-inverse task.
+- When every joint angle is 0, tool forward coincides with base +X_B and tool up coincides with base +Z_B. Because the three directions must form a right-handed frame, tool right coincides with base -Y_B. S is the installation of the tool frame in the wrist frame.
+- D is the attitude of the tool frame relative to the base frame. It maps tool components into base components.
+- The task direction points along base +X_B. In the order X_B, Y_B, Z_B, its unit vector in the base frame is [1, 0, 0]. In the tool frame it equals the transpose of D times that column, which is the first row of D.
+- This sample does not give the joint angles or a numerical D.
 
-工具任务姿态角
-记任务方向在工具系中的分量为 [d_x, d_y, d_z]，顺序是 X_T、Y_T、Z_T。
-- 工具俯仰任务角 α_T：任务方向在工具纵向对称面内的投影与工具前方之间的有向夹角。任务方向指向工具下方时为正。α_T=atan2(-d_y, d_x)。
-- 工具侧向任务角 β_T：任务方向相对于工具纵向对称面的有向偏角。任务方向指向工具右侧时为正。β_T=atan2(d_z, sqrt(d_x^2 + d_y^2))。
-- 工具滚转任务角 γ_T：记工具前方单位向量为 t，工具上方单位向量为 n，基座参考上方向单位向量为 e_Y=[0, 1, 0]。u=(e_Y-(e_Y·t)*t)/||e_Y-(e_Y·t)*t||。令 r=t×u。γ_T=atan2(n·r, n·u)。正方向与绕工具前方的右手定则相同，反方向为负。当工具前方与基座参考上方向平行时，该滚转任务角未定义。
-本机器人任务给定的三个目标任务姿态角是 arctan(1/2), arcsin(1/4), arcsin(1/2)。
-由三个任务姿态角求关节角，只在 -90°<α_T<90°、-90°<β_T<90°、工具前方轴不与基座参考上方向平行、且侧向轴处在非奇异分支 -90°<q2<90° 内进行。
+Tool task angles
+Write the task direction in the tool frame as [d_x, d_y, d_z], in the order X_T, Y_T, Z_T.
+- Tool-pitch task angle α_T: the signed angle between tool forward and the projection of the task direction onto the tool plane of symmetry. The angle is positive when the task direction points downward. α_T=atan2(-d_y, d_x).
+- Tool-lateral task angle β_T: the signed angle of the task direction away from the tool plane of symmetry. The angle is positive when the task direction points to the right. β_T=atan2(d_z, sqrt(d_x^2 + d_y^2)).
+- Tool-roll task angle γ_T: let t be the unit vector of tool forward, n the unit vector of tool up, and e_Y the unit vector of the base reference-up direction. e_Y=[0, 1, 0]. u=(e_Y-(e_Y·t)*t)/||e_Y-(e_Y·t)*t||. Let r=t×u. γ_T=atan2(n·r, n·u). The positive sense is the same as the right-hand rule about tool forward, and the opposite sense is negative. The roll task angle is undefined when tool forward is parallel to the base reference-up direction.
+The three target task angles of this robot task are arctan(1/2), arcsin(1/4), arcsin(1/2).
+Recovering the joint angles from the three task angles is done only for -90°<α_T<90°, -90°<β_T<90°, when the tool forward axis is not parallel to the base reference-up direction, and on the nonsingular lateral branch -90°<q2<90°.
 
-## 物理常识
+## Background
 
-向量用列向量表示，姿态矩阵左乘列向量。姿态矩阵的转置把父坐标系分量映射回子坐标系。任务方向单位向量是基座系中的 [1, 0, 0]，它在工具系中的分量是 D 的第一行。工具俯仰任务角在任务方向指向工具下方时为正。工具侧向任务角在任务方向指向工具右侧时为正。工具滚转任务角从基座参考上方向在垂直于工具前方的平面上的投影量起，正方向与绕工具前方轴的右手定则相同，反方向为负。工具前方与基座参考上方向平行时，工具滚转任务角未定义。本例动轴内旋顺序是法向、侧向、轴向。q1 在声明范围内余弦为正。侧向轴的唯一逆解只使用 -90°<q2<90°。
+Vectors are columns, and an attitude matrix multiplies a column on the left. Its transpose maps parent-frame components back into the child frame. The task-direction unit vector is [1, 0, 0] in the base frame, and its tool-frame components are the first row of D. Tool pitch is positive when the task direction points downward. The tool lateral angle is positive when the task direction points to the right. Tool roll is measured from the projection of the base reference-up direction onto the plane perpendicular to tool forward. Its positive sense is the same as the right-hand rule about the tool forward axis, and the opposite sense is negative. Tool roll is undefined when tool forward is parallel to the base reference-up direction. The intrinsic moving-axis order in this example is normal, lateral, axial. cos(q1) is positive inside the declared range. The unique inverse on the lateral axis uses only -90°<q2<90°.
 
-## 完整过程
+## Full process
 
 
-### 由三个任务姿态角求关节角
+### Joint angles from the three task angles
 
-1.若只给出工具俯仰任务角和工具侧向任务角，不给出工具滚转任务角，三关节能否保证唯一？答案为{ID:1, 选项:A：能；B：不能, 输出格式:无, 标签:A2, 答案:B}。
-两组关节角都在声明范围内：q=(0°, -90°, 0°) 和 q=(30°, -90°, -30°)。
-2.用声明的乘积检查，这两组的姿态矩阵{ID:2, 选项:A：相同；B：不同, 输出格式:无, 标签:A2, 答案:A}。
-3.这两组的工具前方轴与基座参考上方向平行，按本样本的使用条件，这时{ID:3, 选项:A：仍由三个任务姿态角求关节角；B：不由三个任务姿态角求关节角, 输出格式:无, 标签:C1, 答案:B}。
-4.按本样本列出的使用条件，自行判断本例三个目标任务姿态角对应的关节角能否保证唯一？答案为{ID:4, 选项:A：能；B：不能, 输出格式:无, 标签:A2, 答案:A}。
-5.这三个任务姿态角确定的是工具相对基座系的姿态，对应的矩阵是{ID:5, 选项:A：D；B：R；C：S, 输出格式:无, 标签:C1, 答案:A}。
-6.记 a=cos(α_T)*cos(β_T)，bv=-sin(α_T)*cos(β_T)，c=sin(β_T)，D 的第一行是工具系中的任务方向分量，等于{ID:6, 选项:A：[a, bv, c]；B：[a, c, bv]；C：[bv, a, c], 输出格式:无, 标签:C2, 答案:A}。
-7.代入本例角度，这一行的数值是{ID:7, 选项:无, 输出格式:向量, 标签:A2, 答案:[sqrt(3)/2, sqrt(3)/4, -1/4]}。
-8.记 d=bv*cos(γ_T)-c*sin(γ_T)，N=sqrt(a^2+d^2)，在 a>0 的分支上，按工具滚转任务角的零参考和绕工具前方轴的右手定则正方向，第二行是{ID:8, 选项:A：[-d/N, a*cos(γ_T)/N, -a*sin(γ_T)/N]；B：[d/N, a*cos(γ_T)/N, a*sin(γ_T)/N]；C：[-d/N, a*sin(γ_T)/N, a*cos(γ_T)/N], 输出格式:无, 标签:A2, 答案:A}。
-9.第三行是第一行与第二行的叉积，由此算出的 D 为{ID:9, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[sqrt(3)/2, sqrt(3)/4, -1/4], [-1/2, 3/4, -sqrt(3)/4], [0, 1/2, sqrt(3)/2]]}。
-10.零位时工具前方指向{ID:10, 选项:A：任务主方向；B：基座上方；C：基座右侧；D：基座下方, 输出格式:无, 标签:C1, 答案:A}。
-11.工具上方所重合的基座绝对方向是{ID:11, 选项:A：上方；B：下方；C：右侧；D：左侧, 输出格式:无, 标签:C1, 答案:C}。
-工具前方与基座前方重合。
-工具上方与基座右侧重合。
-12.按工具前方 × 工具上方 = 工具右侧，工具右侧指向基座的绝对方向{ID:12, 选项:A：上方；B：下方；C：左侧；D：右侧, 输出格式:无, 标签:A1, 答案:B}。
-S 的列按 X_T、Y_T、Z_T 排列，行按 X_W、Y_W、Z_W 排列。
-零位时球腕物理方向与基座方向重合。
-13.安装矩阵 S 为{ID:13, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[1, 0, 0], [0, 0, -1], [0, 1, 0]]}。
-14.为消去固定安装，球腕相对基座系的姿态应为{ID:14, 选项:A：D*S^T；B：S^T*D；C：D*S, 输出格式:无, 标签:A2, 答案:A}。
-记上一步得到的球腕姿态为 H，其元素为 hij，行号在前，列号在后。
-15.在非奇异分支 -90°<q2<90° 上，q1、q2、q3 的解析提取公式为{ID:15, 选项:无, 输出格式:公式, 标签:A2, 答案:atan2(-h31, h11); atan2(-h21, sqrt(h11^2 + h31^2)); atan2(-h23, h22)}。
-16.由此得到的三个关节角为{ID:16, 选项:无, 输出格式:关节角, 标签:A2, 答案:[0, 30, -60]}。
+1. If only the tool pitch and lateral task angles are given, and not the tool roll, can the three joints be unique? The answer is {ID:1, options:A: can; B: cannot, format:choice, label:A2, answer:B}.
+Both joint triples are inside the declared range: q=(0°, -90°, 0°) and q=(30°, -90°, -30°).
+2. Checked with the declared product, the attitude matrices of these two sets are {ID:2, options:A: same; B: different, format:choice, label:A2, answer:A}.
+3. In both sets the tool forward axis is parallel to the base reference-up direction. Under this sample's conditions, {ID:3, options:A: still recover the joint angles from the three task angles; B: do not recover the joint angles from the three task angles, format:choice, label:C1, answer:B}.
+4. Using the conditions listed for this sample, decide whether the three target task angles determine the joint angles uniquely. The answer is {ID:4, options:A: can; B: cannot, format:choice, label:A2, answer:A}.
+5. These three task angles fix the tool attitude relative to the base frame. The corresponding matrix is {ID:5, options:A: D; B: R; C: S, format:choice, label:C1, answer:A}.
+6. Let a=cos(α_T)*cos(β_T), bv=-sin(α_T)*cos(β_T), and c=sin(β_T). The first row of D is the task direction in the tool frame and equals {ID:6, options:A: [a, bv, c]; B: [a, c, bv]; C: [bv, a, c], format:choice, label:C2, answer:A}.
+7. At this example's angles, this row evaluates to {ID:7, options:none, format:vector, label:A2, answer:[sqrt(3)/2, -sqrt(3)/4, 1/4]}.
+8. Let d=bv*cos(γ_T)-c*sin(γ_T) and N=sqrt(a^2+d^2). On the branch a>0, using the roll zero reference and the right-hand rule about tool forward, the second row is {ID:8, options:A: [-d/N, a*cos(γ_T)/N, -a*sin(γ_T)/N]; B: [d/N, a*cos(γ_T)/N, a*sin(γ_T)/N]; C: [-d/N, a*sin(γ_T)/N, a*cos(γ_T)/N], format:choice, label:A2, answer:A}.
+9. The third row is the cross product of the first and second rows, so the computed D is {ID:9, options:none, format:matrix, label:A2, answer:[[sqrt(3)/2, -sqrt(3)/4, 1/4], [1/2, 3/4, -sqrt(3)/4], [0, 1/2, sqrt(3)/2]]}.
+10. At the zero pose, tool forward points {ID:10, options:A: task forward direction; B: base up; C: base right; D: base down, format:choice, label:C1, answer:A}.
+11. Tool up coincides with the base absolute direction {ID:11, options:A: upward; B: downward; C: right; D: left, format:choice, label:C1, answer:C}.
+Tool forward coincides with base forward.
+Tool up coincides with base right.
+12. By tool forward × tool up = tool right, tool right points along the base absolute direction {ID:12, options:A: upward; B: downward; C: left; D: right, format:choice, label:A1, answer:B}.
+The columns of S follow X_T, Y_T, Z_T, and the rows follow X_W, Y_W, Z_W.
+At the zero pose the wrist's physical directions coincide with the base directions.
+13. The installation matrix S is {ID:13, options:none, format:matrix, label:A2, answer:[[1, 0, 0], [0, 0, -1], [0, 1, 0]]}.
+14. To remove the fixed installation, the wrist attitude relative to the base frame should be {ID:14, options:A: D*S^T; B: S^T*D; C: D*S, format:choice, label:A2, answer:A}.
+Call the wrist attitude just obtained H. Its entries are hij, with the row index first and the column index second.
+15. On the nonsingular branch -90°<q2<90°, the extraction formulas for q1, q2, and q3 are {ID:15, options:none, format:formula, label:A2, answer:atan2(-h31, h11); atan2(-h21, sqrt(h11^2 + h31^2)); atan2(-h23, h22)}.
+16. The three joint angles obtained this way are {ID:16, options:none, format:joint-angles, label:A2, answer:[0, -30, -60]}.
 
-# 层间对应
+# Cross-layer correspondence
 
-这一节不送入模型。原先单独成册的基础理论题已并入本稿，不再另存理论稿。α、β、γ 在本稿记为 α_T、β_T、γ_T；理论稿里的 L 就是这里的 L + L_mount。
+This section is not sent to the model. The basic-theory questions that used to stand alone are folded into this manuscript and are not stored as a separate theory paper. α, β, and γ are written α_T, β_T, and γ_T here. The L of the theory paper is L + L_mount here.
 
-正运动学样本测量的是带分步提示的条件能力。逆运动学样本单独送入，用来观察去掉关节角和正向过程之后的逆解。
+The forward sample measures conditional ability with step-by-step prompts. The inverse sample is injected alone, to see the inverse after the joint angles and the forward process are removed.
 
-| 运动学 | 保留的计算 | 基础理论中的对应操作 |
+| kinematics | computation that is kept | corresponding operation in the basic theory |
 |---|---|---|
-| 正样本 1–9 基座系、球腕末端系、工具系的方向对应哪根坐标轴 | 三套坐标轴声明 | 不设绝对方向 |
-| 正样本 10–24 绝对方向轴旋转顺序、正方向、去向和矩阵。本例顺序是法向、侧向、轴向 | 关节轴读取顺序和球腕三轴；R(q1)、R(q2)、R(q3) 读取该轴、正方向和去向 | 直接给出 Rx、Ry、Rz |
-| 正样本 25–35 使用安装矩阵之前写出 S。零位时工具前方与基座 +X_B 重合，工具上方与基座 +Z_B 重合，工具右侧与基座 -Y_B 重合 | 三列读取零位方向，S 由三列叠成；轴和转角再读取 S | 直接给出安装矩阵 |
-| 正样本 36–53 自行判断 D 与 R、S 的关系。展开式抄写刚得到的关节矩阵和 S，D 读取乘积选择和这四份展开式。46 读取任务方向与基座 +X_B 的关系 | 用同一组关节角计算工具姿态和任务方向 | 用已给矩阵合成 D，再写方向角 |
-| 正样本 54–65 三个任务姿态角的正方向和数值。滚转任务角以基座参考上方向在垂直于工具前方的平面上的投影为零参考 | 工具俯仰、侧向、滚转任务角 | 由坐标分量写 α、β、γ |
-| 正样本 66–85 工具右侧翼尖前缘在工具系中的坐标 | 坐标轴读取绝对方向，表达式读取该轴的正方向和所选参数，坐标向量再读取这三份表达式 | 无对应题 |
-| 正样本 86–98 工具顶点到球腕原点的距离，以及工具系原点在基座系中的平移。沿前方的顺序是 O、底部、顶点 | 平移列。基础理论把整段距离记为 L | 齐次变换的平移列 |
-| 正样本 99–101 工具右侧翼尖前缘在基座系中的位置，含平移 | 本稿保留 | 无对应题 |
-| 正样本 102–140 三个指定特征点的边界可达性。工作单元沿 X_B 延伸，横截面为正方形，所以上下和左右共用 L_cell/2。判据只覆盖这三个端点，不是整个工具的碰撞结论，也只在当前旋转顺序和当前零位安装下成立 | 本稿保留 | 无对应题 |
-| 逆样本 1–4 两个任务姿态角缺少自由度，与侧向轴边界多解分开设问。逆样本 5–9 由三个任务姿态角构造 D | 由目标任务姿态角恢复姿态 | 可解条件，以及由坐标角恢复 D |
-| 逆样本 10–13 使用 S 之前按零位安装写出矩阵 | 工具右侧由零位叉积得到，S 读取这三个方向 | 直接给出安装矩阵 |
-| 逆样本 14 先单独问消去安装后的姿态。逆样本 15–16 把该姿态记为 H 后再提取关节角 | 关节角读取刚写出的 D 和 S，再按所选乘积消去安装 | 用已给提取公式得到关节角 |
+| Forward items 1-9, which axis each direction of the base, wrist, and tool frames uses | three axis declarations | no absolute directions |
+| Forward items 10-24, the absolute-axis order, positive sense, destination, and matrices. The order here is normal, lateral, axial | the joint axis reads the order and the three wrist axes; R(q1), R(q2), and R(q3) read that axis, the positive sense, and the destination | give Rx, Ry, and Rz directly |
+| Forward items 25-35 write S before using the installation matrix. At the zero pose, tool forward coincides with base +X_B, tool up with base +Z_B, and tool right with base -Y_B | the three columns read the zero-pose directions and S is stacked from them; the axis and angle then read S | give the installation matrix directly |
+| Forward items 36-53 decide the relation of D to R and S. The expansions copy the joint matrices and S just obtained, and D reads the product choice and those four expansions. Item 46 reads the relation of the task direction to base +X_B | use one joint triple for the tool attitude and the task direction | compose D from the given matrices, then write the direction angles |
+| Forward items 54-65, the signs and values of the three task angles. Roll uses the projection of base reference-up onto the plane perpendicular to tool forward as its zero | tool pitch, lateral, and roll task angles | write α, β, and γ from the components |
+| Forward items 66-85, the right-tip leading edge in the tool frame | the axis reads the absolute direction, the expression reads that axis's positive sense and the chosen parameter, and the coordinate vector reads the three expressions | no corresponding item |
+| Forward items 86-98, the nose-to-wrist distance and the translation of the tool origin in the base frame. The order along forward is O, base, nose | the translation column. The basic theory writes the whole distance as L | the translation column of a homogeneous transform |
+| Forward items 99-101, the right-tip leading edge in the base frame, including translation | kept in this manuscript | no corresponding item |
+| Forward items 102-140, boundary reachability of the three designated points. The cell extends along X_B and the cross-section is square, so the vertical and lateral limits share L_cell/2. The test covers only these three points, is not a whole-tool collision conclusion, and holds only for the current rotation order and zero-pose installation | kept in this manuscript | no corresponding item |
+| Inverse items 1-4 ask separately about the missing freedom of two task angles and about the multiple solutions at the lateral-axis boundary. Inverse items 5-9 build D from the three task angles | recover the attitude from the target task angles | the solvability condition, and recovering D from the coordinate angles |
+| Inverse items 10-13 write the matrix from the zero-pose installation before using S | tool right comes from the zero-pose cross product, and S reads these three directions | give the installation matrix directly |
+| Inverse item 14 first asks for the attitude after removing the installation. Inverse items 15-16 call that attitude H and then extract the joint angles | the joint angles read the D and S just written, then remove the installation by the chosen product | obtain the joint angles from the given extraction formula |
 
-# 生成注记
+# Generation notes
 
-这一节不送入模型。
+This section is not sent to the model.
 
-D 的含义是工具系相对基座系的姿态。按列向量、矩阵左乘，数值上 D=R*S。这是正样本第 37 题要自行判断的关系，定义里只写三个矩阵各自映射什么，不写乘积。逆样本第 14 题再问消去安装后的姿态 D*S^T，定义里也不写这个乘积。
+D is the attitude of the tool frame relative to the base frame. With column vectors and left multiplication, D=R*S numerically. Forward item 37 asks the model to judge that relation. The declaration only says what each of the three matrices maps, and it does not write the product. Inverse item 14 asks for the attitude D*S^T after the installation is removed, and the declaration does not write that product either.
 
-任务方向在基座系中是 [1, 0, 0]。正样本第 46 题要求由“指向 +X_B”自己写出这个向量，所以正样本定义不直接给出这三个数。逆样本不设这一问，定义里可以给出。
+The task direction in the base frame is [1, 0, 0]. Forward item 46 asks the model to write that vector from the phrase pointing along +X_B, so the forward declaration does not give the three numbers. The inverse sample does not ask this, and its declaration may give them.
 
-注入以句号为界，每句一个待填槽。不另设 step_id。当前句之前的空填入选项原文。同一句的后文对当前空可见，所以答案不写在该句后文。
+Injection is bounded by the sentence period, with one open blank in each sentence. There is no separate step id. Blanks before the current sentence are filled with the answer text. Text after the blank in the same sentence is visible, so the answer is not written into that later text.
 
-逆样本第 1 题要模型自己判断：只给俯仰和侧向两个任务姿态角时，三个关节不能保证唯一。第 2 题要模型自己检查 q=(0°, 90°, 0°) 与 q=(30°, 90°, -30°) 的姿态矩阵是否相同。这两句结论只写在这里：两个任务姿态角定不下三个关节；q2=±90° 时，同一姿态可以对应多组关节角，上面两组就是同一姿态。不要把这两句送入物理常识或第 1、2 题之前的正文。定义只列出唯一解的适用条件，不写当前给定量已经满足。第 4 题的标准答案仍是能。
+Inverse item 1 asks the model to judge for itself that three joints cannot be unique when only the pitch and lateral task angles are given. Inverse item 2 asks the model to check whether q=(0°, 90°, 0°) and q=(30°, 90°, -30°) have the same attitude matrix. Those two conclusions are written only here: two task angles do not determine three joints; at q2=±90° one attitude can correspond to several joint triples, and the two triples above are the same attitude. Do not put these two sentences into the background or into the text before items 1 and 2. The declaration only lists the conditions for a unique solution and does not say that the given values already satisfy them. The gold answer of item 4 is still that it can.
 
-统计时按标签分开。C1 记为定义识别，A1 和 A2 记为基于定义的空间推断。正样本 25–29、54–58、66–84 里两类都有，不要把 C1 的正确率当成独立空间推理。
+Scores are separated by label. C1 is definition recognition. A1 and A2 are spatial inference from the definition. Forward items 25-29, 54-58, and 66-84 contain both kinds. Do not treat the C1 accuracy as independent spatial reasoning.
 
-逆样本必须使用独立会话。不要把整份审阅稿作为附件同时送入，不要携带答案、评分说明、层间对应和本节。同一底层实例的正样本和逆样本按实例分组划分，不要拆到训练集和测试集两侧。不要在公共提示中出现正样本的 [0, 30, -60]。不要在逆样本定义里写 D=Rz(30°)*Rx(30°)，也不要写出 D 的数值。
+The inverse sample must use an independent session. Do not attach the whole review manuscript at once, and do not carry the answers, the scoring notes, the cross-layer table, or this section. The forward and inverse samples of the same underlying case stay in the same split. Do not put them on opposite sides of a train and test split. Do not put the forward sample's [0, 30, -60] in a shared prompt. Do not write D=Rz(30°)*Rx(30°) in the inverse declaration, and do not write a numerical D.
 
-逆解提取公式只在当前默认下成立：动轴内旋顺序是法向、侧向、轴向，非奇异分支是 -90°<q2<90°。完整机械限位仍允许 q2=±90°，边界奇异姿态不纳入唯一逆解任务。旋转顺序改变后必须重推提取公式，不能只替换轴名和关节编号。公式格式示例里的 atan2 写法不是这组关节的标准答案。本样本的提取式是 atan2(-h31, h11); atan2(-h21, sqrt(h11^2 + h31^2)); atan2(-h23, h22)。
+The inverse extraction holds only under the current default: the intrinsic moving-axis order is normal, lateral, axial, and the nonsingular branch is -90°<q2<90°. The full mechanical limit still allows q2=±90°, but singular boundary poses are not part of the unique-inverse task. After the rotation order changes, the extraction must be derived again. Replacing axis names and joint indices is not enough. The atan2 pattern in the format example is not the gold answer for these joints. The extraction for this sample is atan2(-h31, h11); atan2(h21, sqrt(h11^2 + h31^2)); atan2(-h23, h22).
 
-三个指定特征点的边界可达性和最终判据只在当前默认下成立：动轴内旋顺序是法向、侧向、轴向，零位安装是工具前方与基座 +X_B 重合、工具上方与基座 +Z_B 重合，工作单元沿 X_B 延伸且横截面为正方形。因此 q3 与安装角同轴，θ=q3+90°，最左侧矩阵绕 Y_B，上下和左右共用 L_cell/2。判据只覆盖工具顶点、工具右侧翼尖和工具左侧翼尖，不是整个工具的碰撞结论。改变安装后，不一定能把 q3 与安装角直接合并。改变顺序后，最左侧矩阵未必绕 Y_B，端点也未必能在给定限位内达到某边界法向。此时端点到球腕原点的距离达到边界距离，通常只给出理论长度上限，不能直接当成该姿态可达。不要把该判据推广到其他旋转顺序、其他安装矩阵，或矩形而非正方形的截面。另生成样本时要重新推导可达性。
+The boundary reachability of the three designated points, and the final test, hold only under the current default: the intrinsic order is normal, lateral, axial; the zero-pose installation puts tool forward on base +X_B and tool up on base +Z_B; and the cell extends along X_B with a square cross-section. Therefore q3 shares an axis with the installation angle, θ=q3+90°, the leftmost matrix rotates about Y_B, and the vertical and lateral limits share L_cell/2. The test covers only the tool nose, the right tip, and the left tip. It is not a collision conclusion for the whole tool. After the installation changes, q3 cannot always be combined directly with the installation angle. After the order changes, the leftmost matrix need not rotate about Y_B, and a point need not be able to reach a boundary normal inside the given limits. A point whose distance from the wrist origin equals the boundary distance then gives only a theoretical length bound and cannot be treated as an attitude that is actually reachable. Do not extend the test to another rotation order, another installation, or a rectangular rather than square cross-section. A new sample has to derive reachability again.

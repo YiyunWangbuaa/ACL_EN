@@ -31,7 +31,7 @@ EQUIVALENT_PAIRS = (
     ("L + L_mount", "L+L_mount"),
 )
 INEQUIVALENT_PAIRS = (
-    ("正", "负"),
+    ("positive", "negative"),
     ("[1, 0, 0]", "[0, 1, 0]"),
     ("A", "B"),
     ("[0, 30, -60]", "[0, -30, 60]"),

@@ -34,22 +34,22 @@ SCALAR_FLIP = {
     THETA: {"sign": "negative"},
     PHI: {"sign": "negative"},
 }
-SCALAR_ZH = {
-    PSI: "偏航角改为机头向地面右方偏时为负",
-    THETA: "俯仰角改为机头向地面上方偏时为负",
-    PHI: "滚转角改为向机体右侧滚转时为负",
+SCALAR_EN = {
+    PSI: "Yaw is negative when the nose yaws to the right of the ground",
+    THETA: "Pitch is negative when the nose pitches above the ground",
+    PHI: "Roll is negative when the aircraft rolls to its right",
 }
 
 
 def _frame_phrase(title: str, spec: dict) -> str:
     shown = {"Xb": "xb", "Yb": "yb", "Zb": "zb"}
     declared = [
-        f"{shown.get(name, name)}沿{axis['along'].split('_', 1)[1]}指向{axis['points'].split('_', 1)[1]}"
+        f"{shown.get(name, name)} lies along {axis['along'].split('_', 1)[1]} and points {axis['points'].split('_', 1)[1]}"
         for name, axis in spec.items()
         if name != "chirality"
     ]
-    hand = "右手系" if spec["chirality"] == "right" else "左手系"
-    return f"{title}改为{hand}，" + "，".join(declared)
+    hand = "right-handed" if spec["chirality"] == "right" else "left-handed"
+    return f"{title} is {hand}, " + ", ".join(declared)
 
 
 def _samples() -> list[dict]:
@@ -87,19 +87,19 @@ def _samples() -> list[dict]:
             made += 1
             phrases = []
             for key in chosen:
-                if key in SCALAR_ZH:
-                    phrases.append(SCALAR_ZH[key])
+                if key in SCALAR_EN:
+                    phrases.append(SCALAR_EN[key])
                 elif key == "ground_frame":
-                    phrases.append(_frame_phrase("地面系", spec[key]))
+                    phrases.append(_frame_phrase("the ground frame", spec[key]))
                 else:
-                    phrases.append(_frame_phrase("机体系", spec[key]))
+                    phrases.append(_frame_phrase("the airframe", spec[key]))
             samples.append({
                 "id": f"{tier}-{made:02d}",
                 "tier": tier,
                 "changed_count": tier,
                 "changed": chosen,
-                "title": f"变更{tier}项",
-                "change": f"这一子过程的 5 项定义中变更 {tier} 项：" + "；".join(phrases) + "。",
+                "title": f"change {tier} items",
+                "change": f"Of the 5 definitions that enter this subprocess, {tier} differ from the standard definition: " + "; ".join(phrases) + ".",
                 "spec": spec,
             })
     return samples
@@ -141,23 +141,23 @@ def main() -> None:
             if index == 1 or index == len(samples):
                 print(f"wrote {index}/{len(samples)}", flush=True)
     lines = [
-        "# 空气动力学定义变更数据",
+        "# Flight-mechanics definition samples",
         "",
-        f"子过程：地面系到机体系，每条 {BLANK_COUNT} 个空，公共编号 {public_span(PROCESS)[0]} 到 {public_span(PROCESS)[1]}。进入这些空的定义有 5 项：偏航符号、俯仰符号、滚转符号、地面系、机体系。其余飞行力学定义保持当前默认，因为这一子过程不读取它们。",
+        f"Subprocess: ground to body, {BLANK_COUNT} blanks each, public numbers {public_span(PROCESS)[0]} through {public_span(PROCESS)[1]}. Five definitions enter these blanks: the yaw sign, the pitch sign, the roll sign, the ground frame, and the airframe. The other flight-mechanics definitions stay on the current standard definition, because this subprocess does not read them.",
         "",
-        "地面系在含默认的 16 套合法声明里抽取非默认的 15 套。机体系抽取两轴声明的 48 套，它们都和默认的 xb、zb 声明不同。",
+        "The ground frame is drawn from the 15 non-standard declarations among the 16 legal ones, including the standard. The airframe is drawn from the 48 two-axis declarations, all different from the standard xb and zb declaration.",
         "",
-        "| 档 | 变更项 | 条数 | 编号 |",
+        "| tier | items changed | count | ids |",
         "| --- | --- | --- | --- |",
     ]
     for tier in TIERS:
-        lines.append(f"| {tier}/5 | {tier} | {PER_TIER} | {tier}-01 至 {tier}-0{PER_TIER} |")
+        lines.append(f"| {tier}/5 | {tier} | {PER_TIER} | {tier}-01 to {tier}-0{PER_TIER} |")
     lines.extend([
         "",
-        f"抽样种子 {SEED}。数据在 data/flight/basic/ground_to_body/batch/samples.jsonl，每行一条，含定义声明和 28 个空的标准答案。",
+        f"Sample seed {SEED}. The data are in data/flight/basic/ground_to_body/batch/samples.jsonl, one sample per line, with the declaration and the answers of 28 blanks.",
         "",
     ])
-    (OUT_DIR / "00_索引.md").write_text("\n".join(lines), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {len(samples)} samples to {OUT_DIR}")
 
 

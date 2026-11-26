@@ -93,7 +93,7 @@ def _scalars() -> dict:
 
 def _axis_phrase(frame: dict, name: str) -> str:
     axis = frame[name]
-    return f"{name}沿{AXIS_ZH[axis['along']]}指向{DIRECTION_ZH[axis['points']]}"
+    return f"{name} along {AXIS_ZH[axis['along']]}, pointing {DIRECTION_ZH[axis['points']]}"
 
 
 def _check_against_standard(spec: dict) -> None:
@@ -118,27 +118,27 @@ def _check_against_standard(spec: dict) -> None:
 def _samples() -> list[dict]:
     samples = []
     shared = (
-        "相对统一默认，每项可变定义都改离原值。"
-        "理论迎角改为空速指向机体上方为正，理论侧滑改为空速指向机体左侧为正，理论滚转改为右翼指向机体上方为正。"
-        "机构迎角、机构侧滑、机构滚转与上述理论角同向改反。"
-        "安装改为反装。"
-        "弹性迎角改为轴向弯向天平下方为正，弹性侧滑改为轴向弯向天平右侧为正，弹性滚转改为侧向移向天平上方为正。"
-        "气流偏角 α_V 改为空速指向机体上方为正，β_V 改为空速指向机体左侧为正。"
-        "天平安装角改为与绕天平绝对轴向正方向（前方）的右手定则相反，模型安装角改为与绕机体绝对轴向正方向（前方）的右手定则相反。"
-        "体轴、风轴、天平都改为左手系，声明的第一轴离开轴向，第二轴离开法向。"
-        "欧拉顺序由功角机构固定，不是可变定义。"
+        "Relative to the common default, every variable definition leaves its original value. "
+        "The theoretical angle of attack is positive when the airspeed points upward on the airframe, the theoretical sideslip is positive when the airspeed points left on the airframe, and the theoretical roll is positive when the right wing points upward on the airframe. "
+        "The mechanism angle of attack, mechanism sideslip, and mechanism roll are reversed in the same direction as those theoretical angles. "
+        "Installation is changed to inverted. "
+        "The elastic angle of attack is positive when the axis bends downward on the balance, the elastic sideslip is positive when the axis bends right on the balance, and the elastic roll is positive when the lateral axis moves upward on the balance. "
+        "The flow-offset angle α_V is positive when the airspeed points upward on the airframe, and β_V is positive when the airspeed points left on the airframe. "
+        "The balance installation angle is opposite the right-hand rule about the positive absolute balance axis (forward). The model installation angle is opposite the right-hand rule about the positive absolute airframe axis (forward). "
+        "The body, wind, and balance frames are all left-handed. The first declared axis leaves the axial axis, and the second leaves the normal axis. "
+        "The Euler order is fixed by the angle-rod mechanism and is not a variable definition."
     )
     for index in range(10):
         spec = _scalars()
         phrases = []
         for offset, (key, owner, x_name, y_name, with_order) in zip((0, 3, 6), FRAME_SLOTS):
             spec[key] = _frame(owner, x_name, y_name, with_order, LAYOUTS[(index + offset) % 10])
-            phrases.append(_axis_phrase(spec[key], x_name) + "，" + _axis_phrase(spec[key], y_name))
+            phrases.append(_axis_phrase(spec[key], x_name) + "; " + _axis_phrase(spec[key], y_name))
         _check_against_standard(spec)
-        change = shared + "本条坐标轴：" + "；".join(phrases) + "。"
+        change = shared + " Axes in this row: " + "; ".join(phrases) + "."
         samples.append({
             "id": f"{index + 1:02d}",
-            "title": f"全定义反向·轴排列{index + 1}",
+            "title": f"every definition reversed, axis layout {index + 1}",
             "change": change,
             "spec": spec,
         })
@@ -148,8 +148,8 @@ def _samples() -> list[dict]:
 def _standard_answers() -> list[tuple[str, str]]:
     record = build_record({
         "id": "00",
-        "title": "统一默认",
-        "change": "统一默认。",
+        "title": "common default",
+        "change": "Common default.",
         "spec": deepcopy(STANDARD_SPEC),
     })
     return [(item["id"], item["answer"]) for item in record["questions"]]
@@ -180,26 +180,26 @@ def main() -> None:
         encoding="utf-8",
     )
     index = [
-        "# 10条强扰动数据",
+        "# Ten strong perturbations",
         "",
-        "每条都把全部可变定义改离统一默认，用来排查定义组合下的程序错误。欧拉顺序由功角机构固定，不在扰动之内。单因素校核仍看 data/wind_tunnel/review，不要和这里混用。",
+        "Each row moves every variable definition off the common default, to look for program errors under combined definitions. The Euler order is fixed by the angle-rod mechanism and is not perturbed. Single-factor checks still use data/wind_tunnel/review and are not mixed with these rows.",
         "",
-        "正式注入格式见 00_注入格式.md。每条审阅稿给出定义声明和四个子过程的完整正文。",
+        "The formal injection format is in 00_injection_format.md. Each review manuscript gives the declaration and the full text of the four subprocesses.",
         "",
     ]
     for record in records:
         path = OUT_DIR / f"sample_{record['id']}.md"
         text = _render_markdown(record).replace(
-            "data/wind_tunnel/review/00_注入格式.md",
-            "data/wind_tunnel/stress/00_注入格式.md",
+            "data/wind_tunnel/review/00_injection_format.md",
+            "data/wind_tunnel/stress/00_injection_format.md",
         )
         path.write_text(text, encoding="utf-8")
         index.append(
-            f"- 数据 {record['id']} {record['title']}："
-            f"{record['changed_answers']} 个空的答案与统一默认不同。"
+            f"- Data {record['id']} {record['title']}: "
+            f"{record['changed_answers']} blanks differ from the common default."
         )
-    (OUT_DIR / "00_索引.md").write_text("\n".join(index) + "\n", encoding="utf-8")
-    (OUT_DIR / "00_注入格式.md").write_text(
+    (OUT_DIR / "00_index.md").write_text("\n".join(index) + "\n", encoding="utf-8")
+    (OUT_DIR / "00_injection_format.md").write_text(
         _format_document(records[0]["injection_example"]),
         encoding="utf-8",
     )

@@ -79,11 +79,11 @@ _RANGES = (
 )
 
 JOINT_GROUPS = (
-    ("L0", "姿态锚点", ("23", "31", "40")),
-    ("L0", "变换约定", ("44", "45", "46")),
-    ("L0", "力矩起终点", ("185", "186", "187", "188")),
-    ("L2", "风轴到体轴阶段顺序", ("47", "48", "49", "50", "51")),
-    ("L2", "天平到体轴阶段顺序", ("98", "99", "100")),
+    ("L0", "attitude anchors", ("23", "31", "40")),
+    ("L0", "transform convention", ("44", "45", "46")),
+    ("L0", "moment endpoints", ("185", "186", "187", "188")),
+    ("L2", "wind-frame to body-axis stage order", ("47", "48", "49", "50", "51")),
+    ("L2", "balance-frame to body-axis stage order", ("98", "99", "100")),
 )
 
 
@@ -95,7 +95,7 @@ def _table() -> dict[str, str]:
             if blank_id in REMOVED:
                 continue
             if blank_id in found:
-                raise RuntimeError(f"ID{blank_id} 的层级重复。")
+                raise RuntimeError(f"ID{blank_id} has a duplicate layer.")
             found[blank_id] = level
     return found
 
@@ -127,10 +127,10 @@ def audit_layers() -> dict:
     extra = sorted(set(LEVELS) - set(TARGETS), key=int)
     conflict = [blank_id for blank_id, level in LEVELS.items() if major(level) not in {"L0", "L1", "L2", "L3"}]
     if missing or extra or conflict:
-        raise RuntimeError(f"层级未闭合。缺少 {missing}，多出 {extra}，冲突 {conflict}。")
+        raise RuntimeError(f"Layers are not closed. Missing {missing}, extra {extra}, conflict {conflict}.")
     counts = {name: 0 for name in ("L0", "L1", "L2", "L3")}
     for level in LEVELS.values():
         counts[major(level)] += 1
     if sum(counts.values()) != len(LEVELS):
-        raise RuntimeError("四层之和不等于可分层节点数。")
+        raise RuntimeError("The four layers do not add up to the layered node count.")
     return {"nodes": len(LEVELS), **counts, "unassigned": 0, "conflict": 0}

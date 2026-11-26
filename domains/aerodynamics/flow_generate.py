@@ -73,7 +73,7 @@ NAME = {
     ATTACK: "α",
     SIDESLIP: "β",
 }
-SLOT_LINE = re.compile(r"^(\d+)\. .+\{ID:(\d+), .+\}。$")
+SLOT_LINE = re.compile(r"^(\d+)\. .+\{ID:(\d+), .+\}\.$")
 
 
 def _passive(slot: str, angle) -> sp.Matrix:
@@ -202,7 +202,7 @@ def _component_word(expr, values: dict) -> str:
     number = sp.N(expr.subs({key: sp.rad(amount) for key, amount in values.items()}))
     if abs(number) < sp.Float("1e-10"):
         raise DefinitionError("The vertical component is zero, so its direction is undefined.")
-    return "下方" if number > 0 else "上方"
+    return "downward" if number > 0 else "upward"
 
 
 def _recovers(component_expr, target, candidates: list) -> sp.Expr:
@@ -249,88 +249,88 @@ def _choose(correct: str, wrongs: list[str], salt: int) -> tuple[list[str], str]
 
 def _choice(number: int, label: str, stem: str, correct: str, wrongs: list[str]) -> dict:
     options, answer = _choose(correct, wrongs, number)
-    return {"id": number, "label": label, "stem": stem, "options": options, "answer": answer, "format": "无"}
+    return {"id": number, "label": label, "stem": stem, "options": options, "answer": answer, "format": "choice"}
 
 
-def _open(number: int, label: str, stem: str, answer: str, fmt: str = "向量") -> dict:
+def _open(number: int, label: str, stem: str, answer: str, fmt: str = "vector") -> dict:
     return {"id": number, "label": label, "stem": stem, "options": None, "answer": answer, "format": fmt}
 
 
 def _load_questions(loads: dict) -> list[dict]:
     added = loads["added"]
     rows = [
-        _choice(60, "C2", "本子过程的已知气动力分量位于气流系，输出要求采用机体系，因此所需转换方向是", "气流系向机体系", ["机体系向气流系", "气流系向稳定性系后停止"]),
-        _choice(61, "C2", "本子过程转换前后，力矩参考点", "始终为A", ["由A变为G", "由G变为A"]),
-        _choice(62, "C1", "机体系绝对轴向正方向对应", "X_b", ["Y_b", "Z_b"]),
-        _choice(63, "C1", "机体系绝对侧向正方向对应", "Y_b", ["X_b", "Z_b"]),
-        _choice(64, "C1", "机体系绝对法向正方向对应", "Z_b", ["X_b", "Y_b"]),
-        _choice(65, "C1", "气流系中的阻力方向为", "-X_a", ["+X_a", "-Z_a"]),
-        _choice(66, "C1", "气流系中的正升力方向为", loads["lift_axis"], [item for item in ("-Z_a", "+Z_a", "+Y_a") if item != loads["lift_axis"]]),
-        _choice(67, "C1", "气流系中的正侧力方向为", loads["side_axis"], [item for item in ("+Y_a", "-Y_a", "+Z_a") if item != loads["side_axis"]]),
-        _open(68, "A2", "按照 X_a、Y_a、Z_a 的顺序，气流系气动力向量为", loads["air_force"]),
-        _choice(69, "C1", "气流系滚转力矩 l_a 的正方向绕", "+X_a", ["+Y_a", "+Z_a"]),
-        _choice(70, "C1", "气流系俯仰力矩 m_a 的正方向绕", "+Y_a", ["+X_a", "+Z_a"]),
-        _open(71, "A2", "按照 X_a、Y_a、Z_a 的顺序，气流系力矩向量为", loads["air_moment"]),
-        _choice(72, "A1", "仅有正迎角时，稳定性系前方轴相对机体系前方轴偏向机体", loads["stable_side"], ["上方", "下方", "右方"]),
-        _choice(73, "A1", "因此该前方轴在机体系中的 Z_b 分量为", loads["stable_z"], ["正", "负", "零"]),
-        _open(74, "A2", "由此构造机体系到稳定性系的被动变换矩阵 T_s←b 为", loads["to_stable"], "矩阵"),
-        _choice(75, "A1", "仅有正侧滑角时，气流系前方轴相对稳定性系前方轴偏向稳定性系", loads["air_side"], ["左方", "右方", "下方"]),
-        _choice(76, "A1", "因此该前方轴在稳定性系中的 Y_s 分量为", loads["air_y"], ["正", "负", "零"]),
-        _open(77, "A2", "由此构造稳定性系到气流系的被动变换矩阵 T_a←s 为", loads["stable_to_air"], "矩阵"),
-        _choice(78, "C2", "机体系到气流系的整体变换 T_a←b 应写为", "T_a←s*T_s←b", ["T_s←b*T_a←s"]),
-        _open(79, "A2", "T_a←s的展开式为", loads["stable_to_air"], "矩阵"),
-        _open(80, "A2", "T_s←b的展开式为", loads["to_stable"], "矩阵"),
-        _open(81, "A2", "展开该乘积得到 T_a←b 为", loads["to_air"], "矩阵"),
-        _choice(82, "C2", "将气流系气动力换成机体系气动力，应使用", "T_a←b 的转置", ["T_a←b"]),
-        _open(83, "A2", "记该反向矩阵为 B，展开 B 得到", loads["body_from_air"], "矩阵"),
-        _open(84, "A2", "机体系轴向气动力 X 为", loads["body_x"], "表达式"),
-        _open(85, "A2", "机体系侧向气动力 Y_b 为", loads["body_y"], "表达式"),
-        _open(86, "A2", "机体系法向气动力 Z 为", loads["body_z"], "表达式"),
-        _choice(87, "A1", "升力产生的机体系轴向分量为", loads["lift_x"], ["正", "负", "零"]),
-        _choice(88, "A1", "升力产生的机体系法向分量为", loads["lift_z"], ["正", "负", "零"]),
-        _choice(89, "A1", "当 β=0、Y=0 且 D>0、L>0 时，仅凭这些条件，机体系轴向合力 X 的符号", loads["axial_sign"], ["一定为正", "一定为负", "不能确定"]),
-        _open(90, "A2", "取 α=30°、β=0°、D=2、Y=0、L=2*sqrt(3)，机体系气动力向量为", loads["example_force"]),
-        _choice(91, "A1", "坐标转换后，气动力的欧氏长度与转换前", "相同", ["一般增大", "一般减小"]),
-        _choice(92, "C2", "同一参考点 A 处的气动力矩从气流系变到机体系时，应使用", "同一个矩阵 B", ["B 的负矩阵", "额外加入力臂平移"]),
-        _open(93, "A2", "机体系滚转力矩 l_A 为", loads["body_l"], "表达式"),
-        _open(94, "A2", "机体系俯仰力矩 m_A 为", loads["body_m"], "表达式"),
-        _open(95, "A2", "机体系偏航力矩 n_A 为", loads["body_n"], "表达式"),
-        _choice(96, "A1", "当 β=0 时，气流系正俯仰力矩的旋转轴与机体系侧向轴", loads["pitch_relation"], ["重合", "相互垂直", "方向无法确定"]),
-        _choice(97, "A1", "当 α=0、0°<β<90°、l_a>0 且 m_a=n_a=0 时，机体系俯仰力矩 m_A 为", loads["roll_to_pitch"], ["正", "负", "零"]),
-        _open(98, "A2", "由 ρ 和 V 计算动压 q_bar 得到", loads["dynamic"], "表达式"),
-        _open(99, "A2", "将气动力系数换成气流系有量纲力向量，结果为", loads["coefficient_force"]),
-        _choice(100, "C2", f"三个力分量采用相同归一化尺度，因此有符号分量系数向量 {loads['coeff_symbol']} 可以", "使用同一矩阵 B 直接转换", ["必须分别乘不同参考长度后才能转换"]),
-        _choice(101, "C2", "三个力矩系数采用 b、c_bar、b 三个参考长度，当 b 不等于 c_bar 时，应当", "先恢复有量纲力矩，旋转后按输出轴参考长度归一化", ["直接将 B 乘 [C_la, C_ma, C_na]"]),
-        _open(102, "A2", "按照当前归一化定义，机体系俯仰力矩系数 C_mA 为", loads["pitch_coefficient"], "表达式"),
-        _choice(103, "C1", "换算前的力矩参考点是", "A", ["G", "N"]),
-        _choice(104, "C1", "换算后的力矩参考点是", "G", ["A", "N"]),
-        _open(105, "A2", "由共线距离关系，A 到机头参考点 N 的距离 X_N 为", loads["nose_distance"], "表达式"),
-        _choice(106, "C1", "工程轴向位置 x_Ge 的正方向是机体", "后方", ["前方"]),
-        _choice(107, "A1", "该方向与机体系 +X_b 方向", "相反", ["相同"]),
-        _open(108, "A2", "因此质心 G 在以 A 为原点的机体系中的轴向坐标为", loads["lever_x"], "表达式"),
-        _open(109, "A2", "按 X_b、Y_b、Z_b 的顺序，从 A 指向 G 的向量 r_AG 为", loads["arm_from_a"]),
-        _open(110, "A2", "从 G 指向 A 的向量 r_GA 为", loads["arm_from_g"]),
-        _choice(111, "C2", "参考点由 A 换到 G 后，同一气动力系的合力", "保持不变", ["必须取反", "必须增加一个力臂项"]),
-        _choice(112, "C2", "为把关于 A 的力矩换成关于 G 的力矩，附加力矩可用", "r_GA×F_b", ["r_AG×F_b", "r_GA×M_A"]),
-        _choice(113, "A2", "若统一使用从 A 指向 G 的向量 r_AG，换算关系应写为", "M_G=M_A-r_AG×F_b", ["M_G=M_A+r_AG×F_b", "M_G=F_b-r_AG×M_A"]),
-        _choice(114, "A1", "仅有正轴向力 X 时，该力对 G 产生的附加俯仰力矩为", added[("X", "俯仰")], ["正", "负", "零"]),
-        _choice(115, "A1", "仅有正轴向力 X 时，该力对 G 产生的附加偏航力矩为", added[("X", "偏航")], ["正", "负", "零"]),
-        _choice(116, "A1", "仅有正侧向力 Y_b 时，该力对 G 产生的附加滚转力矩为", added[("Y_b", "滚转")], ["正", "负", "零"]),
-        _choice(117, "A1", "仅有正侧向力 Y_b 时，该力对 G 产生的附加偏航力矩为", added[("Y_b", "偏航")], ["正", "负", "零"]),
-        _choice(118, "A1", "仅有正法向力 Z 时，该力对 G 产生的附加滚转力矩为", added[("Z", "滚转")], ["正", "负", "零"]),
-        _choice(119, "A1", "仅有正法向力 Z 时，该力对 G 产生的附加俯仰力矩为", added[("Z", "俯仰")], ["正", "负", "零"]),
-        _open(120, "A2", "换算到质心后的滚转力矩 l_G 为", loads["roll_g"], "表达式"),
-        _open(121, "A2", "换算到质心后的俯仰力矩 m_G 为", loads["pitch_g"], "表达式"),
-        _open(122, "A2", "换算到质心后的偏航力矩 n_G 为", loads["yaw_g"], "表达式"),
-        _open(123, "A2", "代入工程位置定义，质心处的俯仰力矩 m_G 为", loads["pitch_g_engineering"], "表达式"),
-        _choice(124, "A1", "若 G 相对 A 仅沿机体前方偏移，即 x>0、y=z=0，且合力仅沿机体上方，那么附加俯仰力矩为", loads["nose_up"], ["抬头方向", "低头方向", "零"]),
-        _choice(125, "A1", "若 r_AG 与 F_b 平行，参考点换算产生的附加力矩为", "零", ["一定为正", "一定为负"]),
-        _choice(126, "A1", "若 G 相对 A 仅沿机体轴向移动，滚转力矩 l_G 与 l_A", "相同", ["必定相反", "不能建立关系"]),
-        _open(127, "A2", "若所有参考长度、参考面积和动压均保持不变，定义机体系力系数为 [X, Y_b, Z]=q_bar*S*[C_X, C_Yb, C_Z]，则质心处的滚转力矩系数 C_lG 为", loads["roll_coefficient"], "表达式"),
-        _open(128, "A2", "采用相同约定，质心处的俯仰力矩系数 C_mG 为", loads["pitch_coefficient_g"], "表达式"),
-        _open(129, "A2", "采用相同约定，质心处的偏航力矩系数 C_nG 为", loads["yaw_coefficient_g"], "表达式"),
-        _choice(130, "C2", "若同一气动力系从气流系转换到机体系并同时从 A 换算到 G，允许先在气流系完成参考点换算，但必须把同一个力臂向量也表达在", "气流系", ["机体系而不作转换", "任意坐标系"]),
-        _choice(131, "A2", "在本稿右手正交坐标系条件下，若两条路径的力、力矩和力臂均保持一致，则先旋转后换参考点与先换参考点后旋转的最终机体系质心力矩", "相同", ["互为相反数", "一般没有关系"]),
+        _choice(60, "C2", "The known aerodynamic components are in the airflow frame and the output is required in the airframe, so the transform is", "airflow frame to airframe", ["airframe to airflow frame", "airflow frame to stability frame, then stop"]),
+        _choice(61, "C2", "Across this subprocess, the moment reference point", "remains A", ["changes from A to G", "changes from G to A"]),
+        _choice(62, "C1", "The positive absolute airframe axis corresponds to", "X_b", ["Y_b", "Z_b"]),
+        _choice(63, "C1", "The positive absolute airframe lateral direction corresponds to", "Y_b", ["X_b", "Z_b"]),
+        _choice(64, "C1", "The positive absolute airframe normal corresponds to", "Z_b", ["X_b", "Y_b"]),
+        _choice(65, "C1", "Drag in the airflow frame is along", "-X_a", ["+X_a", "-Z_a"]),
+        _choice(66, "C1", "Positive lift in the airflow frame is along", loads["lift_axis"], [item for item in ("-Z_a", "+Z_a", "+Y_a") if item != loads["lift_axis"]]),
+        _choice(67, "C1", "Positive side force in the airflow frame is along", loads["side_axis"], [item for item in ("+Y_a", "-Y_a", "+Z_a") if item != loads["side_axis"]]),
+        _open(68, "A2", "In the order X_a, Y_a, Z_a, the airflow-frame aerodynamic force is", loads["air_force"]),
+        _choice(69, "C1", "Positive airflow roll moment l_a is about", "+X_a", ["+Y_a", "+Z_a"]),
+        _choice(70, "C1", "Positive airflow pitch moment m_a is about", "+Y_a", ["+X_a", "+Z_a"]),
+        _open(71, "A2", "In the order X_a, Y_a, Z_a, the airflow-frame moment is", loads["air_moment"]),
+        _choice(72, "A1", "With only a positive angle of attack, the stability forward axis relative to the airframe forward axis points", loads["stable_side"], ["upward", "downward", "right"]),
+        _choice(73, "A1", "The Z_b component of that forward axis in the airframe is therefore", loads["stable_z"], ["positive", "negative", "zero"]),
+        _open(74, "A2", "The passive matrix T_s←b from the airframe to the stability frame is", loads["to_stable"], "matrix"),
+        _choice(75, "A1", "With only a positive sideslip, the airflow forward axis relative to the stability forward axis points", loads["air_side"], ["left", "right", "downward"]),
+        _choice(76, "A1", "The Y_s component of that forward axis in the stability frame is therefore", loads["air_y"], ["positive", "negative", "zero"]),
+        _open(77, "A2", "The passive matrix T_a←s from the stability frame to the airflow frame is", loads["stable_to_air"], "matrix"),
+        _choice(78, "C2", "The full transform T_a←b from the airframe to the airflow frame is", "T_a←s*T_s←b", ["T_s←b*T_a←s"]),
+        _open(79, "A2", "The expanded T_a←s is", loads["stable_to_air"], "matrix"),
+        _open(80, "A2", "The expanded T_s←b is", loads["to_stable"], "matrix"),
+        _open(81, "A2", "Expanding that product gives T_a←b =", loads["to_air"], "matrix"),
+        _choice(82, "C2", "Convert the airflow-frame force into the airframe force with", "the transpose of T_a←b", ["T_a←b"]),
+        _open(83, "A2", "Call that reverse matrix B and expand it to", loads["body_from_air"], "matrix"),
+        _open(84, "A2", "The airframe axial force X is", loads["body_x"], "expression"),
+        _open(85, "A2", "The airframe lateral force Y_b is", loads["body_y"], "expression"),
+        _open(86, "A2", "The airframe normal force Z is", loads["body_z"], "expression"),
+        _choice(87, "A1", "The airframe axial component produced by lift is", loads["lift_x"], ["positive", "negative", "zero"]),
+        _choice(88, "A1", "The airframe normal component produced by lift is", loads["lift_z"], ["positive", "negative", "zero"]),
+        _choice(89, "A1", "When β=0, Y=0, D>0, and L>0, these conditions alone make the sign of the airframe axial force X", loads["axial_sign"], ["certainly positive", "certainly negative", "indeterminate"]),
+        _open(90, "A2", "At α=30°, β=0°, D=2, Y=0, and L=2*sqrt(3), the airframe aerodynamic force is", loads["example_force"]),
+        _choice(91, "A1", "After the coordinate transform, the Euclidean length of the aerodynamic force is", "same", ["generally increases", "generally decreases"]),
+        _choice(92, "C2", "At the same reference point A, the aerodynamic moment is moved from the airflow frame to the airframe with", "the same matrix B", ["the negative of B", "an extra moment-arm translation"]),
+        _open(93, "A2", "The airframe roll moment l_A is", loads["body_l"], "expression"),
+        _open(94, "A2", "The airframe pitch moment m_A is", loads["body_m"], "expression"),
+        _open(95, "A2", "The airframe yaw moment n_A is", loads["body_n"], "expression"),
+        _choice(96, "A1", "At β=0, the axis of the positive airflow pitch moment and the airframe lateral axis are", loads["pitch_relation"], ["aligned", "perpendicular", "direction indeterminate"]),
+        _choice(97, "A1", "When α=0, 0°<β<90°, l_a>0, and m_a=n_a=0, the airframe pitch moment m_A is", loads["roll_to_pitch"], ["positive", "negative", "zero"]),
+        _open(98, "A2", "Dynamic pressure q_bar from ρ and V is", loads["dynamic"], "expression"),
+        _open(99, "A2", "The dimensional airflow-frame force from the aerodynamic coefficients is", loads["coefficient_force"]),
+        _choice(100, "C2", f"The three force components share one scale, so the signed coefficient vector {loads['coeff_symbol']} can", "convert directly with the same matrix B", ["must be multiplied by different reference lengths before conversion"]),
+        _choice(101, "C2", "When the three moment coefficients use reference lengths b, c_bar, and b, and b is not equal to c_bar,", "recover the dimensional moment, rotate it, then normalize by the output-axis reference length", ["multiply B directly by [C_la, C_ma, C_na]"]),
+        _open(102, "A2", "Under the current normalization, the airframe pitch-moment coefficient C_mA is", loads["pitch_coefficient"], "expression"),
+        _choice(103, "C1", "Before the transfer, the moment reference point is", "A", ["G", "N"]),
+        _choice(104, "C1", "After the transfer, the moment reference point is", "G", ["A", "N"]),
+        _open(105, "A2", "From the collinear lengths, the distance X_N from A to the nose reference N is", loads["nose_distance"], "expression"),
+        _choice(106, "C1", "The positive engineering axial position x_Ge points", "rearward", ["forward"]),
+        _choice(107, "A1", "That direction and the airframe +X_b direction are", "opposite", ["same"]),
+        _open(108, "A2", "The axial coordinate of the center of mass G in the airframe with origin A is therefore", loads["lever_x"], "expression"),
+        _open(109, "A2", "In the order X_b, Y_b, Z_b, the vector r_AG from A to G is", loads["arm_from_a"]),
+        _open(110, "A2", "The vector r_GA from G to A is", loads["arm_from_g"]),
+        _choice(111, "C2", "After the reference point moves from A to G, the resultant force of the same aerodynamic system", "stays unchanged", ["must be reversed", "must gain a moment-arm term"]),
+        _choice(112, "C2", "To transfer the moment about A to the moment about G, the added moment is", "r_GA×F_b", ["r_AG×F_b", "r_GA×M_A"]),
+        _choice(113, "A2", "Using the vector r_AG from A to G, the transfer is", "M_G=M_A-r_AG×F_b", ["M_G=M_A+r_AG×F_b", "M_G=F_b-r_AG×M_A"]),
+        _choice(114, "A1", "With only a positive axial force X, the added pitch moment at G is", added[("X", "pitch")], ["positive", "negative", "zero"]),
+        _choice(115, "A1", "With only a positive axial force X, the added yaw moment at G is", added[("X", "yaw")], ["positive", "negative", "zero"]),
+        _choice(116, "A1", "With only a positive lateral force Y_b, the added roll moment at G is", added[("Y_b", "roll")], ["positive", "negative", "zero"]),
+        _choice(117, "A1", "With only a positive lateral force Y_b, the added yaw moment at G is", added[("Y_b", "yaw")], ["positive", "negative", "zero"]),
+        _choice(118, "A1", "With only a positive normal force Z, the added roll moment at G is", added[("Z", "roll")], ["positive", "negative", "zero"]),
+        _choice(119, "A1", "With only a positive normal force Z, the added pitch moment at G is", added[("Z", "pitch")], ["positive", "negative", "zero"]),
+        _open(120, "A2", "The roll moment l_G transferred to the center of mass is", loads["roll_g"], "expression"),
+        _open(121, "A2", "The pitch moment m_G transferred to the center of mass is", loads["pitch_g"], "expression"),
+        _open(122, "A2", "The yaw moment n_G transferred to the center of mass is", loads["yaw_g"], "expression"),
+        _open(123, "A2", "After substituting the engineering position, the pitch moment m_G at the center of mass is", loads["pitch_g_engineering"], "expression"),
+        _choice(124, "A1", "If G is offset from A only forward on the airframe, so x>0 and y=z=0, and the force is only upward on the airframe, the added pitch moment is", loads["nose_up"], ["nose-up", "nose-down", "zero"]),
+        _choice(125, "A1", "If r_AG is parallel to F_b, the moment added by the reference-point transfer is", "zero", ["certainly positive", "certainly negative"]),
+        _choice(126, "A1", "If G moves from A only along the airframe axis, the roll moments l_G and l_A are", "same", ["necessarily opposite", "no relation can be formed"]),
+        _open(127, "A2", "If every reference length, reference area, and dynamic pressure stays fixed, and [X, Y_b, Z]=q_bar*S*[C_X, C_Yb, C_Z], the roll-moment coefficient C_lG at the center of mass is", loads["roll_coefficient"], "expression"),
+        _open(128, "A2", "Under the same convention, the pitch-moment coefficient C_mG at the center of mass is", loads["pitch_coefficient_g"], "expression"),
+        _open(129, "A2", "Under the same convention, the yaw-moment coefficient C_nG at the center of mass is", loads["yaw_coefficient_g"], "expression"),
+        _choice(130, "C2", "If one aerodynamic system is both rotated from the airflow frame into the airframe and transferred from A to G, the reference-point transfer may be done first in the airflow frame, but the same moment arm must also be expressed in", "the airflow frame", ["the airframe without converting it", "an arbitrary frame"]),
+        _choice(131, "A2", "In this right-handed orthogonal frame, if the force, moment, and arm agree on both paths, the final airframe moment at the center of mass from rotating first and from transferring the point first is", "same", ["negatives of each other", "generally unrelated"]),
     ]
     return rows
 
@@ -393,14 +393,14 @@ def build(spec: dict, lift_z: int = -1, side_y: int = 1) -> dict:
     _check_rotation(body_air)
     loads = build_loads(body_speed, ATTACK, SIDESLIP, _show, lift_z=lift_z, side_y=side_y)
 
-    yaw_side = _sign_word(model, PSI, {"ground_right": "地面右方", "ground_left": "地面左方"})
-    pitch_side = _sign_word(model, THETA, {"ground_up": "上方", "ground_down": "下方"})
-    incline_side = _sign_word(model, MU, {"ground_up": "上方", "ground_down": "下方"})
-    attack_side = _sign_word(model, ALPHA, {"body_down": "下方", "body_up": "上方"})
-    sideslip_side = _sign_word(model, BETA, {"body_right": "右方", "body_left": "左方"})
+    yaw_side = _sign_word(model, PSI, {"ground_right": "right on the ground", "ground_left": "left on the ground"})
+    pitch_side = _sign_word(model, THETA, {"ground_up": "upward", "ground_down": "downward"})
+    incline_side = _sign_word(model, MU, {"ground_up": "upward", "ground_down": "downward"})
+    attack_side = _sign_word(model, ALPHA, {"body_down": "downward", "body_up": "upward"})
+    sideslip_side = _sign_word(model, BETA, {"body_right": "right", "body_left": "left"})
     angles = {name: model.binding(name).definition for name in SYMBOL}
     if model.binding(PHI).sign == POSITIVE:
-        angles[PHI] += "。在前、右、下坐标下，右翼向下为正"
+        angles[PHI] += ". In forward-right-down coordinates, the right wing down is positive"
 
     questions = _questions(
         ground_body_text=ground_body_text,
@@ -418,8 +418,8 @@ def build(spec: dict, lift_z: int = -1, side_y: int = 1) -> dict:
         body_speed=_vector(body_speed),
         beta_text=_formula(beta_formula),
         alpha_text=_formula(alpha_formula),
-        beta_sign="正" if positive_beta > 0 else "负",
-        alpha_sign="正" if positive_alpha > 0 else "负",
+        beta_sign="positive" if positive_beta > 0 else "negative",
+        alpha_sign="positive" if positive_alpha > 0 else "negative",
         yaw_side=yaw_side,
         pitch_side=pitch_side,
         incline_side=incline_side,
@@ -494,77 +494,77 @@ def _questions(**text) -> list[dict]:
     sa = text["stability_air_text"]
     ba = text["body_air_text"]
     rows = [
-        _choice(1, "C1", "地面系、机体系和航迹系的法向正方向分别指向", "下方", ["上方"]),
-        _choice(2, "C1", "地面系、机体系和航迹系的侧向正方向分别指向", "右方", ["左方"]),
-        _choice(3, "C1", "机体前方、机体右方、机体下方构成", "右手系", ["左手系"]),
-        _choice(4, "C1", "偏航角为正时，机体前方在地面水平面上的投影向", f"{text['yaw_side']}偏转", ["地面右方偏转", "地面左方偏转"]),
-        _choice(5, "C1", "俯仰角为正时，机头指向地面", text["pitch_side"], ["上方", "下方"]),
-        _choice(6, "C1", "滚转角 Φ 绕机体的", "轴向", ["侧向", "法向"]),
-        _choice(7, "C2", "本题坐标转换采用", "被动", ["主动"]),
-        _choice(8, "C2", "姿态角采用", "动轴内旋", ["定轴外旋"]),
-        _choice(9, "C2", f"按偏航、俯仰、滚转构造姿态后，将地面系分量映射到机体系的矩阵写成 bRg={text['body_from_ground']}，其中偏航矩阵位于连乘式的", "最右侧", ["最左侧"]),
-        _choice(10, "C2", "将机体系坐标转换到地面系时，使用矩阵 gRb，该矩阵的物理映射方向是", "机体系到地面系", ["地面系到机体系"]),
-        _choice(11, "C2", "将地面系向量转换到机体系时，应使用 gRb 的", "转置", ["本身"]),
-        _choice(12, "C2", "按定义，gRb 的复合形式为", g, ["Cx(Φ)*Cy(θ)*Cz(ψ)", "Cz(ψ)*Cy(θ)*Cx(Φ)", "Cy(θ)*Cz(ψ)*Cx(Φ)"]),
-        _open(13, "C1", "机体前方单位向量在机体系中的坐标为", "[1, 0, 0]"),
-        _choice(14, "C2", "将机体前方轴映射到地面系，应计算", "gRb*[1, 0, 0]", ["gRb^T*[1, 0, 0]"]),
-        _open(15, "A2", "在 ψ=30°、θ=20°、Φ=15° 时，机体前方轴在地面系中的三个分量为", text["nose_example"]),
-        _choice(16, "A1", "由该地面法向分量的符号判断，机头指向地面", text["nose_word"], ["上方", "下方"]),
-        _choice(17, "C2", "给定完整姿态矩阵时，机体右方轴在地面系中的方向由矩阵的第", "二列", ["一列", "三列"]),
-        _choice(18, "C2", "机体下方轴在地面系中的方向由矩阵的第", "三列", ["一列", "二列"]),
-        _choice(19, "C1", "正交姿态矩阵的转置等于其", "逆矩阵", ["负矩阵", "行列式"]),
-        _choice(20, "C1", "任意合法三维旋转矩阵的行列式为", "+1", ["-1", "0"]),
-        _choice(21, "C1", "航迹方位角 φ 描述空速水平投影相对", "Xg", ["Yg", "Zg"]),
-        _choice(22, "C1", "航迹倾斜角 μ 为正表示飞行器向地面", text["incline_side"], ["上方", "下方"]),
-        _choice(23, "C1", "航迹滚转角 γ 使气流系相对航迹系绕共同的空速轴转动，该轴是航迹系的", "Xp", ["Yp", "Zp"]),
-        _choice(24, "C1", "地面系看到的航迹系姿态矩阵记作", "gRp", ["pRg"]),
-        _choice(25, "C2", "按当前定义，不含滚转的 gRp 的复合形式为", p, _track_wrongs(p, text["track_air_text"])),
-        _open(26, "C1", "航迹系单位空速向量为", "[1, 0, 0]"),
-        _choice(27, "C2", "航迹系单位空速向量转换到地面系，应使用", "gRp", ["gRp^T"]),
-        _choice(28, "A2", "空速的地面系法向分量为", text["track_z"], [text["track_z"].replace("-", "") if text["track_z"].startswith("-") else f"-{text['track_z']}", "cos(10°)", "sin(10°)"]),
-        _choice(29, "A1", "由该地面法向分量的符号判断，空速指向地面", text["speed_word"], ["上方", "下方"]),
-        _choice(30, "A2", "当航迹倾斜角为零时，空速地面系法向分量为", "0", ["+1", "-1"]),
-        _choice(31, "A1", "在 μ=0 时，航迹方位角改变会使空速水平投影在 Xg、Yg 平面内", "转动", ["保持不变"]),
-        _choice(32, "A1", "航迹滚转角 γ 改变时，空速方向本身", "不改变", ["改变"]),
-        _choice(33, "A1", "航迹滚转会改变", "气流系 Ya、Za 相对航迹系的方向", ["航迹系 Yp、Zp 轴", "空速大小"]),
-        _open(34, "A2", "地面系空速向量可由航迹方向写成", text["track_speed"]),
-        _choice(35, "C1", "稳定性系 Xs 轴沿空速在飞行器", "对称面内的投影", ["机翼展向投影"]),
-        _choice(36, "C1", "迎角 α 为正时，空速在机体对称面内偏向机体", text["attack_side"], ["上方", "下方"]),
-        _choice(37, "C1", "侧滑角 β 为正时，空速偏向机体", text["sideslip_side"], ["左方", "右方"]),
-        _choice(38, "C2", "机体系到稳定性系的姿态差异只由", "迎角", ["侧滑角", "航迹方位角"]),
-        _choice(39, "C2", "稳定性系到气流系的姿态差异只由", "侧滑角", ["迎角", "偏航角"]),
-        _choice(40, "C2", "按定义，稳定性系到机体系的矩阵为", bs, ["Cy(-α)", "Cy(α)", "Cz(-β)"]),
-        _choice(41, "C2", "气流系到稳定性系的矩阵为", sa, ["Cz(-β)", "Cz(β)", "Cy(-α)"]),
-        _choice(42, "C2", "气流系到机体系的复合矩阵为", ba, ["Cy(-α)*Cz(-β)", "Cz(-β)*Cy(-α)", "Cy(α)*Cz(β)"]),
-        _open(43, "C1", "空速在气流系中的单位向量为", "[1, 0, 0]"),
-        _choice(44, "C2", "空速从气流系变换到机体系，应使用", "bRa", ["bRa^T"]),
-        _open(45, "A2", "空速在机体系中的单位向量为", text["body_speed"]),
-        _choice(46, "A1", "机体系空速的 yb 分量为正时，空速指向机体", "右方", ["左方"]),
-        _choice(47, "A1", "机体系空速的 zb 分量为正时，空速指向机体", "下方", ["上方"]),
-        _choice(48, "A2", "仅由机体系单位空速向量 [vx, vy, vz] 恢复侧滑角时，可用", text["beta_text"], [
+        _choice(1, "C1", "The positive normal of the ground frame, the airframe, and the track frame points", "downward", ["upward"]),
+        _choice(2, "C1", "The positive lateral direction of the ground frame, the airframe, and the track frame points", "right", ["left"]),
+        _choice(3, "C1", "Forward, right, and down on the airframe form", "right-handed", ["left-handed"]),
+        _choice(4, "C1", "When yaw is positive, the horizontal projection of the airframe forward axis turns", text["yaw_side"], ["right on the ground", "left on the ground"]),
+        _choice(5, "C1", "When pitch is positive, the nose points", text["pitch_side"], ["upward", "downward"]),
+        _choice(6, "C1", "Roll Φ is taken about the airframe", "axial", ["lateral", "normal"]),
+        _choice(7, "C2", "Coordinate transforms in this item use", "passive", ["active"]),
+        _choice(8, "C2", "Attitude angles use", "intrinsic moving axes", ["extrinsic fixed axes"]),
+        _choice(9, "C2", f"After the yaw-pitch-roll attitude, bRg={text['body_from_ground']} maps ground-frame components into the airframe, and the yaw matrix is", "the rightmost factor", ["the leftmost factor"]),
+        _choice(10, "C2", "gRb converts airframe coordinates into the ground frame, and its mapping is", "airframe to ground frame", ["ground frame to airframe"]),
+        _choice(11, "C2", "A ground-frame vector is converted into the airframe by using gRb's", "transpose", ["itself"]),
+        _choice(12, "C2", "By the declaration, the factored form of gRb is", g, ["Cx(Φ)*Cy(θ)*Cz(ψ)", "Cz(ψ)*Cy(θ)*Cx(Φ)", "Cy(θ)*Cz(ψ)*Cx(Φ)"]),
+        _open(13, "C1", "The airframe coordinates of the airframe forward unit vector are", "[1, 0, 0]"),
+        _choice(14, "C2", "Map the airframe forward axis into the ground frame by computing", "gRb*[1, 0, 0]", ["gRb^T*[1, 0, 0]"]),
+        _open(15, "A2", "At ψ=30°, θ=20°, and Φ=15°, the ground-frame components of the airframe forward axis are", text["nose_example"]),
+        _choice(16, "A1", "From the sign of that ground normal component, the nose points", text["nose_word"], ["upward", "downward"]),
+        _choice(17, "C2", "In the full attitude matrix, the airframe right axis in the ground frame is column", "the second column", ["the first column", "the third column"]),
+        _choice(18, "C2", "The airframe down axis in the ground frame is column", "the third column", ["the first column", "the second column"]),
+        _choice(19, "C1", "The transpose of an orthogonal attitude matrix equals its", "inverse", ["negative of the matrix", "determinant"]),
+        _choice(20, "C1", "The determinant of any valid three-dimensional rotation matrix is", "+1", ["-1", "0"]),
+        _choice(21, "C1", "Track azimuth φ describes the horizontal airspeed projection relative to", "Xg", ["Yg", "Zg"]),
+        _choice(22, "C1", "Positive track inclination means the aircraft moves", text["incline_side"], ["upward", "downward"]),
+        _choice(23, "C1", "Track roll γ rotates the airflow frame about the shared airspeed axis of the track frame, which is", "Xp", ["Yp", "Zp"]),
+        _choice(24, "C1", "The track attitude seen from the ground frame is", "gRp", ["pRg"]),
+        _choice(25, "C2", "By the current declaration, the factored form of gRp without roll is", p, _track_wrongs(p, text["track_air_text"])),
+        _open(26, "C1", "The track-frame unit airspeed vector is", "[1, 0, 0]"),
+        _choice(27, "C2", "Convert the track-frame unit airspeed into the ground frame with", "gRp", ["gRp^T"]),
+        _choice(28, "A2", "The ground normal component of the airspeed is", text["track_z"], [text["track_z"].replace("-", "") if text["track_z"].startswith("-") else f"-{text['track_z']}", "cos(10°)", "sin(10°)"]),
+        _choice(29, "A1", "From the sign of that ground normal component, the airspeed points", text["speed_word"], ["upward", "downward"]),
+        _choice(30, "A2", "When track inclination is zero, the ground normal component of the airspeed is", "0", ["+1", "-1"]),
+        _choice(31, "A1", "At μ=0, changing track azimuth makes the horizontal airspeed projection", "turns", ["stays unchanged"]),
+        _choice(32, "A1", "When track roll γ changes, the airspeed direction itself", "does not change", ["changes"]),
+        _choice(33, "A1", "Track roll changes", "the directions of airflow Ya and Za relative to the track frame", ["the track axes Yp and Zp", "the airspeed magnitude"]),
+        _open(34, "A2", "The ground-frame airspeed written from the track direction is", text["track_speed"]),
+        _choice(35, "C1", "The stability axis Xs follows the airspeed projected onto the aircraft", "projection in the plane of symmetry", ["spanwise wing projection"]),
+        _choice(36, "C1", "When angle of attack α is positive, the airspeed in the plane of symmetry points", text["attack_side"], ["upward", "downward"]),
+        _choice(37, "C1", "When sideslip β is positive, the airspeed points", text["sideslip_side"], ["left", "right"]),
+        _choice(38, "C2", "The attitude difference from the airframe to the stability frame is only", "angle of attack", ["sideslip", "track azimuth"]),
+        _choice(39, "C2", "The attitude difference from the stability frame to the airflow frame is only", "sideslip", ["angle of attack", "yaw"]),
+        _choice(40, "C2", "By the declaration, the matrix from the stability frame to the airframe is", bs, ["Cy(-α)", "Cy(α)", "Cz(-β)"]),
+        _choice(41, "C2", "The matrix from the airflow frame to the stability frame is", sa, ["Cz(-β)", "Cz(β)", "Cy(-α)"]),
+        _choice(42, "C2", "The composite matrix from the airflow frame to the airframe is", ba, ["Cy(-α)*Cz(-β)", "Cz(-β)*Cy(-α)", "Cy(α)*Cz(β)"]),
+        _open(43, "C1", "The unit airspeed in the airflow frame is", "[1, 0, 0]"),
+        _choice(44, "C2", "Transform the airspeed from the airflow frame into the airframe with", "bRa", ["bRa^T"]),
+        _open(45, "A2", "The unit airspeed in the airframe is", text["body_speed"]),
+        _choice(46, "A1", "When the airframe airspeed component yb is positive, the airspeed points", "right", ["left"]),
+        _choice(47, "A1", "When the airframe airspeed component zb is positive, the airspeed points", "downward", ["upward"]),
+        _choice(48, "A2", "Recover sideslip from the airframe unit airspeed [vx, vy, vz] with", text["beta_text"], [
             "atan2(vy, sqrt(vx^2+vz^2))",
             "atan2(-vy, sqrt(vx^2+vz^2))",
             "atan2(vz, sqrt(vx^2+vy^2))",
             "atan2(vx, vy)",
         ]),
-        _choice(49, "A1", "在 vx>0 且 vy>0 时，侧滑角符号为", text["beta_sign"], ["正", "负"]),
-        _choice(50, "A1", "在 vx>0 且 vz>0 时，迎角符号为", text["alpha_sign"], ["正", "负"]),
-        _choice(51, "A2", "迎角的稳定表达式为", text["alpha_text"], ["atan2(vz, vx)", "atan2(-vz, vx)", "atan2(vy, vx)"]),
-        _choice(52, "C1", "gRb 和 gRp 都把各自子坐标系分量映射到", "地面系", ["气流系"]),
-        _choice(53, "C2", "由航迹角得到地面系空速后，转换到机体系应计算", "gRb^T*vg", ["gRb*vg"]),
-        _choice(54, "C2", "由迎角、侧滑角得到机体系空速时，γ 和 Φ", "不直接进入机体系空速分量公式", ["必须加入"]),
-        _open(55, "A2", "由航迹角构造的地面系空速为", text["track_speed"]),
-        _choice(56, "A1", "将上述空速转换到机体系后，其结果应与由 α、β 直接构造的机体系空速", "相同", ["相反", "一般不相关"]),
-        _choice(57, "A2", "在输入角度描述同一飞行状态且忽略数值舍入的条件下，两条路径结果不一致，说明计算或约定使用中", "至少存在一处错误", ["必定不存在错误"]),
-        _choice(58, "C2", "γ 不改变空速单位向量的地面系坐标，比较空速向量只能验证共同的空速轴而不能验证绕该轴的滚转，因此验证空速方向时可以", "只比较空速向量", ["忽略空速轴向", "只比较滚转角"]),
-        _choice(59, "A2", "对两条路径得到的单位向量作闭合验证，要求其差向量的范数为", "0", ["1", "2"]),
+        _choice(49, "A1", "When vx>0 and vy>0, the sign of sideslip is", text["beta_sign"], ["positive", "negative"]),
+        _choice(50, "A1", "When vx>0 and vz>0, the sign of angle of attack is", text["alpha_sign"], ["positive", "negative"]),
+        _choice(51, "A2", "A stable expression for angle of attack is", text["alpha_text"], ["atan2(vz, vx)", "atan2(-vz, vx)", "atan2(vy, vx)"]),
+        _choice(52, "C1", "Both gRb and gRp map components of their child frames into", "the ground frame", ["the airflow frame"]),
+        _choice(53, "C2", "After the track angles give the ground-frame airspeed, convert it into the airframe by", "gRb^T*vg", ["gRb*vg"]),
+        _choice(54, "C2", "When angle of attack and sideslip give the airframe airspeed, γ and Φ", "do not enter the airframe airspeed formula directly", ["must be included"]),
+        _open(55, "A2", "The ground-frame airspeed built from the track angles is", text["track_speed"]),
+        _choice(56, "A1", "After converting that airspeed into the airframe, it should match the airframe airspeed built directly from α and β", "same", ["opposite", "generally unrelated"]),
+        _choice(57, "A2", "When the angles describe one flight state and rounding is ignored, disagreement between the two paths means that the calculation or the use of the convention has", "at least one error", ["certainly no error"]),
+        _choice(58, "C2", "Because γ does not change the ground coordinates of the unit airspeed, comparing airspeed vectors checks the shared airspeed axis and not the roll about it, so the airspeed direction can be checked by choosing to", "compare only the airspeed vectors", ["ignore the airspeed axis", "compare only the roll angle"]),
+        _choice(59, "A2", "Closing the unit vectors from the two paths requires the norm of their difference to be", "0", ["1", "2"]),
     ]
     return rows
 
 
 def _slot(item: dict) -> str:
     if item["options"] is None:
-        choices = "无"
+        choices = "none"
         answer = item["answer"]
     else:
         choices = format_choices(item["options"])
@@ -574,113 +574,111 @@ def _slot(item: dict) -> str:
         chosen = item["options"][ord(answer) - ord("A")]
         if chosen != item["answer"]:
             raise DefinitionError(f"ID {item['id']} letter {answer} points at {chosen}, not {item['answer']}.")
-    return f"{{ID:{item['id']}, 选项:{choices}, 输出格式:{item['format']}, 标签:{item['label']}, 答案:{answer}}}"
+    return f"{{ID:{item['id']}, options:{choices}, format:{item['format']}, label:{item['label']}, answer:{answer}}}"
 
 
 def _line(item: dict) -> str:
-    line = f"{item['id']}. {item['stem']}{_slot(item)}。"
+    line = f"{item['id']}. {item['stem']}{_slot(item)}."
     matched = SLOT_LINE.fullmatch(line)
-    if not matched or matched.group(1) != matched.group(2) or line.count("。") != 1 or line.count("{ID:") != 1:
+    if not matched or matched.group(1) != matched.group(2) or line.count(".") != 2 or line.count("{ID:") != 1:
         raise DefinitionError(f"ID {item['id']} is not one sentence with one slot.")
     return line
 
 
 def _load_definition(angles: dict, lift_axis: str = "-Z_a", side_axis: str = "+Y_a") -> list[str]:
     return [
-        "## 气动力与参考点定义",
+        "## Aerodynamic loads and the reference point",
         "",
-        "这一节只送给气动力子过程和参考点子过程。",
+        "This section is sent only to the aerodynamic-load subprocess and the reference-point subprocess.",
         "",
-        "固定约定",
-        "- 向量是列向量，矩阵左乘列向量。",
-        "- T_a←b 把同一物理向量的机体系分量映成气流系分量。反向变换用它的转置。",
-        "- T_s←b 是机体系到稳定性系，T_a←s 是稳定性系到气流系。定义不给出这两个矩阵的元素。",
-        "- 三个坐标系都是右手系。分量按 X、Y、Z 书写。",
-        "- 力是作用在飞行器上的气动力。气动力和气动力矩按有符号分量处理。",
-        "- 同一点上改变坐标表达，和改变力矩参考点，是两件事。力和力矩的坐标转换都从气流系到机体系，参考点保持为 A。",
-        "- 角度进入三角函数时使用同一角度单位。本稿取 -90°<α<90°、-90°<β<90°，所以 cos(α)>0、cos(β)>0。",
+        "Fixed conventions",
+        "- Vectors are column vectors, and a matrix multiplies a column vector on the left.",
+        "- T_a←b maps the airframe components of one physical vector to airflow-frame components. The reverse transform is its transpose.",
+        "- T_s←b goes from the airframe to the stability frame, and T_a←s goes from the stability frame to the airflow frame. The declaration does not give the entries of these two matrices.",
+        "- All three frames are right-handed. Components are written in the order X, Y, Z.",
+        "- A force is an aerodynamic force acting on the aircraft. Aerodynamic forces and moments are signed components.",
+        "- Changing the coordinate expression of one point, and changing the moment reference point, are two different operations. Force and moment transforms both go from the airflow frame to the airframe, and the reference point stays at A.",
+        "- An angle enters a trigonometric function in one angle unit. This manuscript uses -90°<α<90° and -90°<β<90°, so cos(α)>0 and cos(β)>0.",
         "",
-        "方向和坐标轴",
-        "- 前方、右方、下方分别是轴向、侧向、法向的正方向。前方 × 右方 = 下方。",
-        "- X_b 指向机体前方，Y_b 指向机体右方，Z_b 指向机体下方。机体系原点在气动参考点 A。",
-        "- X_s 是空速在机体对称面内的投影，Y_s 与 Y_b 同向，Z_s 由 X_s×Y_s 确定。原点与 A 重合。",
-        "- X_a 沿飞行器相对空气的速度。Z_a 位于机体对称面内并垂直于 X_a，取与 Z_b 点积为正的分支。Y_a 由 Z_a×X_a 确定。原点与 A 重合。",
-        "- 空速是飞行器相对空气的速度。空气相对飞行器的方向与它相反。",
+        "Directions and axes",
+        "- Forward, right, and down are the positive axial, lateral, and normal directions. Forward × right = down.",
+        "- X_b points forward on the airframe, Y_b points right on the airframe, and Z_b points down on the airframe. The airframe origin is the aerodynamic reference point A.",
+        "- X_s is the projection of the airspeed onto the airframe plane of symmetry, Y_s has the same sense as Y_b, and Z_s is fixed by X_s×Y_s. The origin coincides with A.",
+        "- X_a follows the velocity of the aircraft relative to the air. Z_a lies in the airframe plane of symmetry, is perpendicular to X_a, and is the branch whose dot product with Z_b is positive. Y_a is fixed by Z_a×X_a. The origin coincides with A.",
+        "- Airspeed is the velocity of the aircraft relative to the air. The direction of the air relative to the aircraft is the opposite direction.",
         "",
-        "气流角",
-        f"- 迎角 α：{angles[ALPHA]}。",
-        f"- 侧滑角 β：{angles[BETA]}。",
-        "- 只分析迎角时令 β=0。只分析侧滑时令 α=0。",
+        "Airflow angles",
+        f"- Angle of attack α: {angles[ALPHA]}.",
+        f"- Sideslip β: {angles[BETA]}.",
+        "- Set β=0 when only angle of attack is analyzed. Set α=0 when only sideslip is analyzed.",
         "",
-        "气动力与力矩",
-        f"- D 是阻力大小，D≥0，方向沿 -X_a。Y 是侧力的有符号大小，正方向沿 {side_axis}。L 是升力的有符号大小，正方向沿 {lift_axis}。",
-        "- l_a、m_a、n_a 分别绕 +X_a、+Y_a、+Z_a 按右手定则为正。",
-        "- X、Y_b、Z 分别沿 +X_b、+Y_b、+Z_b 为正。Y 是气流系侧力，Y_b 是机体系侧向力。",
-        "- l_A、m_A、n_A 是关于 A 的力矩，分别绕 +X_b、+Y_b、+Z_b 按右手定则为正。",
-        "- 在前、右、下机体系中，绕 +Y_b 的正俯仰力矩对应抬头，负值对应低头。",
+        "Aerodynamic force and moment",
+        f"- D is the drag magnitude, D≥0, along -X_a. Y is the signed side force, positive along {side_axis}. L is the signed lift, positive along {lift_axis}.",
+        "- l_a, m_a, and n_a are positive by the right-hand rule about +X_a, +Y_a, and +Z_a.",
+        "- X, Y_b, and Z are positive along +X_b, +Y_b, and +Z_b. Y is the airflow side force, and Y_b is the airframe lateral force.",
+        "- l_A, m_A, and n_A are moments about A, positive by the right-hand rule about +X_b, +Y_b, and +Z_b.",
+        "- In the forward-right-down airframe, a positive pitch moment about +Y_b is nose-up, and a negative value is nose-down.",
         "",
-        "动压与系数",
-        "- ρ>0，V>0，动压 q_bar=ρ*V^2/2。S>0 是参考面积，b>0 是参考翼展，c_bar>0 是参考平均气动弦长。",
-        "- D=q_bar*S*C_D，Y=q_bar*S*C_Ya，L=q_bar*S*C_L。",
-        "- l_a=q_bar*S*b*C_la，m_a=q_bar*S*c_bar*C_ma，n_a=q_bar*S*b*C_na。",
-        "- l_A=q_bar*S*b*C_lA，m_A=q_bar*S*c_bar*C_mA，n_A=q_bar*S*b*C_nA。",
+        "Dynamic pressure and coefficients",
+        "- ρ>0, V>0, and the dynamic pressure is q_bar=ρ*V^2/2. S>0 is the reference area, b>0 is the reference span, and c_bar>0 is the reference mean aerodynamic chord.",
+        "- D=q_bar*S*C_D, Y=q_bar*S*C_Ya, and L=q_bar*S*C_L.",
+        "- l_a=q_bar*S*b*C_la, m_a=q_bar*S*c_bar*C_ma, and n_a=q_bar*S*b*C_na.",
+        "- l_A=q_bar*S*b*C_lA, m_A=q_bar*S*c_bar*C_mA, and n_A=q_bar*S*b*C_nA.",
         "",
-        "参考点",
-        "- A 是原气动数据的力矩参考点，G 是质心，也是换算后的力矩参考点。换算时机体系轴方向不变。",
-        "- 机头参考点是 N。N、A 和一个机尾参考点沿机体轴向共线。L_f 是 N 到机尾参考点的距离，L_A 是 A 到机尾参考点的距离，0<L_A<L_f。",
-        "- X_N 是 A 到 N 的距离，由过程计算。",
-        "- x_Ge 从 N 沿机体后方量到 G 的轴向投影，后方为正。y_Ge、z_Ge 从 A 沿 +Y_b、+Z_b 量取。",
-        "- x_Ge 与 +X_b 相反，y_Ge、z_Ge 与对应的机体系分量同向。定义不直接给出 G 相对 A 的坐标，也不直接给出参考点换算公式。",
+        "Reference point",
+        "- A is the moment reference point of the original aerodynamic data. G is the center of mass and the moment reference point after the transfer. The airframe axes do not change during the transfer.",
+        "- N is the nose reference. N, A, and a tail reference are collinear on the airframe axis. L_f is the distance from N to the tail reference, L_A is the distance from A to the tail reference, and 0<L_A<L_f.",
+        "- X_N is the distance from A to N and is computed in the process.",
+        "- x_Ge is the axial projection from N rearward to G, and rearward is positive. y_Ge and z_Ge are measured from A along +Y_b and +Z_b.",
+        "- x_Ge is opposite +X_b. y_Ge and z_Ge have the same sense as the corresponding airframe components. The declaration does not give the coordinates of G relative to A, and it does not give the reference-point transfer formula.",
         "",
     ]
-
-
 def render(sample: dict, record: dict) -> str:
     angles = record["angles"]
     questions = {item["id"]: item for item in record["questions"]}
     blocks = [
-        ("一", "地面系到机体系", range(1, 21)),
-        ("二", "地面系到航迹系", range(21, 35)),
-        ("三", "机体系、稳定性系与气流系", range(35, 52)),
-        ("四", "地面系与机体系闭环", range(52, 60)),
-        ("五", "气动力和气动力矩从气流系转换到机体系", range(60, 103)),
-        ("六", "力矩从气动参考点换算到质心", range(103, 132)),
+        ("1", "ground frame to airframe", range(1, 21)),
+        ("2", "ground frame to track frame", range(21, 35)),
+        ("3", "airframe, stability frame, and airflow frame", range(35, 52)),
+        ("4", "ground-frame and airframe closure", range(52, 60)),
+        ("5", "aerodynamic force and moment from the airflow frame to the airframe", range(60, 103)),
+        ("6", "moment transfer from the aerodynamic reference point to the center of mass", range(103, 132)),
     ]
     before = {
         28: [
-            "取 φ=40°、μ=10° 计算地面系空速。",
+            "Compute the ground-frame airspeed at φ=40° and μ=10°.",
         ],
         52: [
-            "vg 是由航迹方位角和航迹倾斜角得到的地面系单位空速向量。",
-            "gRb、gRp 分别把机体系、航迹系分量映到地面系。bRa 把气流系分量映到机体系，pRa 把气流系分量映到航迹系。",
-            "gRp 不含航迹滚转。pRa 只含气流系相对航迹系绕共同空速轴的滚转。",
-            "本子过程的姿态角、航迹角、迎角和侧滑角描述同一飞行状态，并忽略数值舍入。这些角不能各自独立取值。",
-            "同一状态下，机体系单位空速经 gRb 映到地面系，等于航迹系单位空速经 gRp 映到地面系。",
-            "完整姿态还满足 gRb*bRa=gRp*pRa。空速向量相等只验证共同的空速轴，不能验证绕该轴的滚转。",
+            "vg is the ground-frame unit airspeed from the track azimuth and the track inclination.",
+            "gRb and gRp map airframe and track-frame components into the ground frame. bRa maps airflow-frame components into the airframe, and pRa maps airflow-frame components into the track frame.",
+            "gRp contains no track roll. pRa contains only the roll of the airflow frame relative to the track frame about their shared airspeed axis.",
+            "The attitude angles, track angles, angle of attack, and sideslip in this subprocess describe one flight state, and numerical rounding is ignored. These angles cannot be chosen independently.",
+            "In that state, the airframe unit airspeed mapped into the ground frame by gRb equals the track-frame unit airspeed mapped into the ground frame by gRp.",
+            "The full attitude also satisfies gRb*bRa=gRp*pRa. Equality of the airspeed vectors checks only the shared airspeed axis, not the roll about that axis.",
         ],
         79: [
-            "在计算总矩阵前，按刚选定的符号写出每个分矩阵的展开式。",
+            "Before the product is formed, write the expansion of each factor in the symbols just chosen.",
         ],
         85: [
-            "下面只保留升力，取 β=0、Y=0、D=0、L>0，且 0°<α<90°。",
+            "Keep only lift. Set β=0, Y=0, D=0, L>0, and 0°<α<90°.",
         ],
         101: [
-            "本子过程直接给出机体系中的合力 F_b=[X, Y_b, Z]，以及关于 A 点的力矩 M_A=[l_A, m_A, n_A]。",
-            "所有分量都已经在同一个机体系里。本子过程只改变力矩参考点，不再改变坐标轴方向。",
+            "This subprocess gives the resultant F_b=[X, Y_b, Z] in the airframe and the moment M_A=[l_A, m_A, n_A] about A.",
+            "Every component is already in the same airframe. This subprocess changes only the moment reference point and does not change the axis directions.",
         ],
         112: [
-            "以下将 r_AG 简记为 [x, y, z]。",
-            "本段只考察附加力矩的方向，令 x>0、y>0、z>0，并逐次单独保留一个正力分量。未提到的力分量都是零。",
+            "Below, r_AG is written [x, y, z].",
+            "This part checks only the direction of the added moment. Set x>0, y>0, and z>0, and keep one positive force component at a time. Every force component that is not named is zero.",
         ],
         118: [
-            "下面恢复所有有符号力分量，不再假设它们为正。",
+            "Restore every signed force component. Do not assume that they are positive.",
         ],
     }
     body = []
     for key, heading, numbers in blocks:
-        if key == "五":
+        if key == "5":
             body.extend(_load_definition(angles, record["lift_axis"], record["side_axis"]))
-        body.append(f"### 子过程{key}：{heading}")
+        body.append(f"### Subprocess {key}: {heading}")
         body.append("")
         for number in numbers:
             if number in before:
@@ -689,95 +687,96 @@ def render(sample: dict, record: dict) -> str:
             body.append(_line(questions[number]))
         body.append("")
     return "\n".join([
-        f"# 数据 {sample['id']} {sample['title']}",
+        f"# Data {sample['id']} {sample['title']}",
         "",
-        "本文件是飞行力学领域审阅稿。编号 1 到 131。前四个子过程做地面、航迹、机体和气流之间的坐标转换。后两个子过程做气动力六分量转换和力矩参考点换算。气动力子过程与参考点子过程单独注入：参考点子过程直接给出机体系中的力和力矩，不使用气动力子过程的回答。这里不做飞行包线判断，不做误差补偿。",
+        "This is a flight-mechanics review manuscript. Blanks are numbered 1 through 131. The first four subprocesses convert coordinates among the ground, track, airframe, and airflow. The last two convert the six aerodynamic components and transfer the moment reference point. The load subprocess and the reference-point subprocess are injected separately: the reference-point subprocess states the airframe force and moment directly and does not use the answers of the load subprocess. This manuscript does not judge the flight envelope and does not apply an error correction.",
         "",
-        f"本条定义：{sample['change']}",
-        f"单定义扰动：{sample['factor']}",
+        f"Definition of this item: {sample['change']}",
+        f"Single-definition perturbation: {sample['factor']}",
         "",
-        "审阅说明、标签、答案和生成注记不送入模型。输出格式规范送入。前四个子过程使用前面的定义声明和物理常识。后两个子过程使用气动力与参考点定义，不携带前四个子过程的正文。送入模型的还有当前子过程名，以及从该子过程开头直到当前句号的正文。当前句之前的空写成答案原文。每句只有一个待填槽。",
+        "Review notes, labels, answers, and generation notes are not sent to the model. The output-format rules are sent. The first four subprocesses use the declaration and the background above. The last two use the aerodynamic-load and reference-point declaration and do not carry the text of the first four. The model also receives the current subprocess name and the text from the start of that subprocess through the period of the current sentence. Blanks before the current sentence are filled with the answer text. Each sentence has one open blank.",
         "",
-        "## 输出格式规范",
+        "## Output format",
         "",
-        "- 无：选择题。值只写选项字母。示例：A",
-        "- 向量：一行三个分量，形如 [a, b, c]。逗号后恰好一个空格。顺序是 X、Y、Z。示例：[1, 0, 0]",
-        "- 矩阵：一行 3×3，形如 [[a, b, c], [d, e, f], [g, h, i]]。逗号后恰好一个空格。示例：[[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
-        "- 表达式：一行。乘号用 *。示例：a*cos(α)+b",
+        "- choice: multiple choice. Write only the option letter. Example: A",
+        "- vector: three components on one line, as [a, b, c]. Put exactly one space after each comma. The order is X, Y, Z. Example: [1, 0, 0]",
+        "- matrix: one 3×3 matrix, as [[a, b, c], [d, e, f], [g, h, i]]. Put exactly one space after each comma. Example: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
+        "- expression: one line. Use * for multiplication. Example: a*cos(α)+b",
         "",
-        "## 定义声明",
+        "## Declaration",
         "",
-        "固定约定",
-        "- 坐标变换采用被动变换。姿态角、航迹角和气流角采用动轴内旋。",
-        "- 向量是列向量，变换矩阵左乘列向量。坐标分量变换矩阵从右向左作用。",
-        "- gRb 表示机体系相对地面系的姿态，把机体系分量映射到地面系。逆向变换使用其转置。",
-        f"- 对偏航、俯仰、滚转这一动轴姿态构造，地面系到机体系的分量变换为 bRg={record['body_from_ground']}，逆向变换为其转置。其他变换按明确的起始系、目标系和中间系确定连乘顺序。",
-        "- 分量按各系的 X、Y、Z 顺序书写。",
-        "- 取 -90°<α、β、θ、μ<90°，使迎角投影、航迹水平投影及所用姿态角分支不发生本稿未处理的退化。方位角和滚转角采用主值区间 [-180°, 180°)。",
+        "Fixed conventions",
+        "- Coordinate transforms are passive. Attitude angles, track angles, and airflow angles use an intrinsic moving-axis sequence.",
+        "- Vectors are column vectors, and a transform matrix multiplies a column vector on the left. Component transforms act from right to left.",
+        "- gRb is the attitude of the airframe relative to the ground frame and maps airframe components into the ground frame. The reverse transform is its transpose.",
+        f"- For the moving-axis attitude yaw, pitch, roll, the component transform from the ground frame to the airframe is bRg={record['body_from_ground']}, and the reverse transform is its transpose. Every other transform takes its product order from the stated start frame, target frame, and intermediate frame.",
+        "- Components are written in the X, Y, Z order of each frame.",
+        "- Take -90°<α, β, θ, μ<90°, so the attack projection, the horizontal track projection, and the attitude branch used here do not meet a degeneracy that this manuscript does not handle. Azimuth and roll use the principal interval [-180°, 180°).",
         "",
-        "数学规则",
-        "- 正交矩阵的转置等于它的逆矩阵。",
-        "- 任意合法三维旋转矩阵的行列式为 +1。",
+        "Mathematical rules",
+        "- The transpose of an orthogonal matrix equals its inverse.",
+        "- The determinant of any valid three-dimensional rotation matrix is +1.",
         "",
-        "绝对方向与手性",
-        "- 地面系、机体系、稳定性系、航迹系和气流系都是右手系。",
-        "- 轴向正方向是前方，侧向正方向是右方，法向正方向是下方。前方 × 右方 = 下方。",
-        "- 轴向、侧向、法向是物理方向，不是固定的坐标轴名。各系坐标轴的局部正方向不随姿态角改变。",
+        "Absolute directions and chirality",
+        "- The ground frame, airframe, stability frame, track frame, and airflow frame are right-handed.",
+        "- The positive axial direction is forward, the positive lateral direction is right, and the positive normal direction is down. Forward × right = down.",
+        "- Axial, lateral, and normal are physical directions, not fixed coordinate-axis names. The local positive direction of each frame axis does not change with the attitude angles.",
         "",
-        "坐标系",
-        "- 地面系 {g}：Xg 是水平面前方，Yg 是水平面右方，Zg 铅垂向下。地面系是固定参考系。",
-        "- 机体系 {b}：xb 沿机头，yb 指向机体右方，zb 指向机体下方。机体系固定于飞行器。机体对称面是 xb-zb 平面。",
-        "- 稳定性系 {s}：Xs 是空速在机体对称面上的投影并指向前方，Ys 垂直于对称面指向右方，Zs 在对称面内垂直于 Xs 并指向下方。",
-        "- 航迹系 {p}：Xp 沿空速，Zp 位于过空速的铅垂面内、垂直于空速并取向下分支，Yp=Zp×Xp。航迹系不含滚转。这里的航迹使用空速方向，不是地速。",
-        "- 气流系 {a}：Xa 沿空速。Za 位于机体对称面内、垂直于 Xa，并取与 Zb 点积为正的分支。Ya=Za×Xa。",
-        "- 气流系相对航迹系绕共同的空速轴滚转。γ 按 +Xp 的右手定则，再按本条角度声明取正负。",
+        "Frames",
+        "- Ground frame {g}: Xg is forward in the horizontal plane, Yg is right in the horizontal plane, and Zg is vertically down. The ground frame is the fixed reference.",
+        "- Airframe {b}: xb follows the nose, yb points right on the airframe, and zb points down on the airframe. The airframe is fixed to the aircraft. The plane of symmetry is the xb-zb plane.",
+        "- Stability frame {s}: Xs is the forward projection of the airspeed onto the airframe plane of symmetry, Ys is perpendicular to that plane and points right, and Zs lies in the plane, is perpendicular to Xs, and points down.",
+        "- Track frame {p}: Xp follows the airspeed, Zp lies in the vertical plane through the airspeed, is perpendicular to the airspeed, and takes the downward branch, and Yp=Zp×Xp. The track frame has no roll. The track here uses the airspeed direction, not the ground speed.",
+        "- Airflow frame {a}: Xa follows the airspeed. Za lies in the airframe plane of symmetry, is perpendicular to Xa, and is the branch whose dot product with Zb is positive. Ya=Za×Xa.",
+        "- The airflow frame rolls relative to the track frame about their shared airspeed axis. γ follows the right-hand rule about +Xp, and the sign is then the sign in this angle declaration.",
         "",
-        "角度",
-        f"- 偏航角 ψ：{angles[PSI]}。",
-        f"- 俯仰角 θ：{angles[THETA]}。",
-        f"- 滚转角 Φ：{angles[PHI]}。",
-        f"- 航迹方位角 φ：{angles[VARPHI]}。",
-        f"- 航迹倾斜角 μ：{angles[MU]}。",
-        f"- 航迹滚转角 γ：{angles[GAMMA]}。它是气流系相对航迹系的滚转，不改变航迹系本身。",
-        f"- 迎角 α：{angles[ALPHA]}。",
-        f"- 侧滑角 β：{angles[BETA]}。",
+        "Angles",
+        f"- Yaw ψ: {angles[PSI]}.",
+        f"- Pitch θ: {angles[THETA]}.",
+        f"- Roll Φ: {angles[PHI]}.",
+        f"- Track azimuth φ: {angles[VARPHI]}.",
+        f"- Track inclination μ: {angles[MU]}.",
+        f"- Track roll γ: {angles[GAMMA]}. It is the roll of the airflow frame relative to the track frame and does not change the track frame itself.",
+        f"- Angle of attack α: {angles[ALPHA]}.",
+        f"- Sideslip β: {angles[BETA]}.",
         "",
-        "基本旋转矩阵",
-        "令 cη=cos(η)，sη=sin(η)。下列矩阵是绕当前坐标轴的被动变换，正角由该轴的右手定则确定。",
-        "- Cx(η)=[[1, 0, 0], [0, cη, sη], [0, -sη, cη]]，绕轴向 X。",
-        "- Cy(η)=[[cη, 0, -sη], [0, 1, 0], [sη, 0, cη]]，绕侧向 Y。",
-        "- Cz(η)=[[cη, sη, 0], [-sη, cη, 0], [0, 0, 1]]，绕法向 Z。",
+        "Elementary rotation matrices",
+        "Let cη=cos(η) and sη=sin(η). The following matrices are passive transforms about the current coordinate axis. A positive angle follows the right-hand rule about that axis.",
+        "- Cx(η)=[[1, 0, 0], [0, cη, sη], [0, -sη, cη]], about the axial axis X.",
+        "- Cy(η)=[[cη, 0, -sη], [0, 1, 0], [sη, 0, cη]], about the lateral axis Y.",
+        "- Cz(η)=[[cη, sη, 0], [-sη, cη, 0], [0, 0, 1]], about the normal axis Z.",
         "",
-        "空速方向",
-        "- 空速指飞行器相对空气的速度，大小 V>0。本稿不使用地速，也不引入风速。",
-        "- 航迹系 Xp 和气流系 Xa 都沿空速，所以两系中的单位空速都是 [1, 0, 0]。",
+        "Airspeed direction",
+        "- Airspeed is the velocity of the aircraft relative to the air, with magnitude V>0. This manuscript does not use ground speed and does not introduce a wind.",
+        "- Track Xp and airflow Xa both follow the airspeed, so the unit airspeed in both frames is [1, 0, 0].",
         "",
-        "## 物理常识",
+        "## Background",
         "",
-        "地面系 Zg 指向下方。地面法向分量为正表示指向下方，为负表示指向上方。各角绕定义声明里的那根绝对轴，正方向以定义声明为准。坐标变换采用被动变换，姿态、航迹和气流角采用动轴内旋。",
+        "Ground Zg points down. A positive ground normal component points down, and a negative component points up. Each angle is taken about the absolute axis named in the declaration, and its positive sense is the sense in the declaration. Coordinate transforms are passive. Attitude, track, and airflow angles use an intrinsic moving-axis sequence.",
         "",
-        "## 完整过程",
+        "## Full process",
         "",
         *body,
-        "# 生成注记",
+        "# Generation notes",
         "",
-        "这一节不送入模型。基本旋转矩阵使用被动形式。gRb 把机体系分量映到地面系，等于 bRg 的转置。本条 gRb="
+        "This section is not sent to the model. The elementary rotations are passive. gRb maps airframe components into the ground frame and equals the transpose of bRg. For this item gRb="
         + record["ground_body"]
-        + "，bRg="
+        + ", bRg="
         + record["body_from_ground"]
-        + "。航迹系不含滚转，gRp="
+        + ". The track frame has no roll, gRp="
         + record["ground_track"]
-        + "，pRa="
+        + ", pRa="
         + record["track_air"]
-        + "，gRa=gRp*pRa。bRs="
+        + ", and gRa=gRp*pRa. bRs="
         + record["body_stability"]
-        + "，bRa="
+        + ", bRa="
         + record["body_air"]
-        + "。角度符号改变后，这些因子、空速分量和气动力矩阵一起重算。定义声明不写入 gRb、gRp、bRs、bRa 和单位空速分量，避免直接抄写派生结果。",
+        + ". After an angle sign changes, these factors, the airspeed components, and the aerodynamic matrices are recomputed together. The declaration does not write gRb, gRp, bRs, bRa, or the unit-airspeed components, so a derived result cannot be copied from it.",
         "",
-        "气动力用同一套正交基。T_i←j 把 j 系分量映到 i 系，它的行是 i 系坐标轴在 j 系中的分量。定义不写 T_s←b 和 T_a←s 的元素。标准迎角下，机体系法向力里的侧力项是 -Y*sin(α)*sin(β)。参考点换算在右手分量下使用 M_G=M_A-r_AG×F_b，定义里不写这个公式。",
+        "The aerodynamic loads use one orthogonal basis. T_i←j maps components of frame j into frame i, and its rows are the axes of frame i written in frame j. The declaration does not write the entries of T_s←b or T_a←s. At the standard angle of attack, the side-force term in the airframe normal force is -Y*sin(α)*sin(β). The reference-point transfer in right-handed components uses M_G=M_A-r_AG×F_b, and the declaration does not write that formula.",
         "",
-        "校验包括：同一飞行状态下空速轴闭合，并且存在一个航迹滚转使 gRb*bRa=gRp*pRa；气流基正交且为右手系；两段变换乘积等于整体变换；力和同点力矩的长度不变；力矩系数的参考长度尺度与有量纲力矩一致；参考点换算可以换回；先旋转后换参考点与先换点后旋转一致。",
+        "The checks are: the airspeed axes close in one flight state, and one track roll makes gRb*bRa=gRp*pRa; the airflow basis is orthogonal and right-handed; the product of the two stages equals the full transform; the force and the moment at one point keep their lengths; the reference-length scale of a moment coefficient agrees with the dimensional moment; the reference-point transfer can be reversed; rotating first and transferring the point first agree.",
+        "",
         "",
     ])
 
@@ -789,57 +788,57 @@ def samples() -> list[dict]:
         return spec
 
     rows = [
-        {"id": "01", "factor": "无", "title": "统一默认", "change": "五个坐标系和八个角度都取标准定义。", "spec": deepcopy(STANDARD_SPEC)},
-        {"id": "02", "factor": "偏航角", "title": "偏航取负", "change": "偏航角改为机头向地面右方偏时为负。", "spec": flipped(PSI)},
-        {"id": "03", "factor": "俯仰角", "title": "俯仰取负", "change": "俯仰角改为机头向地面上方偏时为负。", "spec": flipped(THETA)},
-        {"id": "04", "factor": "滚转角", "title": "滚转取负", "change": "滚转角改为向机体右侧滚转时为负。", "spec": flipped(PHI)},
-        {"id": "05", "factor": "航迹倾斜角", "title": "航迹倾斜取负", "change": "航迹倾斜角改为向地面上方飞时为负。", "spec": flipped(MU)},
-        {"id": "06", "factor": "迎角", "title": "迎角取负", "change": "迎角改为空速投影处于机体轴向下方时为负。", "spec": flipped(ALPHA)},
-        {"id": "07", "factor": "侧滑角", "title": "侧滑取负", "change": "侧滑角改为空速处于飞行器右方时为负。", "spec": flipped(BETA)},
-        {"id": "08", "factor": "航迹方位角", "title": "航迹方位取负", "change": "航迹方位角改为空速水平投影在地面坐标轴 Xg 右侧时为负。", "spec": flipped(VARPHI)},
-        {"id": "09", "factor": "侧力正方向", "title": "侧力沿左侧为正", "change": "侧力的正方向改为沿气流系 -Y_a。", "spec": deepcopy(STANDARD_SPEC), "side_y": -1},
-        {"id": "10", "factor": "升力正方向", "title": "升力沿下方为正", "change": "升力的正方向改为沿气流系 +Z_a。", "spec": deepcopy(STANDARD_SPEC), "lift_z": 1},
+        {"id": "01", "factor": "none", "title": "common default", "change": "All five frames and all eight angles use the standard definition.", "spec": deepcopy(STANDARD_SPEC)},
+        {"id": "02", "factor": "yaw", "title": "yaw reversed", "change": "Yaw is negative when the nose yaws to the right of the ground.", "spec": flipped(PSI)},
+        {"id": "03", "factor": "pitch", "title": "pitch reversed", "change": "Pitch is negative when the nose pitches above the ground.", "spec": flipped(THETA)},
+        {"id": "04", "factor": "roll", "title": "roll reversed", "change": "Roll is negative when the aircraft rolls to its right.", "spec": flipped(PHI)},
+        {"id": "05", "factor": "track inclination", "title": "track inclination reversed", "change": "Track inclination is negative when the aircraft climbs.", "spec": flipped(MU)},
+        {"id": "06", "factor": "angle of attack", "title": "angle of attack reversed", "change": "Angle of attack is negative when the airspeed projection lies below the airframe axis.", "spec": flipped(ALPHA)},
+        {"id": "07", "factor": "sideslip", "title": "sideslip reversed", "change": "Sideslip is negative when the airspeed lies to the right of the aircraft.", "spec": flipped(BETA)},
+        {"id": "08", "factor": "track azimuth", "title": "track azimuth reversed", "change": "Track azimuth is negative when the horizontal airspeed projection lies to the right of Xg.", "spec": flipped(VARPHI)},
+        {"id": "09", "factor": "positive side force", "title": "side force positive to the left", "change": "Side force is positive along -Y_a of the airflow frame.", "spec": deepcopy(STANDARD_SPEC), "side_y": -1},
+        {"id": "10", "factor": "positive lift", "title": "lift positive downward", "change": "Lift is positive along +Z_a of the airflow frame.", "spec": deepcopy(STANDARD_SPEC), "lift_z": 1},
     ]
     factors = [row["factor"] for row in rows]
-    if factors[0] != "无" or len(factors) != 10 or len(set(factors)) != 10:
-        raise RuntimeError("飞行力学主实验必须是 1 条标准定义和 9 条互不相同的单定义扰动。")
+    if factors[0] != "none" or len(factors) != 10 or len(set(factors)) != 10:
+        raise RuntimeError("The flight-mechanics main experiment must be one standard definition and nine distinct single-definition perturbations.")
     return rows
 
 
 def _check_standard(record: dict) -> None:
     by_id = {item["id"]: item["answer"] for item in record["questions"]}
     expected = {
-        4: "地面右方偏转",
-        5: "上方",
+        4: "right on the ground",
+        5: "upward",
         12: "Cz(-ψ)*Cy(-θ)*Cx(-Φ)",
         15: "[cos(20°)*cos(30°), sin(30°)*cos(20°), -sin(20°)]",
-        16: "上方",
-        22: "上方",
-        9: "最右侧",
+        16: "upward",
+        22: "upward",
+        9: "the rightmost factor",
         25: "Cz(-φ)*Cy(-μ)",
-        33: "气流系 Ya、Za 相对航迹系的方向",
-        57: "至少存在一处错误",
+        33: "the directions of airflow Ya and Za relative to the track frame",
+        57: "at least one error",
         28: "-sin(10°)",
-        29: "上方",
+        29: "upward",
         34: "[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]",
-        36: "下方",
-        37: "右方",
+        36: "downward",
+        37: "right",
         40: "Cy(α)",
         41: "Cz(-β)",
         42: "Cy(α)*Cz(-β)",
         45: "[cos(α)*cos(β), sin(β), sin(α)*cos(β)]",
         48: "atan2(vy, sqrt(vx^2+vz^2))",
-        49: "正",
-        50: "正",
+        49: "positive",
+        50: "positive",
         51: "atan2(vz, vx)",
         99: "[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]",
         103: "A",
         68: "[-D, Y, -L]",
-        72: "下方",
-        73: "正",
+        72: "downward",
+        73: "positive",
         74: "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
-        75: "右方",
-        76: "正",
+        75: "right",
+        76: "positive",
         77: "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
         79: "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
         80: "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
@@ -852,10 +851,10 @@ def _check_standard(record: dict) -> None:
         102: "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)",
         105: "L_f - L_A",
         109: "[X_N - x_Ge, y_Ge, z_Ge]",
-        114: "负",
-        119: "正",
+        114: "negative",
+        119: "positive",
         120: "l_A + z*Y_b - y*Z",
-        124: "低头方向",
+        124: "nose-down",
         127: "C_lA + (z/b)*C_Yb - (y/b)*C_Z",
     }
     mismatches = {number: by_id[number] for number, answer in expected.items() if by_id[number] != answer}
@@ -865,15 +864,15 @@ def _check_standard(record: dict) -> None:
 
 def _index(rows: list[dict]) -> str:
     lines = [
-        "# 飞行力学空间坐标转换",
+        "# Flight-mechanics coordinate transforms",
         "",
-        "主实验是 1 条标准定义和 9 条单定义扰动，每条 131 个空，编号 1 到 131。单定义扰动只改一项。前四个子过程做坐标转换。后两个子过程做气动力六分量和力矩参考点换算，并且单独注入。",
+        "The main experiment is one standard definition and nine single-definition perturbations. Each item has 131 blanks, numbered 1 through 131. A single-definition perturbation changes one definition. The first four subprocesses convert coordinates. The last two convert the six aerodynamic components and transfer the moment reference point, and they are injected separately.",
         "",
     ]
     for row in rows:
         lines.append(
-            f"- [数据 {row['id']} {row['title']}](sample_{row['id']}.md)："
-            f"单定义扰动：{row['factor']}。{row['change']}"
+            f"- [Data {row['id']} {row['title']}](sample_{row['id']}.md): "
+            f"single-definition perturbation: {row['factor']}. {row['change']}"
         )
     lines.append("")
     return "\n".join(lines)
@@ -894,8 +893,8 @@ def main() -> None:
             "factor": sample["factor"],
             "title": sample["title"],
             "change": sample["change"],
-            "domain": "飞行力学",
-            "process": "空间坐标转换",
+            "domain": "flight mechanics",
+            "process": "spatial transforms",
             "declaration_products": {
                 "gRb": record["ground_body"],
                 "gRp": record["ground_track"],
@@ -919,7 +918,7 @@ def main() -> None:
         index_rows.append(sample)
         print(f"{sample['id']} {sample['title']}: {len(record['questions'])} blanks")
     (OUT_DIR / "samples.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    (OUT_DIR / "00_索引.md").write_text(_index(index_rows), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text(_index(index_rows), encoding="utf-8")
     print(f"wrote {OUT_DIR}")
 
 

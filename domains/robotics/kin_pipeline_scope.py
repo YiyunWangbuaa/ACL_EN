@@ -6,5 +6,5 @@ SAMPLE_ID = "01"
 FORWARD_IDS = tuple(f"F{n}" for n in range(1, 141))
 INVERSE_IDS = tuple(f"I{n}" for n in range(1, 17))
 NODE_IDS = FORWARD_IDS + INVERSE_IDS
-PROCESS_FORWARD = "正运动学"
-PROCESS_INVERSE = "逆运动学"
+PROCESS_FORWARD = "forward kinematics"
+PROCESS_INVERSE = "inverse kinematics"

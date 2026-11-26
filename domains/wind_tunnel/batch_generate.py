@@ -57,24 +57,39 @@ SCALAR_FLIP = {
     "gamma_tp": {"sense": "opposite"},
 }
 SCALAR_ZH = {
-    "alpha": "理论迎角改为空速指向机体上方为正",
-    "beta": "理论侧滑角改为空速指向机体左侧为正",
-    "gamma": "理论滚转角改为右翼指向机体上方为正",
-    "alpha_m": "机构迎角改为天平偏向风洞下方为正",
-    "beta_m": "机构侧滑角改为天平偏向风洞右侧为正",
-    "gamma_m": "机构滚转改为与绕模型绝对轴向正方向（前方）的右手定则相反",
-    "placement": "安装改为反装",
-    "alpha_e": "弹性迎角改为轴向弯向天平下方为正",
-    "beta_e": "弹性侧滑改为轴向弯向天平右侧为正",
-    "gamma_e": "弹性滚转改为侧向移向天平上方为正",
-    "alpha_v": "气流偏角α_V改为空速指向机体上方为正",
-    "beta_v": "气流偏角β_V改为空速指向机体左侧为正",
-    "gamma_tp": "天平安装角改为与绕天平绝对轴向正方向（前方）的右手定则相反",
+    "alpha": "theoretical angle of attack is positive when the airspeed points upward on the airframe",
+    "beta": "theoretical sideslip is positive when the airspeed points left on the airframe",
+    "gamma": "theoretical roll is positive when the right wing points upward on the airframe",
+    "alpha_m": "mechanism angle of attack is positive when the balance deflects downward in the tunnel",
+    "beta_m": "mechanism sideslip is positive when the balance deflects right in the tunnel",
+    "gamma_m": "mechanism roll is opposite the right-hand rule about the positive absolute model axis (forward)",
+    "placement": "installation is inverted",
+    "alpha_e": "elastic angle of attack is positive when the axis bends downward on the balance",
+    "beta_e": "elastic sideslip is positive when the axis bends right on the balance",
+    "gamma_e": "elastic roll is positive when the lateral axis moves upward on the balance",
+    "alpha_v": "flow-offset angle α_V is positive when the airspeed points upward on the airframe",
+    "beta_v": "flow-offset angle β_V is positive when the airspeed points left on the airframe",
+    "gamma_tp": "balance installation angle is opposite the right-hand rule about the positive absolute balance axis (forward)",
+}
+SCALAR_LABEL = {
+    "alpha": "theoretical angle of attack",
+    "beta": "theoretical sideslip",
+    "gamma": "theoretical roll",
+    "alpha_m": "mechanism angle of attack",
+    "beta_m": "mechanism sideslip",
+    "gamma_m": "mechanism roll",
+    "placement": "installation",
+    "alpha_e": "elastic angle of attack",
+    "beta_e": "elastic sideslip",
+    "gamma_e": "elastic roll",
+    "alpha_v": "flow-offset angle α_V",
+    "beta_v": "flow-offset angle β_V",
+    "gamma_tp": "balance installation angle",
 }
 FRAMES = (
-    ("body_frame", "body", "XTZ", "YTZ", True, "体轴系"),
-    ("wind_frame", "tunnel", "XFD", "YFD", False, "风轴系"),
-    ("balance_frame", "balance", "XTP", "YTP", False, "天平系"),
+    ("body_frame", "body", "XTZ", "YTZ", True, "body-axis frame"),
+    ("wind_frame", "tunnel", "XFD", "YFD", False, "wind frame"),
+    ("balance_frame", "balance", "XTP", "YTP", False, "balance frame"),
 )
 FRAME_KEYS = [item[0] for item in FRAMES]
 FACTORS = list(SCALAR_FLIP) + FRAME_KEYS
@@ -119,9 +134,9 @@ def _frame_phrase(title: str, spec: dict, x_name: str, y_name: str) -> str:
     x_axis = spec[x_name]
     y_axis = spec[y_name]
     return (
-        f"{title}改为{HAND_ZH[spec['chirality']]}，"
-        f"{x_name}沿{AXIS_ZH[x_axis['along']]}指向{DIRECTION_ZH[x_axis['points']]}，"
-        f"{y_name}沿{AXIS_ZH[y_axis['along']]}指向{DIRECTION_ZH[y_axis['points']]}"
+        f"{title} is changed to {HAND_ZH[spec['chirality']]}; "
+        f"{x_name} lies along {AXIS_ZH[x_axis['along']]} and points {DIRECTION_ZH[x_axis['points']]}; "
+        f"{y_name} lies along {AXIS_ZH[y_axis['along']]} and points {DIRECTION_ZH[y_axis['points']]}"
     )
 
 
@@ -133,11 +148,15 @@ def _change_text(tier: int, changed: list[str], spec: dict) -> str:
         else:
             _key, _owner, x_name, y_name, _order, title = next(item for item in FRAMES if item[0] == key)
             phrases.append(_frame_phrase(title, spec[key], x_name, y_name))
-    kept = "模型安装角γ_model保持与绕机体绝对轴向正方向（前方）的右手定则相同，不计入这16项。"
+    kept = (
+        "The model installation angle γ_model stays the same as the right-hand rule "
+        "about the positive absolute airframe axis (forward) and is not one of these 16 items."
+    )
     return (
-        f"定义变更档{tier}%：16项可变定义中变更{len(changed)}项。"
-        + "；".join(phrases)
-        + f"。其余计入的可变定义保持统一默认。{kept}欧拉顺序由功角机构固定，不是可变定义。"
+        f"Definition-change tier {tier}%: {len(changed)} of the 16 variable definitions are changed. "
+        + "; ".join(phrases)
+        + f". The other counted variable definitions stay at the common default. {kept} "
+        "Euler order is fixed by the angle mechanism and is not a variable definition."
     )
 
 
@@ -183,7 +202,7 @@ def _samples() -> list[dict]:
                 "tier": tier,
                 "changed_count": len(chosen),
                 "changed": chosen,
-                "title": f"定义变更{tier}%",
+                "title": f"definition change {tier}%",
                 "change": _change_text(tier, chosen, spec),
                 "spec": spec,
             })
@@ -230,33 +249,33 @@ def _standard_sample() -> dict:
         "tier": 0,
         "changed_count": 0,
         "changed": [],
-        "title": "统一默认",
-        "change": "统一默认。16 项可变定义都不改。",
+        "title": "common default",
+        "change": "Common default. None of the 16 variable definitions is changed.",
         "spec": deepcopy(STANDARD_SPEC),
     }
 
 
 def _index(pilot: list[str]) -> str:
     lines = [
-        "# 1条统一默认和100条定义变更数据",
+        "# One common-default row and 100 definition-change rows",
         "",
-        "000-001 是统一默认，档位 0。相对它，按变更项数分成四档，每档 25 条。16 项可变定义是：理论迎角、理论侧滑、理论滚转、机构迎角、机构侧滑、机构滚转、安装方式、弹性迎角、弹性侧滑、弹性滚转、气流偏角 α_V、气流偏角 β_V、天平安装角，以及体轴系、风轴系、天平系。",
+        "000-001 is the common default, tier 0. Against it, the rows are split by how many definitions change, four tiers of 25. The 16 variable definitions are: theoretical angle of attack, theoretical sideslip, theoretical roll, mechanism angle of attack, mechanism sideslip, mechanism roll, installation, elastic angle of attack, elastic sideslip, elastic roll, flow-offset angle α_V, flow-offset angle β_V, balance installation angle, and the body-axis frame, the wind frame, and the balance frame.",
         "",
-        "一项坐标系算作已变更，是指它不是统一默认的那一套合法坐标轴。每套坐标系有 48 种合法声明，变更时从其余 47 种里抽取。模型安装角 γ_model 不进入任何一个空，四档都保持默认。欧拉顺序由功角机构固定，不是可变定义。",
+        "A frame counts as changed when it is not the legal axis set of the common default. Each frame has 48 legal declarations, and a change is drawn from the other 47. The model installation angle γ_model enters no blank and stays at the default in every tier. Euler order is fixed by the angle mechanism and is not a variable definition.",
         "",
-        "| 档 | 变更项 | 条数 | 编号 |",
+        "| Tier | Changed | Rows | Ids |",
         "| --- | --- | --- | --- |",
         "| 0% | 0/16 | 1 | 000-001 |",
-        "| 25% | 4/16 | 25 | 025-001 至 025-025 |",
-        "| 50% | 8/16 | 25 | 050-001 至 050-025 |",
-        "| 75% | 12/16 | 25 | 075-001 至 075-025 |",
-        "| 100% | 16/16 | 25 | 100-001 至 100-025 |",
+        "| 25% | 4/16 | 25 | 025-001 through 025-025 |",
+        "| 50% | 8/16 | 25 | 050-001 through 050-025 |",
+        "| 75% | 12/16 | 25 | 075-001 through 075-025 |",
+        "| 100% | 16/16 | 25 | 100-001 through 100-025 |",
         "",
-        "抽样种子 20261102。25%、50%、75% 三档的变更组合互不重复；100% 只有一种组合，25 条靠三套坐标系的不同声明区分。被变更的坐标系从 47 种非默认声明里抽取。数据在 samples.jsonl，每行一条，含定义声明和 "
+        "The sample seed is 20261102. The change combinations in the 25%, 50%, and 75% tiers do not repeat; 100% has only one combination, and its 25 rows are distinguished by different declarations of the three frames. A changed frame is drawn from the 47 non-default declarations. The rows are in samples.jsonl, one per line, with the declaration and the gold answers of "
         + str(BLANK_COUNT)
-        + " 个空的标准答案。删掉的空号不前移。cloze_eval 默认读这一整份，包含 000-001。",
+        + " blanks. Removed blank numbers are not shifted. cloze_eval reads this whole file by default, including 000-001.",
         "",
-        "pilot_10.json 只是可选的 10 条名单，不是入口。四档按 3、3、2、2 抽取：" + "、".join(pilot) + "。",
+        "pilot_10.json is only an optional list of 10 ids, not the entry point. The four tiers are drawn 3, 3, 2, 2: " + ", ".join(pilot) + ".",
         "",
     ]
     return "\n".join(lines)
@@ -274,7 +293,7 @@ def write_standard_only() -> None:
     row = json.dumps(_slim(sample, record), ensure_ascii=False)
     if '"id": "000-001"' not in first:
         path.write_text(row + "\n" + existing, encoding="utf-8")
-    (OUT_DIR / "00_索引.md").write_text(_index(_pilot(_samples())), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text(_index(_pilot(_samples())), encoding="utf-8")
     print(f"standard {sample['id']} questions {len(record['questions'])}")
 
 
@@ -299,7 +318,7 @@ def main() -> None:
         json.dumps({"ids": pilot, "counts": PILOT_COUNTS, "seed": PILOT_SEED}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    (OUT_DIR / "00_索引.md").write_text(_index(pilot), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text(_index(pilot), encoding="utf-8")
     print(f"Wrote {len(samples)} samples to {OUT_DIR}")
     print("Pilot: " + ", ".join(pilot))
 

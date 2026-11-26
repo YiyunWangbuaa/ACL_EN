@@ -24,15 +24,15 @@ Q = questions()
 
 
 def _bind(node: str, values: tuple[str, ...]) -> dict:
-    return {"节点": node, "绑定": (node, values), "状态": "已填"}
+    return {"node": node, "bound": (node, values), "status": "filled"}
 
 
 def latent(table: dict) -> int:
-    return sum(1 for slot in table.values() if slot.get("状态") == "独立")
+    return sum(1 for slot in table.values() if slot.get("status") == "independent")
 
 
 def alias(table: dict, render) -> int:
-    domains = [slot["绑定"][1] for slot in table.values()]
+    domains = [slot["bound"][1] for slot in table.values()]
     answers = [render(*combo) for combo in product(*domains)]
     counts = Counter(answers)
     return sum(n * (n - 1) // 2 for n in counts.values())
@@ -63,28 +63,28 @@ RENDER = {
 }
 
 TARGETS = {
-    "R21/ID41": ("41", "矩阵"),
-    "t21/ID47": ("47", "向量"),
-    "Pc2/ID53": ("53", "向量"),
+    "R21/ID41": ("41", "matrix"),
+    "t21/ID47": ("47", "vector"),
+    "Pc2/ID53": ("53", "vector"),
 }
 
 
 def check() -> None:
     for name, table in FACTORS.items():
         if latent(table) != 0:
-            raise RuntimeError(f"{name} latent 应为 0")
+            raise RuntimeError(f"{name} latent should be 0")
         render = RENDER[name]
         if alias(table, render) < 0:
             raise RuntimeError(name)
-        values = tuple(slot["绑定"][1][0] for slot in table.values())
+        values = tuple(slot["bound"][1][0] for slot in table.values())
         got = render(*values)
         target, fmt = TARGETS[name]
         if not answers_equal(got, GOLD[target], fmt):
-            raise RuntimeError(f"{name} 金标合成不一致：{got!r} vs {GOLD[target]!r}")
+            raise RuntimeError(f"{name} gold composition disagrees: {got!r} vs {GOLD[target]!r}")
     print(
-        f"阶段7 测点：已填 {len(FACTORS)}，"
-        + "，".join(f"{name} latent={latent(table)} alias={alias(table, RENDER[name])}" for name, table in FACTORS.items())
-        + f"；未填 {len(PENDING)}。",
+        f"stage 7 probes: filled {len(FACTORS)}, "
+        + ", ".join(f"{name} latent={latent(table)} alias={alias(table, RENDER[name])}" for name, table in FACTORS.items())
+        + f"; unfilled {len(PENDING)}.",
         flush=True,
     )
 

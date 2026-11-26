@@ -188,10 +188,10 @@ def _expand(ctx: _Context, groups: list[tuple[str, ...]], through_rejection: boo
         parts = []
         for parent in group:
             child = explain(ctx, parent)
-            if child.phi_status == "拒绝" and not through_rejection:
-                parts.append(((Factor(parent, ("未判定",)),),))
+            if child.phi_status == "rejected" and not through_rejection:
+                parts.append(((Factor(parent, ("undecided",)),),))
             else:
-                parts.append(child.cause_sets or ((Factor(parent, child.local or ("未判定",)),),))
+                parts.append(child.cause_sets or ((Factor(parent, child.local or ("undecided",)),),))
         for combo in product(*parts):
             bag: dict[str, tuple[str, ...]] = {}
             for piece in combo:
@@ -207,7 +207,7 @@ def explain(ctx: _Context, node: str) -> AnswerFaults:
         return cached
     role = NODE_BY_ID[node].role if node in NODE_BY_ID else ""
     if node in ctx.stack:
-        found = AnswerFaults(node, role, "循环", ("未判定",), (), (), "依赖成环")
+        found = AnswerFaults(node, role, "cycle", ("undecided",), (), (), "the dependency cycles")
         ctx.cache[node] = found
         return found
     ctx.stack.add(node)
@@ -218,10 +218,10 @@ def explain(ctx: _Context, node: str) -> AnswerFaults:
     if not _has_calculator(node):
         modes = _local_modes(node, False)
         found = AnswerFaults(
-            node, role, "无计算器", modes,
+            node, role, "no-calculator", modes,
             ((Factor(node, modes),),) if modes else (),
             (),
-            "这个空没有条件输出，按题目层级记 " + "+".join(modes),
+            "This blank has no conditional output and is recorded by question layer as " + "+".join(modes),
         )
         ctx.stack.remove(node)
         ctx.cache[node] = found
@@ -230,20 +230,20 @@ def explain(ctx: _Context, node: str) -> AnswerFaults:
     written = ctx.written(node)
     if not ok:
         gold_ok, _gold_reason = ctx.calculate(node, ())
-        reason = f"错误前置下计算器拒绝：{phi}" if phi else "错误前置下计算器拒绝"
+        reason = f"the calculator rejected under a wrong prefix: {phi}" if phi else "the calculator rejected under a wrong prefix"
         if not gold_ok or not wrong:
-            found = AnswerFaults(node, role, "拒绝", ("未判定",), ((Factor(node, ("未判定",)),),), (), reason)
+            found = AnswerFaults(node, role, "rejected", ("undecided",), ((Factor(node, ("undecided",)),),), (), reason)
         else:
             def rejects(combo: tuple[str, ...]) -> bool:
                 good, _reason = ctx.calculate(node, tuple(sorted(combo, key=int)))
                 return not good
 
             direct_sets, unresolved = _minimal(wrong, rejects)
-            note = reason.rstrip("。") + "。本题没有可比较的条件输出，不在执行或数理记故障。"
+            note = reason.rstrip(".") + ". This question has no conditional output to compare, so it is not scored as execution or algebra."
             if unresolved:
-                note += "还有未拆开的前置：" + "、".join(f"ID{item}" for item in unresolved)
+                note += " Upstream still unresolved: " + ", ".join(f"ID{item}" for item in unresolved)
             found = AnswerFaults(
-                node, role, "拒绝", (), _unique(_expand(ctx, list(direct_sets), True)), tuple(direct_sets), note,
+                node, role, "rejected", (), _unique(_expand(ctx, list(direct_sets), True)), tuple(direct_sets), note,
             )
         ctx.stack.remove(node)
         ctx.cache[node] = found
@@ -265,14 +265,14 @@ def explain(ctx: _Context, node: str) -> AnswerFaults:
         expanded = [(own, *group) for group in expanded] or [(own,)]
     note = ""
     if unresolved:
-        note = "还有未拆开的前置：" + "、".join(f"ID{item}" for item in unresolved)
+        note = "Upstream still unresolved: " + ", ".join(f"ID{item}" for item in unresolved)
     if matched and not _same(phi, ctx.gold[node]):
-        note = "答案等于错误前置的条件输出。" + note
+        note = "The answer equals the conditional output under the wrong prefix. " + note
     elif not matched and wrong and _same(phi, ctx.gold[node]):
-        note = "错误前置的条件输出仍是金标，这些前置没有造成这道题的失败。" + note
+        note = "The conditional output under the wrong prefix is still the gold, so those upstream blanks did not cause this failure. " + note
     elif not matched and wrong:
-        note = "答案也不等于错误前置的条件输出。" + note
-    found = AnswerFaults(node, role, "相同" if matched else "不同", modes, _unique(expanded), tuple(direct), note.strip())
+        note = "The answer also does not equal the conditional output under the wrong prefix. " + note
+    found = AnswerFaults(node, role, "same" if matched else "different", modes, _unique(expanded), tuple(direct), note.strip())
     ctx.stack.remove(node)
     ctx.cache[node] = found
     return found
@@ -303,33 +303,33 @@ def attribute_run(model, gold: dict[str, str], sample: str, condition: str) -> l
 def _sets(item: AnswerFaults) -> str:
     if not item.cause_sets:
         return "—"
-    return " 或 ".join("、".join(factor.text() for factor in group) for group in item.cause_sets)
+    return " or ".join(", ".join(factor.text() for factor in group) for group in item.cause_sets)
 
 
 def render(sample: str, condition: str, rows: list[AnswerFaults]) -> str:
     lines = [
-        f"# 重叠归因 — {sample} · {condition}",
+        f"# Overlap attribution — {sample} · {condition}",
         "",
-        "本地故障只看题目层级：直接识别 DIR，推理识别 RSN，执行 EXE，数理 ALG。",
-        "答案与错误前置的条件输出不一致，才记这一层。一致则因素在上游。形态不改变层级。",
+        "A local fault uses only the question layer: direct recognition DIR, reasoning recognition RSN, execution EXE, algebra ALG.",
+        "This layer is recorded only when the answer disagrees with the conditional output under the wrong prefix. If they agree, the factor is upstream. Shape does not change the layer.",
         "",
     ]
     counts = Counter()
     for item in rows:
-        local = "+".join(item.local) or "无"
+        local = "+".join(item.local) or "none"
         counts[local] += 1
-    lines.append("本题因素：" + "，".join(f"{name} {count}" for name, count in counts.most_common()))
+    lines.append("Factors on this question: " + ", ".join(f"{name} {count}" for name, count in counts.most_common()))
     mixed = sum(1 for item in rows if len(item.modes()) > 1)
     several = sum(1 for item in rows if any(len(group) > 1 for group in item.cause_sets))
-    lines.append(f"同一因素集里有多种故障的题：{mixed}。同一因素集里有多个因素的题：{several}。")
+    lines.append(f"Questions whose factor set has more than one fault: {mixed}. Questions whose factor set has more than one factor: {several}.")
     lines.append("")
-    lines.append("| 题号 | 题目 | 与条件输出 | 本题 | 实际因素 | 直接前置 |")
+    lines.append("| Id | Question | Versus conditional output | This question | Actual factors | Direct upstream |")
     lines.append("| --- | --- | --- | --- | --- | --- |")
     for item in rows:
-        direct = " 或 ".join("、".join(f"ID{node}" for node in group) for group in item.direct) or "—"
+        direct = " or ".join(", ".join(f"ID{node}" for node in group) for group in item.direct) or "—"
         lines.append(
             f"| ID{item.node} | {item.role} | {item.phi_status} | "
-            f"{'+'.join(item.local) or '无'} | {_sets(item)} | {direct} |"
+            f"{'+'.join(item.local) or 'none'} | {_sets(item)} | {direct} |"
         )
         if item.note:
             lines.append(f"|  |  |  |  | {item.note} |  |")
@@ -340,28 +340,28 @@ def _check(rows: list[AnswerFaults]) -> None:
     by_id = {item.node: item for item in rows}
     matrix = by_id["132"]
     if EXE not in matrix.local or matrix.direct:
-        raise RuntimeError(f"ID132 应是没有上游的 EXE：{matrix}")
+        raise RuntimeError(f"ID132 should be EXE with no upstream: {matrix}")
     total = by_id["55"]
     if EXE in total.local or not total.direct:
-        raise RuntimeError(f"ID55 的答案等于条件输出，不应有本题 EXE：{total}")
+        raise RuntimeError(f"The answer of ID55 equals the conditional output, so it should not have a local EXE: {total}")
     side = by_id["81"]
     if side.local != (ALG,) or not side.direct:
-        raise RuntimeError(f"ID81 在数理层，应有本题 ALG 和上游：{side}")
+        raise RuntimeError(f"ID81 is in the algebra layer and should have a local ALG plus upstream: {side}")
     moment = by_id["197"]
     if moment.local != (ALG,) or not any(factor.modes == (EXE,) for group in moment.cause_sets for factor in group):
-        raise RuntimeError(f"ID197 应是数理 ALG，符号因素留在执行：{moment}")
+        raise RuntimeError(f"ID197 should be algebra ALG, with the sign factor left in execution: {moment}")
     if by_id["4"].local != (DIR,):
-        raise RuntimeError(f"ID4 是没有计算器的轴向，应记 DIR：{by_id['4']}")
+        raise RuntimeError(f"ID4 is an axial blank with no calculator and should be recorded as DIR: {by_id['4']}")
     if EXE not in by_id["98"].local:
-        raise RuntimeError(f"ID98 与固定连乘码不一致，应记 EXE：{by_id['98']}")
+        raise RuntimeError(f"ID98 disagrees with the fixed product code and should be recorded as EXE: {by_id['98']}")
     frame = by_id["24"]
     if EXE in frame.local or not {DIR, RSN} <= set(frame.modes()):
-        raise RuntimeError(f"ID24 的计算器被前置拒绝，因素应同时有 DIR 和 RSN：{frame}")
+        raise RuntimeError(f"The calculator of ID24 was rejected by an upstream blank, so the factors should include both DIR and RSN: {frame}")
     for item in rows:
-        if item.phi_status == "相同" and item.local:
-            raise RuntimeError(f"ID{item.node} 与条件输出相同，仍记了本题故障 {item.local}。")
-        if item.phi_status == "不同" and item.local != (scope_of(item.node),):
-            raise RuntimeError(f"ID{item.node} 的本题故障应是 {scope_of(item.node)}，实际 {item.local}。")
+        if item.phi_status == "same" and item.local:
+            raise RuntimeError(f"ID{item.node} matches the conditional output but still recorded a local fault {item.local}.")
+        if item.phi_status == "different" and item.local != (scope_of(item.node),):
+            raise RuntimeError(f"The local fault of ID{item.node} should be {scope_of(item.node)}, got {item.local}.")
 
 
 if __name__ == "__main__":

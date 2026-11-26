@@ -21,7 +21,7 @@ def main() -> None:
     check_attribution()
     check_t_final()
     check_stage7()
-    print("机器视觉阶段 0–7 通过（物体与双目环节）。", flush=True)
+    print("Computer vision stages 0-7 passed (Object and stereo).", flush=True)
 
 
 if __name__ == "__main__":

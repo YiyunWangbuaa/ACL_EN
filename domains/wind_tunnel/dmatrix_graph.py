@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""图可达生成的审计 D 矩阵（支持层），不做故障注入。
+"""Audit D matrix from graph reachability (the support layer). It does not inject faults.
 
-D[f, m] = 1 当且仅当 m ∈ f.potential（注入点 + 图后代的可达测点列）。
-模糊组 = potential 完全相同的故障。组再分成两类：
+D[f, m] = 1 exactly when m is in f.potential (the injection point plus the reachable probe columns of the graph descendants).
+An ambiguity group is the faults whose potential is identical. Groups fall into two kinds:
 
-- 类标签重复：组员写入的空集合相同，只是 DIR/RSN/EXE 标签不同。
-- 真模糊：组员写入的空不同，后代集却相同。
+- label repeat: the members write the same set of blanks and differ only in the DIR/RSN/EXE label.
+- true ambiguity: the members write different blanks, but the descendant sets are the same.
 """
 from __future__ import annotations
 
@@ -31,12 +31,12 @@ def injected_blanks(item) -> frozenset[str]:
 
 
 def support(sample_id: str) -> dict[str, frozenset[str]]:
-    """故障 id -> 可达测点列（图可达，无注入）。"""
+    """Fault id to the reachable probe columns (graph reachability, no injection)."""
     return {item.id: item.potential for item in instances(sample_id)}
 
 
 def ambiguity_groups(sample_id: str) -> tuple[tuple[str, ...], ...]:
-    """按 potential 归并的多成员模糊组，组内故障按 id 排序。"""
+    """Multi-member ambiguity groups merged by potential, with faults sorted by id."""
     groups: dict[frozenset[str], list[str]] = defaultdict(list)
     for fault_id, reach in support(sample_id).items():
         groups[reach].append(fault_id)
@@ -77,13 +77,13 @@ def classify_groups(rows) -> tuple[dict, ...]:
         shared = sets[0].intersection(*sets[1:]) if sets else frozenset()
         same = len(set(sets)) == 1
         if shared and len(classes) > 1:
-            kind = "类标签重复"
+            kind = "label repeat"
         elif not shared:
-            kind = "真模糊"
+            kind = "true ambiguity"
         elif same:
-            kind = "同注入同标签"
+            kind = "same injection and label"
         else:
-            kind = "同标签部分重叠"
+            kind = "partial overlap of one label"
         found.append({
             "kind": kind,
             "members": tuple(item.id for item in members),
@@ -97,7 +97,7 @@ def classify_groups(rows) -> tuple[dict, ...]:
 
 
 def render(sample_id: str) -> dict:
-    """审计视图：行=故障，列=测点（节点级），以及两类模糊组。"""
+    """Audit view: rows are faults, columns are node-level probes, plus the two kinds of ambiguity groups."""
     library = instances(sample_id)
     columns = [m.id for m in catalog() if m.kind == "node"]
     rows = []
@@ -120,10 +120,10 @@ def render(sample_id: str) -> dict:
         "groups": groups,
         "n_ambiguity": len(groups),
         "max_group": max((len(group["members"]) for group in groups), default=0),
-        "n_label_repeat": sum(group["kind"] == "类标签重复" for group in groups),
-        "n_same_label": sum(group["kind"] == "同注入同标签" for group in groups),
-        "n_partial": sum(group["kind"] == "同标签部分重叠" for group in groups),
-        "n_true": sum(group["kind"] == "真模糊" for group in groups),
+        "n_label_repeat": sum(group["kind"] == "label repeat" for group in groups),
+        "n_same_label": sum(group["kind"] == "same injection and label" for group in groups),
+        "n_partial": sum(group["kind"] == "partial overlap of one label" for group in groups),
+        "n_true": sum(group["kind"] == "true ambiguity" for group in groups),
         "multi_class_blanks": overlap,
     }
 
@@ -133,14 +133,14 @@ if __name__ == "__main__":
 
     sample = sys.argv[1] if len(sys.argv) > 1 else "body-rule"
     view = render(sample)
-    print(f"=== {sample}：图可达 D 矩阵审计 ===")
-    print(f"故障行 {len(view['rows'])}，测点列（节点） {len(view['columns'])}")
+    print(f"=== {sample}: graph-reachability D-matrix audit ===")
+    print(f"fault rows {len(view['rows'])}, probe columns (nodes) {len(view['columns'])}")
     print(
-        f"多成员模糊组 {view['n_ambiguity']} 个，最大组 {view['max_group']} 人；"
-        f"类标签重复 {view['n_label_repeat']}，同注入同标签 {view['n_same_label']}，"
-        f"同标签部分重叠 {view['n_partial']}，真模糊 {view['n_true']}"
+        f"multi-member ambiguity groups {view['n_ambiguity']}, largest group {view['max_group']}; "
+        f"label repeat {view['n_label_repeat']}, same injection and label {view['n_same_label']}, "
+        f"partial overlap of one label {view['n_partial']}, true ambiguity {view['n_true']}"
     )
-    print(f"DIR/RSN/EXE 共写的空 {len(view['multi_class_blanks'])} 个")
+    print(f"blanks written by more than one of DIR/RSN/EXE: {len(view['multi_class_blanks'])}")
     for group in view["groups"]:
-        blanks = ",".join(group["blanks"] or group["shared"]) or "无共有空"
-        print(f"  [{group['kind']}] {len(group['members'])} 人 空 {blanks}: {', '.join(group['members'])}")
+        blanks = ",".join(group["blanks"] or group["shared"]) or "no shared blanks"
+        print(f"  [{group['kind']}] {len(group['members'])} members blanks {blanks}: {', '.join(group['members'])}")

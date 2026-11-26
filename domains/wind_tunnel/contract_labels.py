@@ -162,15 +162,15 @@ def _table() -> dict[str, tuple[str, str]]:
         for number in range(start, end + 1):
             blank_id = str(number)
             if blank_id in REMOVED:
-                raise RuntimeError(f"已删除的 ID{blank_id} 被重新标了标签。")
+                raise RuntimeError(f"Removed ID{blank_id} was labeled again.")
             if blank_id in found:
-                raise RuntimeError(f"ID{blank_id} 的新标签重复。")
+                raise RuntimeError(f"ID{blank_id} has a duplicate new label.")
             found[blank_id] = (label, subtype)
     expected = {str(number) for number in range(1, 214)} - REMOVED
     if set(found) != expected:
         missing = sorted(expected - set(found), key=int)
         extra = sorted(set(found) - expected, key=int)
-        raise RuntimeError(f"新标签没有覆盖全部目标空。缺少 {missing}，多出 {extra}。")
+        raise RuntimeError(f"New labels do not cover every target blank. Missing {missing}, extra {extra}.")
     return found
 
 
@@ -195,7 +195,7 @@ def export_document(path: Path) -> None:
         for node in process_nodes.values()
     }
     if graph_ids != set(TARGETS):
-        raise RuntimeError("新标签和依赖图的题号不一致。")
+        raise RuntimeError("New labels and the dependency-graph ids disagree.")
     targets = []
     for process, nodes in GRAPH.items():
         for blank_id, node in sorted(nodes.items(), key=lambda item: int(item[0])):
@@ -225,7 +225,7 @@ def export_document(path: Path) -> None:
     path.write_text(json.dumps({
         "targets": targets,
         "probes": probes,
-        "note": "路径标签只标会改变后续推理路径的空。C-PATH-ANCHOR 只用于中间状态起点：ID23、ID31、ID40 是姿态旋转所在坐标系，ID129 是安装角校正的绝对方向。ID97 仍是矩阵执行，不标成路径边。",
+        "note": "Path labels mark only blanks that change a later reasoning path. C-PATH-ANCHOR is only for the start of an intermediate state: ID23, ID31, and ID40 are the frames of the attitude rotations, and ID129 is the absolute direction of the installation-angle correction. ID97 remains matrix execution and is not a path edge.",
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
@@ -236,13 +236,13 @@ def check_labels() -> None:
     live_ids = {item["probe_id"] for item in live}
     labeled = {item["probe_id"] for item in PROBES}
     if live_ids != labeled:
-        raise RuntimeError(f"探针标注和当前探针不一致：{sorted(live_ids ^ labeled)}")
+        raise RuntimeError(f"Probe labels disagree with the live probes: {sorted(live_ids ^ labeled)}")
     for item in live:
         spec = next(probe for probe in PROBES if probe["probe_id"] == item["probe_id"])
         if item["new_label"] != spec["new_label"] or item["target"] != spec["target_id"]:
-            raise RuntimeError(f"{item['probe_id']} 的标注和探针定义不一致。")
+            raise RuntimeError(f"{item['probe_id']} label disagrees with the probe definition.")
         if item.get("context_depth") != "target_local" or item.get("writes_back") is not False:
-            raise RuntimeError(f"{item['probe_id']} 不是不写回的目标局部探针。")
+            raise RuntimeError(f"{item['probe_id']} is not a target-local probe that does not write back.")
     print(f"label check ok: {len(TARGETS)} targets, {len(PROBES)} probes")
 
 

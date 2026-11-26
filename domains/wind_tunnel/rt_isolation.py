@@ -11,29 +11,28 @@ import re
 
 from cloze_eval import prompt_for
 from domains.wind_tunnel.contract_probes import filled_prefix
-from domains.wind_tunnel.dataset_generate import PROCESS_OFFSET, PROCESS_TEXT, SLOT_MARK
+from domains.wind_tunnel.dataset_generate import PROCESS_OFFSET, PROCESS_TEXT, SLOT_MARK, _period_index
 
-PROCESS = "风轴系到体轴系"
+PROCESS = "wind frame to body-axis frame"
 RT_ID = "55"
 DEEP_ANCHOR = "51"
-PLACEHOLDER = "（此分矩阵答案已隐去）"
-PROBE_MARK = "《探针记录》"
+PLACEHOLDER = "(this component-matrix answer is hidden)"
+PROBE_MARK = "Probe record "
 # The name is stated before the matrix blank. Shallow probes stop at that sentence.
 MATRICES = (
-    {"key": "rp1", "name": "RP1", "blank": "8", "shallow_anchor": "4", "named": "前置变换矩阵为RP1"},
-    {"key": "rp2", "name": "RP2", "blank": "13", "shallow_anchor": "12", "named": "前置变换矩阵为RP2"},
-    {"key": "alpha", "name": "R_α_M", "blank": "26", "shallow_anchor": "25", "named": "对应的旋转矩阵为R_α_M"},
-    {"key": "beta", "name": "R_β_M", "blank": "34", "shallow_anchor": "33", "named": "对应的旋转矩阵为R_β_M"},
-    {"key": "gamma", "name": "R_γ_M", "blank": "43", "shallow_anchor": "42", "named": "对应的旋转矩阵为R_γ_M"},
+    {"key": "rp1", "name": "RP1", "blank": "8", "shallow_anchor": "7", "named": "is therefore RP1"},
+    {"key": "rp2", "name": "RP2", "blank": "13", "shallow_anchor": "12", "named": "pre-transform is RP2"},
+    {"key": "alpha", "name": "R_α_M", "blank": "26", "shallow_anchor": "25", "named": "rotation matrix is R_α_M"},
+    {"key": "beta", "name": "R_β_M", "blank": "34", "shallow_anchor": "33", "named": "rotation matrix is R_β_M"},
+    {"key": "gamma", "name": "R_γ_M", "blank": "43", "shallow_anchor": "42", "named": "rotation matrix is R_γ_M"},
 )
 COMPONENT_IDS = tuple(item["blank"] for item in MATRICES)
-CONTROL_LEAD = "控制组把探针答案显式写入前缀。R_γ_M 的探针记录为"
-# 与 data/wind_tunnel/review/00_注入格式.md 的矩阵格式相同。
+CONTROL_LEAD = "The control writes the probe answer into the prefix. The probe record for R_γ_M is "
+# Same matrix wording as dataset_generate.MATRIX_FORMAT, plus the worked example.
 MATRIX_FORMAT = (
-    "输出格式：矩阵。输出一行3×3矩阵，形如[[a, b, c], [d, e, f], [g, h, i]]。"
-    "逗号后恰好一个空格。元素为整数，或由cos、sin和本题角度符号组成的表达式。"
-    "乘号用*。不要换行，不要使用LaTeX。"
-    "示例：[[cos(θ), 0, -sin(θ)], [0, 1, 0], [sin(θ), 0, cos(θ)]]。示例不是本题答案。"
+    "Write one 3×3 matrix on a single line, as [[a, b, c], [d, e, f], [g, h, i]]. "
+    "Put exactly one space after each comma. Each entry is an integer or an expression in cos, sin, and the angle symbols of this item. Use * for multiplication. Do not break the line and do not use LaTeX. "
+    "Example: [[cos(θ), 0, -sin(θ)], [0, 1, 0], [sin(θ), 0, cos(θ)]]. The example is not the answer to this item."
 )
 
 
@@ -50,13 +49,13 @@ def hide_components(memory: dict[str, str]) -> dict[str, str]:
     hidden = _copy(memory)
     for blank_id in COMPONENT_IDS:
         if blank_id not in hidden:
-            raise KeyError(f"冻结前缀缺少分矩阵 ID{blank_id}")
+            raise KeyError(f"The frozen prefix is missing component matrix ID{blank_id}")
         hidden[blank_id] = PLACEHOLDER
     return hidden
 
 
 def _question(name: str) -> str:
-    return f"写出{name}的展开式。{MATRIX_FORMAT}"
+    return f"Write the expansion of {name}. {MATRIX_FORMAT}"
 
 
 def _template(chain: dict) -> str:
@@ -82,15 +81,15 @@ def _next_slotfree(chain: dict, anchor: str) -> str:
     template = _template(chain)
     found = re.search(rf"@@{re.escape(anchor)}@@", template)
     if found is None:
-        raise KeyError(f"题面没有 @@{anchor}@@")
+        raise KeyError(f"the problem text does not contain @@{anchor}@@")
     tail = template[found.end():]
-    period = tail.find("。")
+    period = _period_index(tail)
     if period < 0:
-        raise RuntimeError(f"ID{anchor} 后面没有句号")
+        raise RuntimeError(f"There is no period after ID{anchor}")
     rest = tail[period + 1:].lstrip()
     extra: list[str] = []
     while rest:
-        end = rest.find("。")
+        end = _period_index(rest)
         if end < 0:
             break
         sentence = rest[: end + 1].strip()
@@ -112,21 +111,21 @@ def _probe_prefix(chain: dict, anchor: str, memory: dict[str, str]) -> str:
 def _probe_prompt(chain: dict, anchor: str, memory: dict[str, str], question: str) -> str:
     prefix = _probe_prefix(chain, anchor, memory)
     if question in prefix:
-        raise RuntimeError("探针题干写进了过程前缀")
+        raise RuntimeError("The probe stem was written into the process prefix")
     if PROBE_MARK in prefix or PROBE_MARK in question:
-        raise RuntimeError("探针前缀里已经有探针记录")
+        raise RuntimeError("The probe prefix already contains a probe record")
     return "\n".join([
-        "这是一次旁路探针。只回答下面这一个问题。",
-        "不要填写过程中的空，不要继续后面的句子。",
-        "这个答案只作评分记录，不会写回原流程，也不会进入 R_t。",
+        "This is a side probe. Answer only the question below.",
+        "Do not fill blanks in the process, and do not continue the later sentences.",
+        "This answer is only a score record. It is not written back to the original flow, and it does not enter R_t.",
         "",
-        "【定义声明】",
+        "[Declaration]",
         chain["declaration"],
         "",
-        "【过程】",
+        "[Process]",
         prefix,
         "",
-        "【探针】",
+        "[Probe]",
         question,
     ])
 
@@ -136,26 +135,26 @@ def _rt_prompt(chain: dict, memory: dict[str, str]) -> str:
 
 
 def _inject_control(prompt: str, probe_answer: str) -> str:
-    sentence = f"{CONTROL_LEAD}{probe_answer}。"
-    needle = "写出R1*R2*R3符号化简后的总矩阵"
+    sentence = f"{CONTROL_LEAD}{probe_answer}. "
+    needle = "Write the symbolically simplified product R_t = R1*R2*R3"
     if needle not in prompt:
-        raise RuntimeError("R_t 题面里没有总矩阵提问，无法放入控制句")
+        raise RuntimeError("The R_t prompt has no total-matrix question, so the control sentence cannot be inserted")
     return prompt.replace(needle, sentence + needle, 1)
 
 
 def build_conditions(chain: dict, frozen: dict[str, str], held: dict[str, dict[str, str]]) -> dict[str, str]:
     """frozen is fixed before any probe. held answers are never copied into the main prompts."""
     if chain["process"] != PROCESS:
-        raise RuntimeError(f"这一组条件目前只用于{PROCESS}")
+        raise RuntimeError(f"This set of conditions is only used for {PROCESS}")
     required = set(COMPONENT_IDS) | {item["shallow_anchor"] for item in MATRICES} | {DEEP_ANCHOR, RT_ID}
     missing = sorted(required - set(map(str, frozen)))
     if missing:
-        raise KeyError("冻结前缀缺少 " + "、".join(missing))
+        raise KeyError("The frozen prefix is missing " + ", ".join(missing))
     answers = []
     for item in MATRICES:
         pair = held[item["key"]]
         if PROBE_MARK not in pair["shallow"] or PROBE_MARK not in pair["deep"]:
-            raise RuntimeError(f"{item['name']} 的探针答案必须带记录标记")
+            raise RuntimeError(f"The probe answer for {item['name']} must carry the record mark")
         answers.extend((pair["shallow"], pair["deep"]))
     original = _copy(frozen)
     masked = hide_components(original)
@@ -182,7 +181,7 @@ def build_conditions(chain: dict, frozen: dict[str, str], held: dict[str, dict[s
 def _assert_isolated(prompts: dict[str, str], frozen: dict[str, str], answers: list[str]) -> None:
     gold = {item["blank"]: _compact(frozen[item["blank"]]) for item in MATRICES}
     if any(not text or text == _compact(PLACEHOLDER) for text in gold.values()):
-        raise RuntimeError("分矩阵金标是空的，遮蔽检查没有意义")
+        raise RuntimeError("The component-matrix gold is empty, so the masking check has nothing to test")
     rt_answer = _compact(frozen[RT_ID])
 
     def compact_has(name: str, part: str) -> bool:
@@ -194,66 +193,66 @@ def _assert_isolated(prompts: dict[str, str], frozen: dict[str, str], answers: l
     ]
     for name in probe_names:
         if any(answer in prompts[name] for answer in answers):
-            raise RuntimeError(f"{name} 看见了探针答案")
+            raise RuntimeError(f"{name} saw a probe answer")
         if rt_answer and rt_answer in _compact(prompts[name]):
-            raise RuntimeError(f"{name} 看见了 R_t 的答案")
+            raise RuntimeError(f"{name} saw the R_t answer")
     for item in MATRICES:
         shallow = f"shallow_{item['key']}"
         deep_original = f"deep_original_{item['key']}"
         deep_rederive = f"deep_rederive_{item['key']}"
         question = _question(item["name"])
-        if not question.startswith(f"写出{item['name']}的展开式。") or MATRIX_FORMAT not in question:
-            raise RuntimeError(f"{item['name']} 的探针没有要求写出展开式，或没有附上矩阵格式")
-        if "重新推导" in question or "重新写出" in question:
-            raise RuntimeError(f"{item['name']} 的探针仍在要求重新推导矩阵")
+        if not question.startswith(f"Write the expansion of {item['name']}.") or MATRIX_FORMAT not in question:
+            raise RuntimeError(f"The {item['name']} probe does not ask for the expansion, or it omits the matrix format")
+        if "re-derive" in question or "write it again" in question:
+            raise RuntimeError(f"The {item['name']} probe still asks to re-derive the matrix")
         if item["named"] not in prompts[shallow]:
-            raise RuntimeError(f"{item['name']} 的浅层探针还没看见矩阵名称")
+            raise RuntimeError(f"The {item['name']} shallow probe has not seen the matrix name")
         if compact_has(shallow, gold[item["blank"]]):
-            raise RuntimeError(f"{item['name']} 的浅层探针看见了自己的原答案")
+            raise RuntimeError(f"The {item['name']} shallow probe saw its own original answer")
         if not compact_has(deep_original, gold[item["blank"]]):
-            raise RuntimeError(f"{item['name']} 的原流程深层探针应当看见原答案")
+            raise RuntimeError(f"The {item['name']} original-flow deep probe should see the original answer")
         if compact_has(deep_rederive, gold[item["blank"]]):
-            raise RuntimeError(f"{item['name']} 的重推导探针仍然看见原答案")
+            raise RuntimeError(f"The {item['name']} rederive probe still sees the original answer")
         if item["named"] not in prompts[deep_rederive]:
-            raise RuntimeError(f"{item['name']} 的重推导探针连名称都没有")
+            raise RuntimeError(f"The {item['name']} rederive probe does not even contain the name")
 
     for name in ("rt_original", "rt_rederive"):
         if any(answer in prompts[name] for answer in answers) or PROBE_MARK in prompts[name]:
-            raise RuntimeError(f"{name} 看见了探针答案")
+            raise RuntimeError(f"{name} saw a probe answer")
     if not all(compact_has("rt_original", gold[item["blank"]]) for item in MATRICES):
-        raise RuntimeError("R_t-original 应当保留原流程里的分矩阵")
+        raise RuntimeError("R_t-original should keep the component matrices from the original flow")
     if any(compact_has("rt_rederive", gold[item["blank"]]) for item in MATRICES):
-        raise RuntimeError("R_t-rederive 仍然看见分矩阵答案")
+        raise RuntimeError("R_t-rederive still sees a component-matrix answer")
     if prompts["rt_original"] == prompts["rt_rederive"]:
-        raise RuntimeError("两个 R_t 条件的提示相同，不能分开记分")
+        raise RuntimeError("The two R_t conditions have the same prompt and cannot be scored apart")
 
-    gamma_deep = next(answer for answer in answers if answer.endswith("深层R_γ_M"))
+    gamma_deep = next(answer for answer in answers if answer.endswith("deep R_γ_M"))
     if gamma_deep not in prompts["rt_writeback_control"]:
-        raise RuntimeError("写回控制没有放入 R_γ_M 的深层探针答案")
+        raise RuntimeError("The write-back control did not include the deep R_γ_M probe answer")
     if any(answer in prompts["rt_writeback_control"] for answer in answers if answer != gamma_deep):
-        raise RuntimeError("写回控制放入了不该写入的探针答案")
+        raise RuntimeError("The write-back control included a probe answer that should not be written")
     if not all(compact_has("rt_writeback_control", gold[item["blank"]]) for item in MATRICES):
-        raise RuntimeError("写回控制应当在原始前缀上追加探针答案，而不是改成重推导")
+        raise RuntimeError("The write-back control should append the probe answer to the original prefix, not switch to rederive")
 
 
 STAGES = (
     {
-        "process": "天平系到体轴系",
+        "process": "balance frame to body-axis frame",
         "deep_anchor": "100",
         "total_id": "104",
         "matrices": (
-            {"key": "rtp_tz1", "name": "RTP_TZ1", "blank": "95", "shallow_anchor": "91", "named": "前置矩阵为RTP_TZ1"},
-            {"key": "roll", "name": "R_(γ_M-γ_tp)", "blank": "88", "shallow_anchor": "87", "named": "对应的旋转矩阵为R_(γ_M-γ_tp)"},
-            {"key": "rtp_tz2", "name": "RTP_TZ2", "blank": "97", "shallow_anchor": "88", "named": "前置矩阵为RTP_TZ2"},
+            {"key": "rtp_tz1", "name": "RTP_TZ1", "blank": "95", "shallow_anchor": "94", "named": "is therefore RTP_TZ1"},
+            {"key": "roll", "name": "R_(γ_M-γ_tp)", "blank": "88", "shallow_anchor": "87", "named": "rotation matrix is R_(γ_M-γ_tp)"},
+            {"key": "rtp_tz2", "name": "RTP_TZ2", "blank": "97", "shallow_anchor": "88", "named": "RTP_TZ2 is also required"},
         ),
     },
     {
-        "process": "天平系到风轴系",
+        "process": "balance frame to wind frame",
         "deep_anchor": "134",
         "total_id": "",
         "matrices": (
-            {"key": "rp_tp_fd", "name": "RP_TP_FD", "blank": "126", "shallow_anchor": "125", "named": "对应的变换矩阵为RP_TP_FD"},
-            {"key": "gamma_tp", "name": "R_γ_tp", "blank": "132", "shallow_anchor": "131", "named": "对应的旋转矩阵为R_γ_tp"},
+            {"key": "rp_tp_fd", "name": "RP_TP_FD", "blank": "126", "shallow_anchor": "125", "named": "transform matrix is RP_TP_FD"},
+            {"key": "gamma_tp", "name": "R_γ_tp", "blank": "132", "shallow_anchor": "131", "named": "rotation matrix is R_γ_tp"},
         ),
     },
 )
@@ -262,7 +261,7 @@ STAGES = (
 def isolate_stage(chain: dict, frozen: dict[str, str], stage: dict) -> dict[str, str]:
     """Shallow and deep probes for one later stage. Probe answers stay out of the total, when there is one."""
     if chain["process"] != stage["process"]:
-        raise RuntimeError(f"探针阶段与过程不符：{chain['process']}")
+        raise RuntimeError(f"The probe stage does not match the process: {chain['process']}")
     matrices = stage["matrices"]
     hide_ids = tuple(item["blank"] for item in matrices)
     required = set(hide_ids) | {item["shallow_anchor"] for item in matrices} | {stage["deep_anchor"]}
@@ -271,9 +270,9 @@ def isolate_stage(chain: dict, frozen: dict[str, str], stage: dict) -> dict[str,
         required.add(total_id)
     missing = sorted(required - set(map(str, frozen)))
     if missing:
-        raise KeyError("冻结前缀缺少 " + "、".join(missing))
-    answers = [f"{PROBE_MARK}浅层{item['name']}" for item in matrices]
-    answers += [f"{PROBE_MARK}深层{item['name']}" for item in matrices]
+        raise KeyError("The frozen prefix is missing " + ", ".join(missing))
+    answers = [f"{PROBE_MARK}shallow {item['name']}" for item in matrices]
+    answers += [f"{PROBE_MARK}deep {item['name']}" for item in matrices]
     original = _copy(frozen)
     masked = _copy(frozen)
     for blank_id in hide_ids:
@@ -294,7 +293,7 @@ def isolate_stage(chain: dict, frozen: dict[str, str], stage: dict) -> dict[str,
 def _assert_stage(prompts, frozen, answers, matrices, total_id: str) -> None:
     gold = {item["blank"]: _compact(frozen[item["blank"]]) for item in matrices}
     if any(not text or text == _compact(PLACEHOLDER) for text in gold.values()):
-        raise RuntimeError("分矩阵金标是空的，遮蔽检查没有意义")
+        raise RuntimeError("The component-matrix gold is empty, so the masking check has nothing to test")
     total_answer = _compact(frozen[total_id]) if total_id else ""
 
     def compact_has(name: str, part: str) -> bool:
@@ -303,30 +302,30 @@ def _assert_stage(prompts, frozen, answers, matrices, total_id: str) -> None:
     probe_names = [key for key in prompts if key.startswith("shallow_") or key.startswith("deep_")]
     for name in probe_names:
         if any(answer in prompts[name] for answer in answers) or PROBE_MARK in prompts[name]:
-            raise RuntimeError(f"{name} 看见了探针答案")
+            raise RuntimeError(f"{name} saw a probe answer")
         if total_answer and total_answer in _compact(prompts[name]):
-            raise RuntimeError(f"{name} 看见了总矩阵答案")
+            raise RuntimeError(f"{name} saw the total-matrix answer")
     for item in matrices:
         shallow = f"shallow_{item['key']}"
         question = _question(item["name"])
-        if not question.startswith(f"写出{item['name']}的展开式。") or MATRIX_FORMAT not in prompts[shallow]:
-            raise RuntimeError(f"{item['name']} 的探针没有要求写出展开式，或没有附上矩阵格式")
+        if not question.startswith(f"Write the expansion of {item['name']}.") or MATRIX_FORMAT not in prompts[shallow]:
+            raise RuntimeError(f"The {item['name']} probe does not ask for the expansion, or it omits the matrix format")
         if item["named"] not in prompts[shallow]:
-            raise RuntimeError(f"{item['name']} 的浅层探针还没看见矩阵名称")
+            raise RuntimeError(f"The {item['name']} shallow probe has not seen the matrix name")
         if compact_has(shallow, gold[item["blank"]]):
-            raise RuntimeError(f"{item['name']} 的浅层探针看见了自己的原答案")
+            raise RuntimeError(f"The {item['name']} shallow probe saw its own original answer")
         if not compact_has(f"deep_original_{item['key']}", gold[item["blank"]]):
-            raise RuntimeError(f"{item['name']} 的原流程深层探针应当看见原答案")
+            raise RuntimeError(f"The {item['name']} original-flow deep probe should see the original answer")
         if any(compact_has(f"deep_rederive_{item['key']}", gold[other["blank"]]) for other in matrices):
-            raise RuntimeError(f"{item['name']} 的重推导探针仍然看见分矩阵答案")
+            raise RuntimeError(f"The {item['name']} rederive probe still sees a component-matrix answer")
     if total_id:
         for name in ("total_original", "total_rederive"):
             if any(answer in prompts[name] for answer in answers) or PROBE_MARK in prompts[name]:
-                raise RuntimeError(f"{name} 看见了探针答案")
+                raise RuntimeError(f"{name} saw a probe answer")
         if not all(compact_has("total_original", gold[item["blank"]]) for item in matrices):
-            raise RuntimeError("总矩阵原流程应当保留分矩阵")
+            raise RuntimeError("The original-flow total matrix should keep the component matrices")
         if any(compact_has("total_rederive", gold[item["blank"]]) for item in matrices):
-            raise RuntimeError("总矩阵重推导仍然看见分矩阵答案")
+            raise RuntimeError("The rederive total matrix still sees a component-matrix answer")
         if prompts["total_original"] == prompts["total_rederive"]:
-            raise RuntimeError("两个总矩阵条件的提示相同，不能分开记分")
+            raise RuntimeError("The two total-matrix conditions have the same prompt and cannot be scored apart")
 

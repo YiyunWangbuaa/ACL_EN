@@ -587,8 +587,8 @@ class BodyFrameModel:
                 "alpha, then beta, then gamma. Alpha rotates first."
             ),
             "Rotation: passive for every frame. This convention is fixed.",
-            "每根轴先由声明确定绝对方向轴，角度再绑到绝对方向轴上，最后按该坐标系的绝对方向对应关系推断具体坐标轴。",
-            "角度记录里同时保留 absolute_axis 与推断出的 associated_axis。",
+            "Each axis is first assigned an absolute-direction axis by the declaration. The angle is then bound to that absolute-direction axis, and the concrete coordinate axis is inferred from how that frame's axes correspond to the absolute directions.",
+            "Angle records keep both absolute_axis and the inferred associated_axis.",
             "Load coefficients are fixed to absolute axes. The same roles apply to body and balance.",
             *[
                 f"  {item.symbol} {item.name} {item.kind}: {item.role}"

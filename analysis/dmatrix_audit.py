@@ -62,7 +62,7 @@ def analyse(sample: str) -> None:
     payload = json.loads((OUT / f"{sample}.json").read_text(encoding="utf-8"))
     rows = payload["rows"]
     catalog = {m.id: m for m in ME.catalog()}
-    print(f"\n{'='*70}\n{sample}: 行 {len(rows)}，测点 {len(catalog)}")
+    print(f"\n{'='*70}\n{sample}: rows {len(rows)}, probes {len(catalog)}")
 
     hit = Counter()
     per_col_inst = defaultdict(set)
@@ -74,35 +74,35 @@ def analyse(sample: str) -> None:
 
     node_columns = [mid for mid, item in catalog.items() if item.kind == "node"]
     untouched = [mid for mid in node_columns if hit[mid] == 0]
-    print(f"\n--- 1. 没有任何行可达的节点列：{len(untouched)} / {len(node_columns)} ---")
+    print(f"\n--- 1. Node columns reached by no row: {len(untouched)} / {len(node_columns)} ---")
     for mid in untouched[:40]:
         print(f"    {mid:<28} node={catalog[mid].node}")
 
-    print(f"\n--- 2. 被最多行可达的节点（低区分度）---")
+    print("\n--- 2. Nodes reached by the most rows (low discrimination) ---")
     for mid, count in hit.most_common(12):
-        print(f"    {mid:<28} 被 {count:<4} 行到达")
+        print(f"    {mid:<28} reached by {count:<4} rows")
 
     signature = defaultdict(list)
     for mid, inst in per_col_inst.items():
         signature[frozenset(inst)].append(mid)
     duplicates = [group for group in signature.values() if len(group) > 1]
-    print(f"\n--- 3. 到达行的类集合完全相同的节点组：{len(duplicates)} 组 ---")
+    print(f"\n--- 3. Node groups whose reaching-row classes are identical: {len(duplicates)} groups ---")
     for group in sorted(duplicates, key=len, reverse=True)[:8]:
-        print(f"    {len(group)} 个：{sorted(group)[:8]}")
+        print(f"    {len(group)} nodes: {sorted(group)[:8]}")
 
     groups = payload.get("groups") or []
     counts = Counter(group["kind"] for group in groups)
     print(
-        f"\n--- 4. 模糊组：类标签重复 {counts.get('类标签重复', 0)}"
-        f"，同注入同标签 {counts.get('同注入同标签', 0)}"
-        f"，真模糊 {counts.get('真模糊', 0)} ---"
+        f"\n--- 4. Ambiguity groups: label-repeat {counts.get('label-repeat', 0)}"
+        f", same-injection-same-label {counts.get('same-injection-same-label', 0)}"
+        f", true-ambiguity {counts.get('true-ambiguity', 0)} ---"
     )
     for group in groups:
-        if group["kind"] != "真模糊":
+        if group["kind"] != "true-ambiguity":
             continue
-        print(f"    {len(group['members'])} 人 共有空 {','.join(group['shared']) or '无'}: {', '.join(group['members'])}")
+        print(f"    {len(group['members'])} members, shared blanks {','.join(group['shared']) or 'none'}: {', '.join(group['members'])}")
 
-    print("\n--- 5. 每行可达节点数分布 ---")
+    print("\n--- 5. Distribution of reachable-node counts per row ---")
     sizes = Counter(len(row["reach_nodes"]) for row in rows.values())
     print(f"    {dict(sorted(sizes.items()))}")
 

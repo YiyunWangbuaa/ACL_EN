@@ -10,4 +10,4 @@ LOAD_FIRST = 60
 NODE_IDS = tuple(str(number) for number in range(FIRST_ID, LAST_ID + 1))
 COORD_IDS = tuple(str(number) for number in range(FIRST_ID, COORD_LAST + 1))
 LOAD_IDS = tuple(str(number) for number in range(LOAD_FIRST, LAST_ID + 1))
-PROCESS = "空间坐标转换"
+PROCESS = "spatial transforms"

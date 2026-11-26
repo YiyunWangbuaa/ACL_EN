@@ -191,7 +191,7 @@ def subtree_signature(root: str, assignment: Assignment, nodes: tuple[str, ...] 
     """Recomputed text of each requested node. Empty when a contradiction blocks it.
 
     T5 step 2 uses this for an RSN subtree check. An unnamed joint assignment
-    that holds at one node only stays an EXE candidate (``value_form=错序``).
+    that holds at one node only stays an EXE candidate (``value_form=wrong-order``).
     """
     del root
     wanted = tuple(str(node).removeprefix("ID") for node in nodes)
@@ -224,18 +224,18 @@ def assignments(node_id: str, sample_id: str) -> tuple[Assignment, ...]:
 def seed_from_reason(reason: str, node_id: str = "") -> str:
     """Text seed only. The satisfiability search, not this string, decides the group."""
     text = reason or ""
-    if "不能和其他轴组成一组" in text:
+    if "cannot form a set with the other axes" in text:
         match = _ID_IN_REASON.search(text)
         slot = match.group(1) if match else ""
         for group in _CLUSTERS:
             if group.constraint == "orthonormal_triad" and slot in group.slots:
                 return group.key
         return ""
-    if "变换顺序不是" in text and "排列" in text:
+    if "transform order is not" in text and "permutation" in text:
         return "G-order-attitude"
-    if "力矩等效的起点" in text:
+    if "moment transfer does not match the template" in text:
         return "G-moment-path"
-    if "天平六分量没有各自落到一根坐标轴上" in text:
+    if "The six balance components do not each land on one coordinate axis." in text:
         covered = set(_inputs(str(node_id).removeprefix("ID"))) if node_id else set()
         for key in ("G-bind-balance", "G-bind-body"):
             group = next(item for item in _CLUSTERS if item.key == key)
@@ -305,15 +305,15 @@ def _take_fixed(sample_id: str, assignment: Assignment, pending: dict, found: li
 
 
 def _branch_poles(current: dict[str, str]) -> tuple[tuple[str, tuple[tuple[str, str], ...]], ...]:
-    order = (("16", "侧滑角"), ("17", "迎角"), ("18", "滚转角"))
+    order = (("16", "sideslip"), ("17", "angle of attack"), ("18", "roll"))
     poles = (
-        ("frame_anchor", tuple((slot, "风轴系") for slot in _BRANCH_SLOTS["frame_anchor"])),
-        ("transform_sense", (("44", "主动"), ("45", "动轴"), ("46", "内旋"))),
-        ("rotation_type", (("44", "被动"), ("45", "定轴"), ("46", "外旋"))),
+        ("frame_anchor", tuple((slot, "wind frame") for slot in _BRANCH_SLOTS["frame_anchor"])),
+        ("transform_sense", (("44", "active"), ("45", "moving axes"), ("46", "intrinsic"))),
+        ("rotation_type", (("44", "passive"), ("45", "fixed axes"), ("46", "extrinsic"))),
         ("angle_order", order),
         (
             "mount_basis",
-            (("83", current.get("83", "正")), ("84", current.get("84", "正")), ("96", "倒装")),
+            (("83", current.get("83", "positive")), ("84", current.get("84", "positive")), ("96", "inverted")),
         ),
     )
     return tuple(poles)
@@ -814,23 +814,23 @@ def audit(dump: bool = False) -> dict:
     for group in minimal:
         consumer = _cluster_consumer(group)
         if consumer is None:
-            raise RuntimeError(f"{group.key} 没有判定节点。")
+            raise RuntimeError(f"{group.key} has no decision node.")
         if not _domain_satisfiable("standard-default", consumer, group.slots, _domains("standard-default", group.slots)):
-            raise RuntimeError(f"{group.key} 不可满足。")
+            raise RuntimeError(f"{group.key} is not satisfiable.")
         for slot in group.slots:
             rest = tuple(item for item in group.slots if item != slot)
             if rest and _domain_satisfiable("standard-default", consumer, rest, _domains("standard-default", rest)):
-                raise RuntimeError(f"{group.key} 删掉 ID{slot} 后仍可满足。")
+                raise RuntimeError(f"{group.key} is still satisfiable after ID{slot} is removed.")
     body_groups = tuple((group.key, group.slots) for group in _minimal_groups("body-rule"))
     roll_groups = tuple((group.key, group.slots) for group in _minimal_groups("roll-rule"))
     if body_groups != roll_groups:
-        raise RuntimeError("B3 失败：body 与 roll 的最小组不一致。")
+        raise RuntimeError("B3 failed: the minimal groups of body and roll do not agree.")
     for sample_id in ("body-rule", "roll-rule"):
         allowed = set(changed_reads(sample_id))
         for item in chain_assignments(sample_id):
             outside = [slot for slot, _value in item.slots if slot not in allowed]
             if item.kind != "chain" or outside:
-                raise RuntimeError(f"B4 失败：{sample_id} 的链式槽 {outside or item.slots} 不在 changed 里。")
+                raise RuntimeError(f"B4 failed: the chain slots {outside or item.slots} of {sample_id} are not in changed.")
     rows = _model_rows()
     unexplained = []
     by_sample = defaultdict(list)
@@ -843,15 +843,15 @@ def audit(dump: bool = False) -> dict:
     print(f"unexplained={len(unexplained)} B1={len(explanations)}", flush=True)
     for item in explanations:
         if not item.answer or not item.path or not item.assignment.slots:
-            raise RuntimeError(f"B5 失败：ID{item.target} 缺少注入、路径或答案。")
+            raise RuntimeError(f"B5 failed: ID{item.target} is missing an injection, a path, or an answer.")
     if explanations:
         sample = explanations[0]
         signature = subtree_signature(sample.target, sample.assignment, sample.path, sample.sample)
         if signature.get(sample.target, "") != sample.answer:
-            raise RuntimeError("subtree_signature 与 answer_under 不一致。")
+            raise RuntimeError("subtree_signature does not agree with answer_under.")
     checked, mismatched = _regression("body-rule")
     if mismatched:
-        raise RuntimeError("单槽回归与 T3 不一致：" + "；".join(mismatched))
+        raise RuntimeError("The single-slot regression does not agree with T3: " + "; ".join(mismatched))
     elapsed = time.perf_counter() - started
     no_calculator = sum(1 for row in rows if not _has_calculator(row["node"]))
     explained_early = len(rows) - no_calculator - len(unexplained)
@@ -864,13 +864,13 @@ def audit(dump: bool = False) -> dict:
     for group in minimal:
         print(f"  {group.key} {group.constraint} {' '.join('ID'+slot for slot in group.slots)}")
     if not minimal:
-        print("  （没有通过最小性的多槽组）")
+        print("  (no multi-slot group passed minimality)")
     print("seeds")
     for reason in (
-        "ID120 的坐标轴“XTP”不能和其他轴组成一组",
-        "变换顺序不是迎角、侧滑角、滚转角的一个排列",
-        "天平六分量没有各自落到一根坐标轴上",
-        "力矩等效的起点、终点或力的位置与模板不一致",
+        "Coordinate axis 'XTP' of ID120 cannot form a set with the other axes",
+        "The transform order is not a permutation of angle of attack, sideslip, and roll.",
+        "The six balance components do not each land on one coordinate axis.",
+        "The start, the end, or the force location of the moment transfer does not match the template.",
     ):
         print(f"  {seed_from_reason(reason, '111')} ← {reason}")
     print("clusters")
@@ -894,8 +894,8 @@ def audit(dump: bool = False) -> dict:
             print(f"    answer={item.answer[:180]}")
     if len(explanations) < 30:
         print(
-            f"B1 未到 30（实际 {len(explanations)}）。"
-            "changed 链式替换已单独计入；未命中的包括计算器值域到不了的码字，以及对齐矩阵无法产生的含 γ_tp 的答案。"
+            f"B1 did not reach 30 (actual {len(explanations)})."
+            "Chain replacements in changed are counted separately. The misses include codes the calculator range cannot reach, and answers that contain γ_tp which an alignment matrix cannot produce."
         )
     return {
         "unexplained": len(unexplained),
@@ -907,7 +907,7 @@ def audit(dump: bool = False) -> dict:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="验收多槽替换")
+    parser = argparse.ArgumentParser(description="Check multi-slot replacement.")
     parser.add_argument("--dump", action="store_true")
     args = parser.parse_args()
     audit(dump=args.dump)

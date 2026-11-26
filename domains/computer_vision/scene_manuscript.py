@@ -6,27 +6,25 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-from domain_layout import DOMAINS
+from domain_layout import EVAL
 from domains.computer_vision.scene_pipeline_scope import NODE_IDS, SAMPLE_ID
 from domains.mbd_kernel import question_clauses
 
-REVIEW = Path(DOMAINS["computer_vision"]["scene"]["review"])
-_SCENE = "# 物体与双目"
+REVIEW = Path(EVAL["cv"]["data"])
+_SCENE = "# Object and stereo"
 _SLOT = re.compile(
-    r"\{ID:(\d+), 选项:(.*?), 输出格式:(.*?), 标签:(.*?), 答案:(.*?)\}"
+    r"\{ID:(\d+), options:(.*?), format:(.*?), label:(.*?), answer:(.*?)\}"
 )
 
 
 def _parse_options(raw: str) -> list[str]:
     text = raw.strip()
-    if text == "无":
+    if text == "none":
         return []
     found = []
-    for part in text.split("；"):
+    for part in text.split(";"):
         part = part.strip()
-        if "：" in part:
-            found.append(part.split("：", 1)[1].strip())
-        elif ":" in part:
+        if ":" in part:
             found.append(part.split(":", 1)[1].strip())
     return found
 
@@ -34,7 +32,7 @@ def _parse_options(raw: str) -> list[str]:
 def _scene_text(path: Path) -> str:
     text = path.read_text(encoding="utf-8")
     if _SCENE not in text:
-        raise RuntimeError(f"{path.name} 缺少物体与双目分节")
+        raise RuntimeError(f"{path.name} is missing the Object and stereo section")
     return text.split(_SCENE, 1)[1]
 
 
@@ -57,7 +55,7 @@ def questions() -> dict[str, dict]:
                 letter = raw_answer.upper()
                 index = ord(letter) - ord("A")
                 if index < 0 or index >= len(options):
-                    raise RuntimeError(f"ID{node} 选项字母越界")
+                    raise RuntimeError(f"ID{node} option letter out of range")
                 answer_text = options[index]
             else:
                 for index, option in enumerate(options):
@@ -66,7 +64,7 @@ def questions() -> dict[str, dict]:
                         answer_text = option
                         break
                 if not letter:
-                    raise RuntimeError(f"ID{node} 无法解析选择题答案：{raw_answer!r}")
+                    raise RuntimeError(f"ID{node} cannot parse choice answer: {raw_answer!r}")
         found[node] = {
             "id": node,
             "label": match.group(4).strip(),
@@ -78,7 +76,7 @@ def questions() -> dict[str, dict]:
             "answer": letter if options else raw_answer,
         }
     if set(found) != set(NODE_IDS):
-        raise RuntimeError(f"缺空：{sorted(set(NODE_IDS) - set(found), key=int)[:8]}")
+        raise RuntimeError(f"missing blanks: {sorted(set(NODE_IDS) - set(found), key=int)[:8]}")
     return found
 
 

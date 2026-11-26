@@ -14,7 +14,8 @@ from domains.aerodynamics.pipeline_scope import LAST_ID, NODE_IDS, SAMPLE_ID
 
 REVIEW = DOMAINS["aerodynamics"]["flow"]["review"]
 _SLOT = re.compile(
-    r"\{ID:(\d+), 选项:(.*?), 输出格式:(.*?), 标签:(.*?), 答案:(.*?)\}"
+    r"\{ID:(\d+), options:(.*?), format:(.*?), label:(.*?), answer:(.*?)\}",
+    re.S,
 )
 
 
@@ -22,8 +23,12 @@ _SLOT = re.compile(
 def record() -> dict:
     for sample in samples():
         if sample["id"] == SAMPLE_ID:
-            return build(sample["spec"])
-    raise RuntimeError(f"找不到样本 {SAMPLE_ID}")
+            return build(
+                sample["spec"],
+                lift_z=sample.get("lift_z", -1),
+                side_y=sample.get("side_y", 1),
+            )
+    raise RuntimeError(f"Sample {SAMPLE_ID} was not found")
 
 
 @lru_cache(maxsize=1)
@@ -47,7 +52,7 @@ def questions() -> dict[str, dict]:
             "answer": letter if options else text,
         }
     if set(found) != set(NODE_IDS):
-        raise RuntimeError("生成器没有给出完整的 1–131。")
+        raise RuntimeError("The generator did not produce the complete 1-131.")
     return found
 
 

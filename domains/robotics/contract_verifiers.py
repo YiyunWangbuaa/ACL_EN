@@ -89,17 +89,17 @@ def _parse_degrees(token: str):
     token = token.strip()
     match = re.fullmatch(r"(-?\d+)°", token)
     if not match:
-        raise ValueError(f"不是角度：{token}")
+        raise ValueError(f"not an angle: {token}")
     return sp.rad(int(match.group(1)))
 
 
 def _parse_factor(token: str) -> sp.Matrix:
     raw = token.strip().replace(" ", "")
-    if raw in {"单位阵", "I", "Eye"}:
+    if raw in {"the identity", "I", "Eye"}:
         return sp.eye(3)
     match = re.fullmatch(r"(Rx|Ry|Rz)\((.+)\)", raw)
     if not match:
-        raise ValueError(f"无法解析因子：{token}")
+        raise ValueError(f"cannot parse factor: {token}")
     axis, angle = match.group(1), match.group(2)
     value = _parse_degrees(angle) if "°" in angle else sp.sympify(angle)
     if axis == "Rx":
@@ -120,17 +120,17 @@ def _parse_product(text: str) -> sp.Matrix:
 def _parse_vector(text: str) -> sp.Matrix:
     raw = str(text).strip()
     if not (raw.startswith("[") and raw.endswith("]")):
-        raise ValueError(f"不是向量：{text}")
+        raise ValueError(f"not a vector: {text}")
     cells = [item.strip() for item in raw[1:-1].split(",")]
     if len(cells) != 3:
-        raise ValueError(f"向量不是三维：{text}")
+        raise ValueError(f"vector not three-dimensional: {text}")
     return sp.Matrix([sp.sympify(cell) for cell in cells])
 
 
 def _parse_literal_matrix(text: str) -> sp.Matrix:
     raw = str(text).replace(" ", "")
     if not (raw.startswith("[[") and raw.endswith("]]")):
-        raise ValueError(f"不是矩阵：{text}")
+        raise ValueError(f"not a matrix: {text}")
     rows = []
     depth = 0
     current = ""
@@ -150,12 +150,12 @@ def _parse_literal_matrix(text: str) -> sp.Matrix:
         else:
             current += ch
     if len(rows) != 3:
-        raise ValueError(f"矩阵不是 3×3：{text}")
+        raise ValueError(f"matrix not 3×3: {text}")
     data = []
     for row in rows:
         cells = row[1:-1].split(",")
         if len(cells) != 3:
-            raise ValueError(f"矩阵行不是三维：{row}")
+            raise ValueError(f"matrix row not three-dimensional: {row}")
         data.append([sp.sympify(cell) for cell in cells])
     return sp.Matrix(data)
 
@@ -168,16 +168,16 @@ def _tool_components(d_text: str, rule_text: str) -> str:
     matrix = _parse_literal_matrix(d_text)
     ref = sp.Matrix([1, 0, 0])
     rule = str(rule_text)
-    if "转置" in rule:
+    if "transpose" in rule:
         vector = sp.simplify(matrix.T * ref)
-    elif "D乘" in rule.replace(" ", "") or rule.startswith("D乘"):
+    elif "D times" in rule:
         vector = sp.simplify(matrix * ref)
     else:
         # Option letters already resolved to text in gold_texts.
-        if "转置" in rule:
+        if "transpose" in rule:
             vector = sp.simplify(matrix.T * ref)
         else:
-            raise ValueError(f"无法解释映射规则：{rule_text}")
+            raise ValueError(f"cannot interpret the mapping rule: {rule_text}")
     return _show_vector(vector)
 
 
@@ -185,16 +185,16 @@ def _sign_from_alpha(vector_text: str) -> str:
     x, y, _z = (_parse_vector(vector_text)[i] for i in range(3))
     value = sp.N(-y / x)
     if abs(value) < 1e-12:
-        raise ValueError("α 为 0")
-    return "正" if value > 0 else "负"
+        raise ValueError("α is 0")
+    return "positive" if value > 0 else "negative"
 
 
 def _sign_from_beta(vector_text: str) -> str:
     z = _parse_vector(vector_text)[2]
     value = sp.N(z)
     if abs(value) < 1e-12:
-        raise ValueError("β 为 0")
-    return "正" if value > 0 else "负"
+        raise ValueError("β is 0")
+    return "positive" if value > 0 else "negative"
 
 
 def _angles_from_components(vector_text: str) -> str:
@@ -205,7 +205,7 @@ def _angles_from_components(vector_text: str) -> str:
     # γ is sample-specific; for gold regression return the declared triple when components match gold.
     gold = gold_texts()["F11"]
     probe = _show_vector(sp.Matrix([x, y, z]))
-    if answers_equal(probe, gold_texts()["F7"], "向量"):
+    if answers_equal(probe, gold_texts()["F7"], "vector"):
         return gold
     return f"arctan({sp.simplify(alpha)}), arcsin({sp.simplify(beta)}), ?"
 
@@ -228,7 +228,7 @@ def _first_row_numeric(choice_text: str) -> str:
         "[bv, a, c]": [bv, a, c],
     }
     if choice_text not in mapping:
-        raise ValueError(f"未知第一行形式：{choice_text}")
+        raise ValueError(f"unknown first-row form: {choice_text}")
     return _show_vector(sp.Matrix(mapping[choice_text]))
 
 
@@ -293,7 +293,7 @@ def derive(_model, node_id: str, texts: dict[str, str]) -> Execution:
             return Execution("derived", _joints_from_pose(texts["I8"], texts["I9"]))
     except Exception as exc:
         return Execution("contradictory", reason=str(exc))
-    return Execution("contradictory", reason=f"{node_id} 没有计算器")
+    return Execution("contradictory", reason=f"{node_id} no calculator")
 
 
 def reference_phi(node_id: str, assignment: dict[str, str], sample_id: str = "01"):
@@ -315,38 +315,38 @@ def check_verifiers() -> None:
     gold = gold_texts()
     rows = questions()
     if set(DECLARATION_ROOTS) | DERIVED_NODES != set(NODE_IDS):
-        raise RuntimeError("声明根与派生节点没有覆盖理论首块")
+        raise RuntimeError("declaration roots and derived nodes do not cover the theory block")
     for node in NODE_IDS:
         got = derive(None, node, gold)
         if not got.ok:
-            raise RuntimeError(f"{node} 金标回归失败：{got.reason}")
-        fmt = rows[node]["format"] if not rows[node]["options"] else "表达式"
+            raise RuntimeError(f"{node} gold regression failed: {got.reason}")
+        fmt = rows[node]["format"] if not rows[node]["options"] else "expression"
         if rows[node]["options"]:
             if got.matrix != gold[node] and not answers_equal(got.matrix, gold[node], fmt):
-                raise RuntimeError(f"{node} 金标回归值不一致：{got.matrix!r} vs {gold[node]!r}")
+                raise RuntimeError(f"{node} gold regression value mismatch: {got.matrix!r} vs {gold[node]!r}")
         elif not answers_equal(got.matrix, gold[node], fmt):
-            raise RuntimeError(f"{node} 金标回归值不一致：{got.matrix!r} vs {gold[node]!r}")
+            raise RuntimeError(f"{node} gold regression value mismatch: {got.matrix!r} vs {gold[node]!r}")
     bad = derive(None, "F4", {**gold, "F3": "not-a-product"})
     if bad.ok:
-        raise RuntimeError("非法上游仍推出了 F4")
-    changed = answer_under("F7", {"F6": "D乘该向量"})
-    if changed is None or answers_equal(changed, gold["F7"], "向量"):
+        raise RuntimeError("an illegal upstream still produced F4")
+    changed = answer_under("F7", {"F6": "D times that vector"})
+    if changed is None or answers_equal(changed, gold["F7"], "vector"):
         # Prefer an alternate that actually flips mapping if present.
-        alt = "D乘该向量"
+        alt = "D times that vector"
         changed = answer_under("F7", {"F6": alt})
-        if changed is not None and answers_equal(changed, gold["F7"], "向量"):
+        if changed is not None and answers_equal(changed, gold["F7"], "vector"):
             # Same numeric for this D first column? Try corrupting F4 instead.
             changed = answer_under("F4", {"F3": "Ry(30°)*Rx(30°)"})
-            if changed is None or answers_equal(changed, gold["F4"], "矩阵"):
-                raise RuntimeError("改写上游后终点没有变化")
+            if changed is None or answers_equal(changed, gold["F4"], "matrix"):
+                raise RuntimeError("rewriting an upstream node did not change the terminal")
     if DERIVED_EXCEPTIONS:
-        raise RuntimeError(f"派生例外未清空：{DERIVED_EXCEPTIONS}")
+        raise RuntimeError(f"derived exceptions were not cleared: {DERIVED_EXCEPTIONS}")
     for node in T_FINAL:
         if node not in NODE_IDS:
-            raise RuntimeError(f"终点 {node} 不在范围")
+            raise RuntimeError(f"terminal {node} is out of range")
     print(
-        f"阶段3 计算器：理论金标回归通过，声明根 {len(DECLARATION_ROOTS)}，"
-        f"派生边 {sum(1 for n in NODE_IDS if input_ids(n))}。",
+        f"stage 3 calculators: theory gold regression passed, declaration roots {len(DECLARATION_ROOTS)}, "
+        f"derived edges {sum(1 for n in NODE_IDS if input_ids(n))}.",
         flush=True,
     )
 

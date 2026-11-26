@@ -43,8 +43,8 @@ def _samples() -> list[dict]:
         spec[GAMMA] = {"sign": "negative"}
         samples.append({
             "id": f"{index:02d}",
-            "title": f"全因子偏离 {index:02d}",
-            "change": "方位、倾斜、航迹滚转三个符号都离开默认，地面系、航迹系和气流系都换成另一套合法坐标轴。",
+            "title": f"full-factor departure {index:02d}",
+            "change": "The signs of track azimuth, track inclination, and track roll all leave the standard definition, and the ground frame, the track frame, and the airflow frame are each replaced by another legal set of axes.",
             "spec": spec,
         })
     return samples
@@ -55,18 +55,18 @@ def main() -> None:
     samples = _samples()
     standard = build_record({
         "id": "00",
-        "title": "统一默认",
+        "title": "common default",
         "change": "",
         "spec": deepcopy(STANDARD_SPEC),
     })
     standard_answers = {item["id"]: item["answer"] for item in standard["questions"]}
     records = []
     lines = [
-        "# 空气动力学强扰动样本",
+        "# Flight-mechanics stress samples",
         "",
-        "子过程：地面系转航迹系和气流系。每条同时改掉三个航迹角符号、地面系、航迹系和气流系。机体系、稳定性坐标系以及姿态角、迎角、侧滑角保持当前默认，因为这一子过程的空不读取它们。",
+        "Subprocess: ground to track and airflow. Each sample changes the three track-angle signs, the ground frame, the track frame, and the airflow frame together. The airframe, the stability frame, and the attitude angles, angle of attack, and sideslip stay on the current standard definition, because the blanks of this subprocess do not read them.",
         "",
-        "| 编号 | 与默认不同的空 |",
+        "| id | blanks that differ from the standard |",
         "| --- | --- |",
     ]
     for sample in samples:
@@ -78,7 +78,7 @@ def main() -> None:
         records.append(record)
         print(f"sample {sample['id']}: {differ}/41 answers differ from the standard")
     lines.append("")
-    (OUT_DIR / "00_索引.md").write_text("\n".join(lines), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text("\n".join(lines), encoding="utf-8")
     (OUT_DIR / "samples.json").write_text(
         json.dumps(records, ensure_ascii=False, indent=2),
         encoding="utf-8",

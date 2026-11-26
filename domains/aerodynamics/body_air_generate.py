@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Cloze for the body frame to the airflow frame through the stability frame.
 
-The manuscript is 体轴系转换气流系.md. Geometry and rotation sense come from
+The manuscript is the airframe to the airflow frame. Geometry and rotation sense come from
 FlightFrameModel. Passive rotation is fixed, and the first angle's matrix is
 the rightmost factor.
 
@@ -48,20 +48,21 @@ from flight_frame_model import (
 )
 
 
-PROCESS = "体轴系到气流系"
+PROCESS = "body to airflow"
 BLANK_COUNT = 41
 BODY_SHOW = {"Xb": "xb", "Yb": "yb", "Zb": "zb"}
 UNDRECTED_AXES = ["xb", "yb", "zb", "Xs", "Ys", "Zs", "Xa", "Ya", "Za"]
 BODY_DIRECTED = ["+xb", "-xb", "+yb", "-yb", "+zb", "-zb"]
 STABILITY_DIRECTED = ["+Xs", "-Xs", "+Ys", "-Ys", "+Zs", "-Zs"]
 AIR_DIRECTED = ["+Xa", "-Xa", "+Ya", "-Ya", "+Za", "-Za"]
-FRAMES = ["航迹系", "稳定性坐标系", "地面系"]
-ANGLE_SETS = ["α", "β", "α，β"]
-TRANSFORMS = ["主动", "被动"]
-ROTATIONS = ["外旋", "内旋"]
-SIDES = ["左侧", "右侧"]
-VERTICALS = ["上方", "下方"]
-TURNS = ["正向", "逆向"]
+FRAMES = ["track frame", "stability frame", "ground frame"]
+ANGLE_SETS = ["α", "β", "α, β"]
+TRANSFORMS = ["active", "passive"]
+ROTATIONS = ["extrinsic fixed axes", "intrinsic moving axes"]
+FACTOR_PLACE = ["the leftmost factor", "the rightmost factor"]
+SIDE_WORDS = ["left", "right"]
+VERTICALS = ["upward", "downward"]
+TURNS = ["positive", "reverse"]
 STABILITY_CODES = ["R_α", "RP_s"]
 AIR_CODES = ["R_α", "R_β", "RP_s", "RP_sa"]
 TOTAL_CODES = ["Sβ", "Sα"]
@@ -167,26 +168,26 @@ def _angle_matrix(model: FlightFrameModel, angle: str) -> sp.Matrix:
 def _attack_side(model: FlightFrameModel) -> str:
     toward = model.binding(ALPHA).positive_toward
     if toward == "body_down":
-        return "下方"
+        return "downward"
     if toward == "body_up":
-        return "上方"
+        return "upward"
     raise DefinitionError(f"Positive angle of attack moves toward {toward}.")
 
 
 def _sideslip_side(model: FlightFrameModel) -> str:
     toward = model.binding(BETA).positive_toward
     if toward == "body_right":
-        return "右侧"
+        return "right"
     if toward == "body_left":
-        return "左侧"
+        return "left"
     raise DefinitionError(f"Positive sideslip moves toward {toward}.")
 
 
 def _turn(model: FlightFrameModel, angle: str) -> str:
     sense = _record(model, angle).rotation_when_positive
     if sense == POSITIVE_ROTATION:
-        return "正向"
-    return "逆向"
+        return "positive"
+    return "reverse"
 
 def generate(spec: dict) -> dict:
     """Build the 35 cloze answers for one flight-mechanics declaration."""
@@ -211,46 +212,46 @@ def generate(spec: dict) -> dict:
     airflow = model.geometry["airflow"]
 
     rows = [
-        (1, "A1", "体轴系向气流系的中间坐标系", "稳定性坐标系", FRAMES),
-        (2, "A1", "机体系与气流系之间的欧拉角", "α，β", ANGLE_SETS),
-        (3, "A1", "机体系与稳定性坐标系之间的角度", "α", ANGLE_SETS),
-        (4, "A1", "稳定性坐标系与气流系之间的角度", "β", ANGLE_SETS),
-        (5, "C2", "机体系向稳定性坐标系采用的变换", "被动", TRANSFORMS),
-        (6, "C2", "气流角旋转采用的方式", "内旋", ROTATIONS),
-        (7, "C2", "最先旋转的角度所对应矩阵在连乘式中的位置", "右侧", SIDES),
-        (8, "C1", "机体法向正方向对应的有向坐标轴", _directed(model, "body", body.positive["normal"]), BODY_DIRECTED),
-        (9, "C1", "机体侧向正方向对应的有向坐标轴", _directed(model, "body", body.positive["lateral"]), BODY_DIRECTED),
-        (10, "C1", "机体轴向正方向对应的有向坐标轴", _directed(model, "body", body.positive["axial"]), BODY_DIRECTED),
-        (11, "C1", "稳定法向正方向对应的有向坐标轴", _directed(model, "stability", stability.positive["normal"]), STABILITY_DIRECTED),
-        (12, "C1", "稳定侧向正方向对应的有向坐标轴", _directed(model, "stability", stability.positive["lateral"]), STABILITY_DIRECTED),
-        (13, "C1", "稳定轴向正方向对应的有向坐标轴", _directed(model, "stability", stability.positive["axial"]), STABILITY_DIRECTED),
-        (14, "C1", "正迎角时空速投影在机体的一侧", _attack_side(model), VERTICALS),
-        (15, "A1", "迎角旋转所绕的无方向坐标轴", _show(_record(model, ALPHA).axis), UNDRECTED_AXES),
-        (16, "A2", "绕该轴旋转 α 的转向", _turn(model, ALPHA), TURNS),
-        (17, "A2", "α 的被动旋转矩阵", _matrix_text(attack), None),
-        (18, "A2", "机体坐标轴与稳定坐标轴重合的 RP_s", _matrix_text(align_stability), None),
-        (19, "A2", "机体系到稳定性坐标系连乘式中的 R1", "RP_s", STABILITY_CODES),
-        (20, "A2", "机体系到稳定性坐标系连乘式中的 R2", "R_α", STABILITY_CODES),
-        (21, "A2", "总矩阵前 R1 的展开式", _matrix_text(align_stability), None),
-        (22, "A2", "总矩阵前 R2 的展开式", _matrix_text(attack), None),
+        (1, "A1", "Intermediate frame from the airframe to the airflow frame", "stability frame", FRAMES),
+        (2, "A1", "Euler angles between the airframe and the airflow frame", "α, β", ANGLE_SETS),
+        (3, "A1", "Angle between the airframe and the stability frame", "α", ANGLE_SETS),
+        (4, "A1", "Angle between the stability frame and the airflow frame", "β", ANGLE_SETS),
+        (5, "C2", "Transform used from the airframe to the stability frame", "passive", TRANSFORMS),
+        (6, "C2", "How the airflow angles are rotated", "intrinsic moving axes", ROTATIONS),
+        (7, "C2", "Place of the matrix of the angle rotated first", "the rightmost factor", FACTOR_PLACE),
+        (8, "C1", "Directed axis of the positive airframe normal", _directed(model, "body", body.positive["normal"]), BODY_DIRECTED),
+        (9, "C1", "Directed axis of the positive airframe lateral direction", _directed(model, "body", body.positive["lateral"]), BODY_DIRECTED),
+        (10, "C1", "Directed axis of the positive airframe axial direction", _directed(model, "body", body.positive["axial"]), BODY_DIRECTED),
+        (11, "C1", "Directed axis of the positive stability normal", _directed(model, "stability", stability.positive["normal"]), STABILITY_DIRECTED),
+        (12, "C1", "Directed axis of the positive stability lateral direction", _directed(model, "stability", stability.positive["lateral"]), STABILITY_DIRECTED),
+        (13, "C1", "Directed axis of the positive stability axial direction", _directed(model, "stability", stability.positive["axial"]), STABILITY_DIRECTED),
+        (14, "C1", "Where the airspeed in the plane of symmetry points when angle of attack is positive", _attack_side(model), VERTICALS),
+        (15, "A1", "Undirected axis of the angle-of-attack rotation", _show(_record(model, ALPHA).axis), UNDRECTED_AXES),
+        (16, "A2", "Sense of rotating α about that axis", _turn(model, ALPHA), TURNS),
+        (17, "A2", "Passive rotation matrix of α", _matrix_text(attack), None),
+        (18, "A2", "RP_s that aligns the airframe axes with the stability axes", _matrix_text(align_stability), None),
+        (19, "A2", "R1 in the product from the airframe to the stability frame", "RP_s", STABILITY_CODES),
+        (20, "A2", "R2 in the product from the airframe to the stability frame", "R_α", STABILITY_CODES),
+        (21, "A2", "Expansion of R1 before the total matrix", _matrix_text(align_stability), None),
+        (22, "A2", "Expansion of R2 before the total matrix", _matrix_text(attack), None),
         (23, "A2", "Sα = R1*R2", _matrix_text(stability_total), None),
-        (24, "C1", "气流法向正方向对应的有向坐标轴", _directed(model, "airflow", airflow.positive["normal"]), AIR_DIRECTED),
-        (25, "C1", "气流侧向正方向对应的有向坐标轴", _directed(model, "airflow", airflow.positive["lateral"]), AIR_DIRECTED),
-        (26, "C1", "气流轴向正方向对应的有向坐标轴", _directed(model, "airflow", airflow.positive["axial"]), AIR_DIRECTED),
-        (27, "C1", "正侧滑时空速相对对称面的一侧", _sideslip_side(model), SIDES),
-        (28, "A1", "侧滑旋转所绕的无方向坐标轴", _show(_record(model, BETA).axis), UNDRECTED_AXES),
-        (29, "A2", "绕该轴旋转 β 的转向", _turn(model, BETA), TURNS),
-        (30, "A2", "β 的被动旋转矩阵", _matrix_text(sideslip), None),
-        (31, "A2", "稳定坐标轴与气流坐标轴重合的 RP_sa", _matrix_text(align_air), None),
-        (32, "A2", "稳定性坐标系到气流系连乘式中的 R1", "RP_sa", AIR_CODES),
-        (33, "A2", "稳定性坐标系到气流系连乘式中的 R2", "R_β", AIR_CODES),
-        (34, "A2", "总矩阵前 R1 的展开式", _matrix_text(align_air), None),
-        (35, "A2", "总矩阵前 R2 的展开式", _matrix_text(sideslip), None),
+        (24, "C1", "Directed axis of the positive airflow normal", _directed(model, "airflow", airflow.positive["normal"]), AIR_DIRECTED),
+        (25, "C1", "Directed axis of the positive airflow lateral direction", _directed(model, "airflow", airflow.positive["lateral"]), AIR_DIRECTED),
+        (26, "C1", "Directed axis of the positive airflow axial direction", _directed(model, "airflow", airflow.positive["axial"]), AIR_DIRECTED),
+        (27, "C1", "Side of the plane of symmetry where the airspeed lies when sideslip is positive", _sideslip_side(model), SIDE_WORDS),
+        (28, "A1", "Undirected axis of the sideslip rotation", _show(_record(model, BETA).axis), UNDRECTED_AXES),
+        (29, "A2", "Sense of rotating β about that axis", _turn(model, BETA), TURNS),
+        (30, "A2", "Passive rotation matrix of β", _matrix_text(sideslip), None),
+        (31, "A2", "RP_sa that aligns the stability axes with the airflow axes", _matrix_text(align_air), None),
+        (32, "A2", "R1 in the product from the stability frame to the airflow frame", "RP_sa", AIR_CODES),
+        (33, "A2", "R2 in the product from the stability frame to the airflow frame", "R_β", AIR_CODES),
+        (34, "A2", "Expansion of R1 before the total matrix", _matrix_text(align_air), None),
+        (35, "A2", "Expansion of R2 before the total matrix", _matrix_text(sideslip), None),
         (36, "A2", "Sβ = R1*R2", _matrix_text(air_total), None),
-        (37, "A2", "体轴系到气流系连乘式中的 R1", "Sβ", TOTAL_CODES),
-        (38, "A2", "体轴系到气流系连乘式中的 R2", "Sα", TOTAL_CODES),
-        (39, "A2", "总矩阵前 R1 的展开式", _matrix_text(air_total), None),
-        (40, "A2", "总矩阵前 R2 的展开式", _matrix_text(stability_total), None),
+        (37, "A2", "R1 in the body to airflow product", "Sβ", TOTAL_CODES),
+        (38, "A2", "R2 in the body to airflow product", "Sα", TOTAL_CODES),
+        (39, "A2", "Expansion of R1 before the total matrix", _matrix_text(air_total), None),
+        (40, "A2", "Expansion of R2 before the total matrix", _matrix_text(stability_total), None),
         (41, "A2", "Sαβ = R1*R2", _matrix_text(full_total), None),
     ]
     items = []
@@ -288,22 +289,22 @@ def _check_standard() -> None:
     by_id = {item["manuscript_id"]: item["answer"] for item in payload["items"]}
     identity = "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"
     expected = {
-        "1": "稳定性坐标系",
-        "2": "α，β",
+        "1": "stability frame",
+        "2": "α, β",
         "3": "α",
         "4": "β",
-        "5": "被动",
-        "6": "内旋",
-        "7": "右侧",
+        "5": "passive",
+        "6": "intrinsic moving axes",
+        "7": "the rightmost factor",
         "8": "+zb",
         "9": "+yb",
         "10": "+xb",
         "11": "+Zs",
         "12": "+Ys",
         "13": "+Xs",
-        "14": "下方",
+        "14": "downward",
         "15": "yb",
-        "16": "逆向",
+        "16": "reverse",
         "17": "[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]",
         "18": identity,
         "19": "RP_s",
@@ -311,9 +312,9 @@ def _check_standard() -> None:
         "24": "+Za",
         "25": "+Ya",
         "26": "+Xa",
-        "27": "右侧",
+        "27": "right",
         "28": "Zs",
-        "29": "正向",
+        "29": "positive",
         "30": "[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]",
         "31": identity,
         "32": "RP_sa",
@@ -364,9 +365,9 @@ def _check_standard() -> None:
     negative[ALPHA] = {"sign": NEGATIVE}
     negative[BETA] = {"sign": NEGATIVE}
     flipped = {item["manuscript_id"]: item["answer"] for item in generate(negative)["items"]}
-    if flipped["14"] != "上方" or flipped["27"] != "左侧":
+    if flipped["14"] != "upward" or flipped["27"] != "left":
         raise AssertionError("A reversed airflow angle still points to the standard side.")
-    if flipped["16"] != "正向" or flipped["29"] != "逆向":
+    if flipped["16"] != "positive" or flipped["29"] != "reverse":
         raise AssertionError("A reversed airflow angle kept the standard turn.")
     if [flipped[item] for item in ("19", "20", "32", "33", "37", "38")] != [
         "RP_s", "R_α", "RP_sa", "R_β", "Sβ", "Sα",

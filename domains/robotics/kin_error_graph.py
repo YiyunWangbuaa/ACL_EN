@@ -47,18 +47,18 @@ def future_edges() -> tuple[tuple[str, str], ...]:
 def check_graph() -> None:
     graph = nodes()
     if set(graph) != set(NODE_IDS) or len(graph) != len(NODE_IDS):
-        raise RuntimeError(f"节点数应为 {len(NODE_IDS)}，得到 {len(graph)}")
+        raise RuntimeError(f"node count should be {len(NODE_IDS)}, got {len(graph)}")
     bad = future_edges()
     if bad:
-        raise RuntimeError(f"存在后句指向前句的边：{bad}")
+        raise RuntimeError(f"there is an edge from a later sentence to an earlier one: {bad}")
     wired = {node for node in NODE_IDS if input_ids(node)}
     if wired != set(DERIVED_NODES):
         missing = sorted(set(DERIVED_NODES) - wired)
         extra = sorted(wired - set(DERIVED_NODES))
-        raise RuntimeError(f"依赖图和派生节点不一致：缺 {missing} 多 {extra}")
+        raise RuntimeError(f"dependency graph and derived nodes disagree: missing {missing} extra {extra}")
     print(
-        f"阶段1 依赖图：节点 {len(graph)}，边 {len(edges())}，"
-        f"派生节点 {len(DERIVED_NODES)}，未来边 0。",
+        f"stage 1 dependency graph: nodes {len(graph)}, edges {len(edges())}, "
+        f"derived nodes {len(DERIVED_NODES)}, future edges 0.",
         flush=True,
     )
 

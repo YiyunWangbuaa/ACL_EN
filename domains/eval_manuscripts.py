@@ -18,12 +18,12 @@ from domains.computer_vision.scene_pipeline_scope import LAST_ID as SCENE_LAST
 from domains.robotics.kin_pipeline_scope import FORWARD_IDS, INVERSE_IDS
 
 SLOT = re.compile(
-    r"\{ID:(\d+), 选项:(.*?), 输出格式:(.*?), 标签:(.*?), 答案:(.*?)\}",
+    r"\{ID:(\d+), options:(.*?), format:(.*?), label:(.*?), answer:(.*?)\}",
     re.S,
 )
 _HEADING = re.compile(r"^(#{1,6})[ \t]+(.+?)[ \t]*$", re.M)
 _SAMPLE_ID = re.compile(
-    r"^# 数据[ \t\u3000]+(\d+)(?:[ \t\u3000]+(\d{3}-\d{3}))?",
+    r"^# Data[ \t]+(\d+)(?:[ \t]+(\d{3}-\d{3}))?",
     re.M,
 )
 
@@ -31,18 +31,18 @@ _SAMPLE_ID = re.compile(
 def load_rows(domain: str, path: Path, wanted: list[str] | None) -> list[dict]:
     """Every sample under the domain entry, or the ids in `wanted`."""
     if domain not in {"flight", "cv", "robotics"}:
-        raise RuntimeError(f"{domain} 不从审阅稿读取。")
+        raise RuntimeError(f"{domain} is not read from a review manuscript.")
     files = _files(path)
     rows = [_load_file(domain, item) for item in files]
     found = {row["id"] for row in rows}
     if len(found) != len(rows):
-        raise RuntimeError(f"{path} 里有重复的样本编号。")
+        raise RuntimeError(f"{path} has duplicate sample ids.")
     if wanted is None:
         rows.sort(key=lambda row: row["id"])
         return rows
     missing = [item for item in wanted if item not in found]
     if missing:
-        raise RuntimeError("样本里没有这些编号：" + "、".join(missing))
+        raise RuntimeError("These ids are not in the samples: " + ", ".join(missing))
     order = {item: index for index, item in enumerate(wanted)}
     picked = [row for row in rows if row["id"] in order]
     picked.sort(key=lambda row: order[row["id"]])
@@ -57,7 +57,7 @@ def manuscript_standard(domain: str) -> dict[tuple[str, str], str]:
         return _answers([_load_file("robotics", _file_with_id("robotics", "01"))])
     if domain == "cv":
         return _answers([_load_file("cv", _file_with_id("cv", "01"))])
-    raise RuntimeError(f"{domain} 没有审阅稿标准答案。")
+    raise RuntimeError(f"{domain} has no review-manuscript gold answers.")
 
 
 def render_sentence(sentence: dict, fill: bool, memory: dict[str, str] | None = None) -> str:
@@ -67,7 +67,7 @@ def render_sentence(sentence: dict, fill: bool, memory: dict[str, str] | None = 
     text = sentence["source"]
     spans = list(SLOT.finditer(text))
     if len(spans) != len(sentence["blanks"]):
-        raise RuntimeError("句子里的槽和解析结果对不上。")
+        raise RuntimeError("The slots in the sentence do not match the parse.")
     parts: list[str] = []
     cursor = 0
     for match, blank in zip(spans, sentence["blanks"]):
@@ -108,7 +108,7 @@ def process_text(
         if hit:
             reached = True
     if not reached:
-        raise RuntimeError(f"{chain['process']} 没有空 {target}。")
+        raise RuntimeError(f"{chain['process']} has no blank {target}.")
     return "\n".join(chunks)
 
 
@@ -124,26 +124,28 @@ def _files(path: Path) -> list[Path]:
         return [path]
     found = sorted(path.glob("sample_*.md"))
     if not found:
-        raise RuntimeError(f"没有审阅稿：{path}")
+        raise RuntimeError(f"No review manuscript: {path}")
     return found
 
 
 def _load_file(domain: str, path: Path) -> dict:
     text = _cut(path.read_text(encoding="utf-8"))
     sample_id, tier = _identity(text)
-    format_note = _section(text, "输出格式规范")
+    format_note = _section(text, "Output format")
     if domain == "flight":
         chains = _flight_chains(text, sample_id, tier, format_note)
         _expect(chains, "", FLIGHT_LAST, path)
     elif domain == "cv":
         chains = _vision_chains(text, sample_id, tier, format_note)
-        if any(chain["process"].startswith("基础理论/") for chain in chains):
-            _expect(chains, "基础理论/", THEORY_LAST, path)
-        _expect(chains, "物体与双目/", SCENE_LAST, path)
+        if any(chain["process"].startswith("Basic theory/") for chain in chains):
+            _expect(chains, "Basic theory/", THEORY_LAST, path)
+        _expect(chains, "Object and stereo/", SCENE_LAST, path)
     elif domain == "robotics":
         chains = _robotics_chains(text, sample_id, tier, format_note)
-        _expect(chains, "正运动学/", len(FORWARD_IDS), path)
-        _expect(chains, "逆运动学/", len(INVERSE_IDS), path)
+        forward_prefix = "Forward kinematics/"
+        inverse_prefix = "Inverse kinematics/"
+        _expect(chains, forward_prefix, len(FORWARD_IDS), path)
+        _expect(chains, inverse_prefix, len(INVERSE_IDS), path)
     else:
         raise RuntimeError(domain)
     return {
@@ -157,17 +159,17 @@ def _load_file(domain: str, path: Path) -> dict:
 
 
 def _flight_chains(text: str, sample_id: str, tier: int, format_note: str) -> list[dict]:
-    declaration = _section(text, "定义声明")
-    prior = _section(text, "物理常识")
-    aero = _section(text, "气动力与参考点定义")
+    declaration = _section(text, "Declaration")
+    prior = _section(text, "Background")
+    aero = _section(text, "Aerodynamic loads and the reference point")
     if not declaration or not aero:
-        raise RuntimeError(f"{sample_id} 缺少定义声明或气动力定义。")
+        raise RuntimeError(f"{sample_id} is missing the declaration or the aerodynamic-load definition.")
     chains = []
     in_aero = False
     for block in _blocks(text):
-        if block["level"] == 1 and block["title"].startswith("生成注记"):
+        if block["level"] == 1 and block["title"].startswith("Generation notes"):
             break
-        if block["level"] == 2 and block["title"] == "气动力与参考点定义":
+        if block["level"] == 2 and block["title"] == "Aerodynamic loads and the reference point":
             in_aero = True
             continue
         if block["level"] != 3:
@@ -177,19 +179,23 @@ def _flight_chains(text: str, sample_id: str, tier: int, format_note: str) -> li
         else:
             chains.append(_chain(sample_id, tier, block["title"], declaration, prior, format_note, block["body"]))
     if len(chains) != 6:
-        raise RuntimeError(f"{sample_id} 应有 6 个子过程，实际 {len(chains)}。")
+        raise RuntimeError(f"{sample_id} should have 6 subprocesses, found {len(chains)}.")
     return chains
 
 
 def _vision_chains(text: str, sample_id: str, tier: int, format_note: str) -> list[dict]:
-    if "# 物体与双目" not in text:
-        raise RuntimeError(f"{sample_id} 缺少物体与双目。")
-    scene = _stage_chains(_between(text, "# 物体与双目", None), "物体与双目", sample_id, tier, format_note)
-    if "# 前置环节：基础理论" not in text:
+    marker = "# Object and stereo"
+    stage = "Object and stereo"
+    if marker not in text:
+        raise RuntimeError(f"{sample_id} has no object-and-stereo section.")
+    scene = _stage_chains(_between(text, marker, None), stage, sample_id, tier, format_note)
+    theory_marker = "# Basic theory"
+    if theory_marker not in text:
         return scene
+    theory_stage = "Basic theory"
     theory = _stage_chains(
-        _between(text, "# 前置环节：基础理论", "# 物体与双目"),
-        "基础理论",
+        _between(text, theory_marker, marker),
+        theory_stage,
         sample_id,
         tier,
         format_note,
@@ -198,11 +204,17 @@ def _vision_chains(text: str, sample_id: str, tier: int, format_note: str) -> li
 
 
 def _robotics_chains(text: str, sample_id: str, tier: int, format_note: str) -> list[dict]:
-    forward = _between(text, "# 正运动学样本", "# 逆运动学样本")
-    inverse = _between(text, "# 逆运动学样本", "# 层间对应")
+    forward_mark, inverse_mark, cross = (
+        "# Forward kinematics",
+        "# Inverse kinematics",
+        "# Cross-layer correspondence",
+    )
+    forward_stage, inverse_stage = "Forward kinematics", "Inverse kinematics"
+    forward = _between(text, forward_mark, inverse_mark)
+    inverse = _between(text, inverse_mark, cross)
     return (
-        _stage_chains(forward, "正运动学", sample_id, tier, format_note)
-        + _stage_chains(inverse, "逆运动学", sample_id, tier, format_note)
+        _stage_chains(forward, forward_stage, sample_id, tier, format_note)
+        + _stage_chains(inverse, inverse_stage, sample_id, tier, format_note)
     )
 
 
@@ -213,10 +225,10 @@ def _stage_chains(
     tier: int,
     format_note: str,
 ) -> list[dict]:
-    declaration = _section(text, "定义声明")
-    prior = _section(text, "物理常识")
+    declaration = _section(text, "Declaration")
+    prior = _section(text, "Background")
     if not declaration:
-        raise RuntimeError(f"{sample_id} {stage} 没有定义声明。")
+        raise RuntimeError(f"{sample_id} {stage} has no declaration.")
     chains = []
     for block in _blocks(text):
         if block["level"] == 1:
@@ -227,7 +239,7 @@ def _stage_chains(
                 declaration, prior, format_note, block["body"],
             ))
     if not chains:
-        raise RuntimeError(f"{sample_id} {stage} 没有子过程。")
+        raise RuntimeError(f"{sample_id} {stage} has no subprocess.")
     return chains
 
 
@@ -242,7 +254,7 @@ def _chain(
 ) -> dict:
     sentences = _sentences(body)
     if not sentences:
-        raise RuntimeError(f"{sample_id} {process} 没有待填槽。")
+        raise RuntimeError(f"{sample_id} {process} has no blanks to fill.")
     return {
         "sample_id": sample_id,
         "tier": tier,
@@ -255,6 +267,18 @@ def _chain(
     }
 
 
+def _sentence_break(chunk: str) -> bool:
+    if "。" in chunk:
+        return True
+    for index, char in enumerate(chunk):
+        if char != ".":
+            continue
+        nxt = chunk[index + 1] if index + 1 < len(chunk) else ""
+        if nxt in ("", " ", "\n", "\t"):
+            return True
+    return False
+
+
 def _sentences(body: str) -> list[dict]:
     """Group slots that share a sentence. A period inside a slot is not a boundary."""
     slots = list(SLOT.finditer(body))
@@ -264,7 +288,7 @@ def _sentences(body: str) -> list[dict]:
     current: list[re.Match[str]] = []
     cursor = 0
     for match in slots:
-        if current and "。" in body[cursor:match.start()]:
+        if current and _sentence_break(body[cursor:match.start()]):
             groups.append(current)
             current = []
         current.append(match)
@@ -293,21 +317,40 @@ def _sentences(body: str) -> list[dict]:
     return sentences
 
 
+def _period_at(body: str, start: int, end: int, reverse: bool) -> int:
+    window = body[start:end]
+    found = -1
+    for index, char in enumerate(window):
+        if char == "。":
+            hit = index
+        elif char == ".":
+            nxt = window[index + 1] if index + 1 < len(window) else ""
+            hit = index if nxt in ("", " ", "\n", "\t") else -1
+        else:
+            continue
+        if hit == -1:
+            continue
+        found = hit
+        if not reverse:
+            return start + hit
+    return start + found if found != -1 else -1
+
+
 def _span(body: str, group: list[re.Match[str]], prev_end: int) -> tuple[int, int]:
     first = group[0].start()
-    last_period = body.rfind("。", prev_end, first)
+    last_period = _period_at(body, prev_end, first, reverse=True)
     start = last_period + 1 if last_period != -1 else prev_end
-    period = body.find("。", group[-1].end())
+    period = _period_at(body, group[-1].end(), len(body), reverse=False)
     end = period + 1 if period != -1 else len(body)
     return start, end
 
 
 def _options(raw: str) -> list[str]:
     text = raw.strip()
-    if not text or text == "无":
+    if not text or text == "none":
         return []
     found = []
-    for part in text.split("；"):
+    for part in re.split(r"[;；]", text):
         piece = part.strip()
         if not piece:
             continue
@@ -330,8 +373,8 @@ def _expect(chains: list[dict], prefix: str, last: int, path: Path) -> None:
     expected = [str(number) for number in range(1, last + 1)]
     if found != expected:
         raise RuntimeError(
-            f"{path.name} {prefix or '全文'} 空编号不是 1–{last}。"
-            f"解析到 {len(found)} 个。"
+            f"{path.name} {prefix or 'full text'} blank ids are not 1-{last}. "
+            f"Parsed {len(found)}."
         )
 
 
@@ -368,7 +411,7 @@ def _answers_from_chains(chains: list[dict]) -> dict[tuple[str, str], str]:
 def _identity(text: str) -> tuple[str, int]:
     match = _SAMPLE_ID.search(text)
     if match is None:
-        raise RuntimeError("审阅稿缺少“# 数据”标题。")
+        raise RuntimeError('Review manuscript is missing the "# Data" heading.')
     if match.group(2):
         public = match.group(2)
         return public, int(public.split("-")[0])
@@ -382,16 +425,24 @@ def _section(text: str, title: str) -> str:
     return ""
 
 
+def _section_any(text: str, *titles: str) -> str:
+    for title in titles:
+        found = _section(text, title)
+        if found:
+            return found
+    return ""
+
+
 def _between(text: str, start: str, end: str | None) -> str:
     at = text.find(start)
     if at < 0:
-        raise RuntimeError(f"审阅稿缺少 {start}")
+        raise RuntimeError(f"Review manuscript is missing {start}")
     body = text[at + len(start):]
     if end is None:
         return body
     stop = body.find(end)
     if stop < 0:
-        raise RuntimeError(f"审阅稿缺少 {end}")
+        raise RuntimeError(f"Review manuscript is missing {end}")
     return body[:stop]
 
 
@@ -399,13 +450,14 @@ def _file_with_id(domain: str, sample_id: str) -> Path:
     for path in _files(EVAL[domain]["data"]):
         if _identity(path.read_text(encoding="utf-8"))[0] == sample_id:
             return path
-    raise RuntimeError(f"{domain} 没有样本 {sample_id}。")
+    raise RuntimeError(f"{domain} has no sample {sample_id}.")
 
 
 def _cut(text: str) -> str:
-    at = text.find("\n# 生成注记")
-    if at >= 0:
-        text = text[:at]
+    for marker in ("\n# Generation notes",):
+        at = text.find(marker)
+        if at >= 0:
+            text = text[:at]
     return text
 
 

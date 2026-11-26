@@ -2,7 +2,7 @@
 """Strict and normalized cloze scores.
 
 Strict is stripped equality. Normalized also accepts spacing, unicode
-punctuation, a leading 答案 prefix, and LaTeX markup. Expressions, matrices,
+punctuation, a leading answer prefix, and LaTeX markup. Expressions, matrices,
 vectors, distances and moment arms may also match by sympy equivalence.
 Choice blanks stay on the option text and are not passed to sympy.
 """
@@ -12,18 +12,23 @@ from __future__ import annotations
 import random
 import re
 
-SYMBOLIC = {"矩阵", "向量", "表达式", "距离", "arctan", "arcsin", "力臂"}
+
+SYMBOLIC = {
+    "matrix", "vector", "expression", "distance", "moment-arm",
+    "arctan", "arcsin",
+}
 _AXIS = r"XFD|YFD|ZFD|XTZ|YTZ|ZTZ|XTP|YTP|ZYP"
 _AXIS_TOKEN = re.compile(rf"-?(?:{_AXIS})")
 _AXIS_NAME = re.compile(rf"-?({_AXIS})")
 _OPPOSITES = (
-    {"正", "负"},
-    {"正", "逆"},
-    {"相同", "相反"},
-    {"顺时针", "逆时针"},
-    {"上方", "下方"},
-    {"左侧", "右侧"},
-    {"前方", "后方"},
+    {"positive", "negative"},
+    {"positive", "reverse"},
+    {"same", "opposite"},
+    {"clockwise", "counterclockwise"},
+    {"upward", "downward"},
+    {"left", "right"},
+    {"forward", "rearward"},
+    {"upright", "inverted"},
 )
 _GREEK = (
     ("Δα_e", "Dalpha_e"),
@@ -53,6 +58,8 @@ _GREEK = (
     ("ψ", "psi"),
     ("ω", "omega"),
     ("λ", "lam"),
+    ("Λ", "Lam_up"),
+    ("Γ", "Gam_up"),
 )
 _LATEX_FRAC = re.compile(r"\\frac\{([^{}]*)\}\{([^{}]*)\}")
 _LATEX_MATRIX = re.compile(
@@ -78,11 +85,12 @@ _FUNC_CALL = re.compile(r"(arcsin|arctan|asin|atan|sin|cos|tan)(?!\s*\()(?![A-Za
 _SUB_BASE = r"[A-Za-zα-ωΑ-ΩθφψΔ]"
 _NOISE = re.compile(r"[\u00a0\u200b\u200c\u200d\ufeff\u3000\u2060]")
 _KEYWORD = re.compile(
-    r"(?:最终答案|正确答案|参考答案|输出结果|答案|输出为|输出是|输出|结果为|结果是|结果|因此|所以|答)"
-    r"\s*[:：]?\s*(?:为|是)?\s*[:：]?\s*"
+    r"\b(?:final answer|correct answer|reference answer|output result|the answer|answer|"
+    r"output is|output|result is|result|therefore|so)\b"
+    r"\s*:?\s*(?:is)?\s*:?\s*",
+    re.I,
 )
-_LEAD = re.compile(r"^(?:[*•]+\s*|-\s+(?=[\u4e00-\u9fff])|[（(]?\d+[)）.、]\s*)")
-_NOTE = re.compile(r"（[^（）]{0,16}）$")
+_LEAD = re.compile(r"^(?:[*•]+\s*|\(?\d+\)\s+|\d+[.)]\s+)")
 
 
 def extract_payload(text: str) -> str:
@@ -100,9 +108,9 @@ def extract_payload(text: str) -> str:
             value = tail
     value = value.strip()
     value = _LEAD.sub("", value)
-    value = value.strip(" \t\"'`“”‘’「」『』【】")
-    value = _NOTE.sub("", value)
-    value = re.sub(r"[。！？；;，,]+$", "", value)
+    value = value.strip(" \t\"'`")
+    value = re.sub(r"[;,]+$", "", value)
+    value = re.sub(r"(?<![0-9])[.!?]+$", "", value)
     return value.strip()
 
 
@@ -223,11 +231,11 @@ def normalize(text: str) -> str:
     value = _implicit_calls(value)
     value = value.replace("−", "-").replace("–", "-").replace("—", "-")
     value = value.replace("⋅", "·").replace("∙", "·").replace("・", "·")
-    value = value.replace("（", "(").replace("）", ")").replace("，", ",").replace("、", ",")
-    value = value.replace("。", "")
-    value = value.replace("“", "").replace("”", "").replace("‘", "").replace("’", "")
     value = value.replace('"', "").replace("'", "")
     value = re.sub(r"\s+", "", value)
+    bound = re.match(r"^[^=\[\]]+=(\[.*\])$", value)
+    if bound:
+        return bound.group(1)
     return value
 
 
@@ -244,12 +252,12 @@ def choice_letter(index: int) -> str:
 
 def format_choices(options: list[str]) -> str:
     if not options:
-        return "无"
-    return "；".join(f"{choice_letter(index)}：{option}" for index, option in enumerate(options))
+        return "none"
+    return "; ".join(f"{choice_letter(index)}: {option}" for index, option in enumerate(options))
 
 
 def _split_choice(raw: str) -> tuple[str, str]:
-    matched = re.match(r"^([A-Za-z])(?:\s*[:：.、]\s*(.*))?$", raw, re.S)
+    matched = re.match(r"^([A-Za-z])(?:\s*[:.]\s*(.*))?$", raw, re.S)
     if not matched:
         return "", raw
     body = matched.group(2)
@@ -323,7 +331,7 @@ def resolve_choice(answer: str, options: list[str]) -> tuple[str, str]:
 
 
 def answer_letter(answer: str, options: list[str] | None) -> str:
-    choice = [item for item in (options or []) if item and item != "无"]
+    choice = [item for item in (options or []) if item and item != "none"]
     if not choice:
         return answer
     raw = answer.strip()
@@ -365,6 +373,9 @@ def _sympy_modules():
         "arctan": sympy.atan,
         "asin": sympy.asin,
         "atan": sympy.atan,
+        "atan2": sympy.atan2,
+        "sqrt": sympy.sqrt,
+        "Matrix": sympy.Matrix,
         "pi": sympy.pi,
     })
     return sympy, locals_map
@@ -376,7 +387,8 @@ def _to_sympy_text(text: str) -> str:
     value = re.sub(r"(\d+(?:\.\d+)?)°", r"(\1*pi/180)", value)
     for source, target in _GREEK:
         value = value.replace(source, target)
-    value = re.sub(r"(?<=\d)(?=[A-Za-z(])", "*", value)
+    value = re.sub(r"(?<=\d)(?=[A-Za-z])", "*", value)
+    value = re.sub(r"(?<![A-Za-z])(\d+(?:\.\d+)?)(?=\()", r"\1*", value)
     value = re.sub(r"\)(?=[A-Za-z(])", ")*", value)
     return value
 
@@ -390,9 +402,9 @@ def _split_row(text: str) -> list[str]:
             cells.append("".join(current))
             current = []
             continue
-        if char == "(":
+        if char in "([":
             depth += 1
-        elif char == ")":
+        elif char in ")]":
             depth -= 1
         current.append(char)
     cells.append("".join(current))
@@ -426,15 +438,49 @@ def _split_matrix(text: str) -> list[list[str]] | None:
     return [_split_row(row) for row in rows]
 
 
+def _embed_vectors(text: str) -> str:
+    """Turn a bracket vector inside an expression into a matrix product term."""
+    out: list[str] = []
+    index = 0
+    while index < len(text):
+        if text[index] != "[":
+            out.append(text[index])
+            index += 1
+            continue
+        if index + 1 < len(text) and text[index + 1] == "[":
+            end = _closing_bracket(text, index)
+            out.append(text[index:end])
+            index = end
+            continue
+        end = _closing_bracket(text, index)
+        if end <= index:
+            out.append(text[index])
+            index += 1
+            continue
+        out.append(f"Matrix([[{text[index + 1:end - 1]}]])")
+        index = end
+    return "".join(out)
+
+
+def _sympify_piece(text: str, sympy, locals_map):
+    return sympy.sympify(_embed_vectors(text), locals=locals_map)
+
+
 def _parse_expr(text: str, sympy, locals_map):
     prepared = _to_sympy_text(text)
     matrix = _split_matrix(prepared)
     if matrix is not None:
-        return sympy.Matrix([[sympy.sympify(cell, locals=locals_map) for cell in row] for row in matrix])
+        return sympy.Matrix([[_sympify_piece(cell, sympy, locals_map) for cell in row] for row in matrix])
     if prepared.startswith("[") and prepared.endswith("]") and prepared.count("[") == 1:
         cells = _split_row(prepared[1:-1])
-        return sympy.Matrix([[sympy.sympify(cell, locals=locals_map) for cell in cells]])
-    return sympy.sympify(prepared, locals=locals_map)
+        return sympy.Matrix([[_sympify_piece(cell, sympy, locals_map) for cell in cells]])
+    parts = _split_row(prepared)
+    if len(parts) > 1:
+        parsed = [_sympify_piece(cell, sympy, locals_map) for cell in parts]
+        if any(not isinstance(cell, sympy.Expr) for cell in parsed):
+            raise ValueError("comma-separated pieces are not an expression")
+        return sympy.Matrix([parsed])
+    return _sympify_piece(prepared, sympy, locals_map)
 
 
 def _is_zero(expr, sympy) -> bool:
@@ -513,18 +559,18 @@ def _axis_swap(prediction: str, answer: str) -> bool:
 
 def classify(prediction: str, answer: str, accepted: bool, standard: str | None) -> str:
     if accepted:
-        return "格式" if normalize(prediction) != normalize(answer) or prediction != answer else ""
+        return "format" if normalize(prediction) != normalize(answer) or prediction != answer else ""
     if standard is not None and standard != answer and (
         normalized_equal(prediction, standard) or (
             _looks_symbolic(prediction) and _looks_symbolic(standard) and sympy_equal(prediction, standard)
         )
     ):
-        return "定义未用"
+        return "unused-definition"
     if _sign_only(prediction, answer):
-        return "符号"
+        return "sign"
     if _axis_swap(prediction, answer):
-        return "轴"
-    return "其他"
+        return "axis"
+    return "other"
 
 
 def _looks_symbolic(text: str) -> bool:
@@ -539,7 +585,7 @@ def judge(
     options: list[str] | None = None,
     standard: str | None = None,
 ) -> dict:
-    choice = [item for item in (options or []) if item and item != "无"]
+    choice = [item for item in (options or []) if item and item != "none"]
     letter, gold_text = resolve_choice(answer, choice) if choice else ("", answer)
     scored_answer = letter if letter else answer
     exact = prediction == scored_answer
@@ -566,7 +612,7 @@ def judge(
             class_standard = standard_text if standard_letter else standard
     kind = ""
     if not exact:
-        kind = "格式" if accepted else classify(compared, class_answer, False, class_standard)
+        kind = "format" if accepted else classify(compared, class_answer, False, class_standard)
     return {
         "exact": exact,
         "normalized": accepted,
@@ -594,22 +640,22 @@ def bootstrap_ci(groups: list[list[bool]], draws: int = 2000, seed: int = 202611
 
 
 def _check_scoring() -> None:
-    spaced = judge("γ_M + γ_tp", "γ_M+γ_tp", "表达式")
-    if not (spaced["normalized"] and not spaced["exact"] and spaced["error_kind"] == "格式"):
+    spaced = judge("γ_M + γ_tp", "γ_M+γ_tp", "expression")
+    if not (spaced["normalized"] and not spaced["exact"] and spaced["error_kind"] == "format"):
         raise RuntimeError(spaced)
-    signed_space = judge("- YTP", "-YTP", "无", ["-YTP", "YTP"])
-    if not signed_space["normalized"] or signed_space["error_kind"] != "格式":
+    signed_space = judge("- YTP", "-YTP", "choice", ["-YTP", "YTP"])
+    if not signed_space["normalized"] or signed_space["error_kind"] != "format":
         raise RuntimeError(signed_space)
-    dropped_sign = judge("-YTP", "YTP", "无", ["-YTP", "YTP"])
-    if dropped_sign["normalized"] or dropped_sign["error_kind"] != "符号":
+    dropped_sign = judge("-YTP", "YTP", "choice", ["-YTP", "YTP"])
+    if dropped_sign["normalized"] or dropped_sign["error_kind"] != "sign":
         raise RuntimeError(dropped_sign)
-    axis = judge("YTZ", "YFD", "无", ["YTZ", "YFD"])
-    if axis["error_kind"] != "轴":
+    axis = judge("YTZ", "YFD", "choice", ["YTZ", "YFD"])
+    if axis["error_kind"] != "axis":
         raise RuntimeError(axis)
-    matrix = judge("[[1,0,0],[0,1,0],[0,0,1]]", "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]", "矩阵")
-    if not matrix["normalized"] or matrix["error_kind"] != "格式":
+    matrix = judge("[[1,0,0],[0,1,0],[0,0,1]]", "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]", "matrix")
+    if not matrix["normalized"] or matrix["error_kind"] != "format":
         raise RuntimeError(matrix)
-    trig = judge("sin(α_M+β_M)", "sin(α_M)*cos(β_M)+cos(α_M)*sin(β_M)", "表达式")
+    trig = judge("sin(α_M+β_M)", "sin(α_M)*cos(β_M)+cos(α_M)*sin(β_M)", "expression")
     if not trig["sympy_equal"] or not trig["normalized"]:
         raise RuntimeError(trig)
     juxtaposed = judge(
@@ -617,87 +663,125 @@ def _check_scoring() -> None:
         "arctan((sin(α_M)*cos(γ_M) + sin(β_M)*sin(γ_M)*cos(α_M))/(cos(α_M)*cos(β_M)))",
         "arctan",
     )
-    if not juxtaposed["normalized"] or juxtaposed["exact"] or juxtaposed["error_kind"] != "格式":
+    if not juxtaposed["normalized"] or juxtaposed["exact"] or juxtaposed["error_kind"] != "format":
         raise RuntimeError(juxtaposed)
     outer_minus = judge(
         "-arcsin(cos(α_M)sin(β_M)cos(γ_M)-sin(α_M)sin(γ_M))",
         "arcsin(sin(β_M)*cos(α_M)*cos(γ_M) - sin(α_M)*sin(γ_M))",
         "arcsin",
     )
-    if outer_minus["normalized"] or outer_minus["error_kind"] != "符号":
+    if outer_minus["normalized"] or outer_minus["error_kind"] != "sign":
         raise RuntimeError(outer_minus)
-    prefix = judge("因此答案为：正装。", "正装", "无", ["正装", "反装"])
-    if not prefix["normalized"] or prefix["exact"] or prefix["error_kind"] != "格式":
+    prefix = judge("Therefore the answer is: upright.", "upright", "choice", ["upright", "inverted"])
+    if not prefix["normalized"] or prefix["exact"] or prefix["error_kind"] != "format":
         raise RuntimeError(prefix)
-    wrapped = judge("所以 γ_M + γ_tp 。", "γ_M+γ_tp", "表达式")
-    if not wrapped["normalized"] or wrapped["error_kind"] != "格式":
+    wrapped = judge("so γ_M + γ_tp.", "γ_M+γ_tp", "expression")
+    if not wrapped["normalized"] or wrapped["error_kind"] != "format":
         raise RuntimeError(wrapped)
-    marked = judge("最终答案：[[1, 0, 0], [0, 1, 0], [0, 0, 1]]", "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]", "矩阵")
+    marked = judge("final answer: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]", "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]", "matrix")
     if not marked["normalized"] or marked["exact"]:
         raise RuntimeError(marked)
-    piece = judge("CZ_TZ", "CZ_TZ,MZ_TZ", "无", ["CN_TZ,MN_TZ", "CA_TZ,MA_TZ", "CZ_TZ,MZ_TZ"])
-    if not piece["normalized"] or piece["exact"] or piece["error_kind"] != "格式":
+    piece = judge("CZ_TZ", "CZ_TZ,MZ_TZ", "choice", ["CN_TZ,MN_TZ", "CA_TZ,MA_TZ", "CZ_TZ,MZ_TZ"])
+    if not piece["normalized"] or piece["exact"] or piece["error_kind"] != "format":
         raise RuntimeError(piece)
-    letter = judge("A", "正", "无", ["正", "负", "不确定"])
+    letter = judge("A", "positive", "choice", ["positive", "negative", "indeterminate"])
     if not letter["normalized"] or not letter["exact"] or letter["error_kind"]:
         raise RuntimeError(letter)
-    letter_stored = judge("A", "A", "无", ["正", "负", "不确定"])
+    letter_stored = judge("A", "A", "choice", ["positive", "negative", "indeterminate"])
     if not letter_stored["exact"]:
         raise RuntimeError(letter_stored)
-    option_text = judge("正", "A", "无", ["正", "负", "不确定"])
-    if not option_text["normalized"] or option_text["exact"] or option_text["error_kind"] != "格式":
+    option_text = judge("positive", "A", "choice", ["positive", "negative", "indeterminate"])
+    if not option_text["normalized"] or option_text["exact"] or option_text["error_kind"] != "format":
         raise RuntimeError(option_text)
-    pair_letter = judge("C", "CZ_TZ,MZ_TZ", "无", ["CN_TZ,MN_TZ", "CA_TZ,MA_TZ", "CZ_TZ,MZ_TZ"])
+    pair_letter = judge("C", "CZ_TZ,MZ_TZ", "choice", ["CN_TZ,MN_TZ", "CA_TZ,MA_TZ", "CZ_TZ,MZ_TZ"])
     if not pair_letter["exact"]:
         raise RuntimeError(pair_letter)
-    wrong_letter = judge("B", "正", "无", ["正", "负", "不确定"])
-    if wrong_letter["normalized"] or wrong_letter["error_kind"] != "符号":
+    wrong_letter = judge("B", "positive", "choice", ["positive", "negative", "indeterminate"])
+    if wrong_letter["normalized"] or wrong_letter["error_kind"] != "sign":
         raise RuntimeError(wrong_letter)
-    shared = judge("CZ_TZ", "CN_TZ,MN_TZ", "无", ["CN_TZ,MN_TZ", "CA_TZ,MA_TZ", "CZ_TZ,MZ_TZ"])
+    shared = judge("CZ_TZ", "CN_TZ,MN_TZ", "choice", ["CN_TZ,MN_TZ", "CA_TZ,MA_TZ", "CZ_TZ,MZ_TZ"])
     if shared["normalized"]:
         raise RuntimeError(shared)
-    conflict = judge("A：负", "正", "无", ["正", "负", "不确定"])
+    conflict = judge("A: negative", "positive", "choice", ["positive", "negative", "indeterminate"])
     if conflict["normalized"]:
         raise RuntimeError(conflict)
-    unused_phrase = judge("因此答案为：正装。", "反装", "无", ["正装", "反装"], standard="正装")
-    if unused_phrase["normalized"] or unused_phrase["error_kind"] != "定义未用":
+    unused_phrase = judge("Therefore the answer is: upright.", "inverted", "choice", ["upright", "inverted"], standard="upright")
+    if unused_phrase["normalized"] or unused_phrase["error_kind"] != "unused-definition":
         raise RuntimeError(unused_phrase)
-    latex = judge(r"$\sin(\alpha_M)$", "sin(α_M)", "表达式")
+    latex = judge(r"$\sin(\alpha_M)$", "sin(α_M)", "expression")
     if not latex["normalized"]:
         raise RuntimeError(latex)
-    latex_call = judge(r"\sin\theta_M\cos\varphi_M", "sin(θ_M)*cos(φ_M)", "表达式")
+    latex_call = judge(r"\sin\theta_M\cos\varphi_M", "sin(θ_M)*cos(φ_M)", "expression")
     if not latex_call["normalized"]:
         raise RuntimeError(latex_call)
     latex_sub = judge(
         r"[(c_{y1}-v_1)/f_{y1}, -1, (u_1-c_{x1})/f_{x1}]",
         "[(cy1 - v1)/fy1, -1, (-cx1 + u1)/fx1]",
-        "向量",
+        "vector",
     )
     if not latex_sub["normalized"]:
         raise RuntimeError(latex_sub)
-    latex_frac = judge(r"\frac{u1-cx1}{fx1}", "(u1-cx1)/fx1", "表达式")
+    latex_frac = judge(r"\frac{u1-cx1}{fx1}", "(u1-cx1)/fx1", "expression")
     if not latex_frac["normalized"]:
         raise RuntimeError(latex_frac)
     latex_matrix = judge(
         r"\begin{bmatrix} 0 & -1 & 0 \\ 1 & 0 & 0 \\ 0 & 0 & 0 \end{bmatrix}",
         "[[0, -1, 0], [1, 0, 0], [0, 0, 0]]",
-        "矩阵",
+        "matrix",
     )
     if not latex_matrix["normalized"]:
         raise RuntimeError(latex_matrix)
     latex_display = judge(
         r"\[\left[\frac{cy1-v1}{fy1},\,-1,\,\frac{u1-cx1}{fx1}\right]\]",
         "[(cy1 - v1)/fy1, -1, (u1 - cx1)/fx1]",
-        "向量",
+        "vector",
     )
     if not latex_display["normalized"]:
         raise RuntimeError(latex_display)
-    unused = judge("正装", "反装", "无", ["正装", "反装"], standard="正装")
-    if unused["error_kind"] != "定义未用":
+    unused = judge("upright", "inverted", "choice", ["upright", "inverted"], standard="upright")
+    if unused["error_kind"] != "unused-definition":
         raise RuntimeError(unused)
-    sign_matrix = judge("[[0, 0, 1], [0, 1, 0], [1, 0, 0]]", "[[0, 0, -1], [0, -1, 0], [-1, 0, 0]]", "矩阵")
-    if sign_matrix["normalized"] or sign_matrix["error_kind"] != "符号":
+    sign_matrix = judge("[[0, 0, 1], [0, 1, 0], [1, 0, 0]]", "[[0, 0, -1], [0, -1, 0], [-1, 0, 0]]", "matrix")
+    if sign_matrix["normalized"] or sign_matrix["error_kind"] != "sign":
         raise RuntimeError(sign_matrix)
+    named = judge(
+        r'"R_{\theta_1}=\begin{bmatrix}1&0&0\\0&\cos\theta_1&\sin\theta_1\\0&-\sin\theta_1&\cos\theta_1\end{bmatrix}"',
+        "[[1, 0, 0], [0, cos(θ1), sin(θ1)], [0, -sin(θ1), cos(θ1)]]",
+        "matrix",
+    )
+    if not named["normalized"]:
+        raise RuntimeError(named)
+    flipped = judge(
+        r"R_{\psi_1}=\begin{bmatrix}\cos\psi_1&0&-\sin\psi_1\\0&1&0\\\sin\psi_1&0&\cos\psi_1\end{bmatrix}",
+        "[[cos(ψ1), 0, sin(ψ1)], [0, 1, 0], [-sin(ψ1), 0, cos(ψ1)]]",
+        "matrix",
+    )
+    if flipped["normalized"]:
+        raise RuntimeError(flipped)
+    angles = judge(
+        "atan2(1, 2), atan2(1, sqrt(15)), atan2(1, sqrt(3))",
+        "arctan(1/2), arcsin(1/4), arcsin(1/2)",
+        "expression",
+    )
+    if not angles["normalized"]:
+        raise RuntimeError(angles)
+    opposite = judge("atan2(-1, 2)", "arctan(1/2)", "expression")
+    if opposite["normalized"]:
+        raise RuntimeError(opposite)
+    merged = judge(
+        "D*[L + L_mount + x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]",
+        "D*[L + L_mount, 0, 0] + D*[x_r - (b/2)*tan(Λ), (b/2)*tan(Γ), b/2]",
+        "expression",
+    )
+    if not merged["normalized"]:
+        raise RuntimeError(merged)
+    other = judge(
+        "D*[L + L_mount + x_r, 0, b/2]",
+        "D*[L + L_mount, 0, 0] + D*[x_r, 0, 0]",
+        "expression",
+    )
+    if other["normalized"]:
+        raise RuntimeError(other)
     low, high = bootstrap_ci([[True, False], [True, True]])
     if not (0 <= low <= high <= 1):
         raise RuntimeError((low, high))

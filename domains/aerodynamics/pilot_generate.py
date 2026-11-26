@@ -58,25 +58,25 @@ FACTORS = [
 BLANK_COUNT = BODY_BLANKS + TRACK_BLANKS + AIR_BLANKS
 BUILDS = (build_ground_body, build_track_air, build_body_air)
 SCALAR_FLIP = {name: {"sign": "negative"} for name in FACTORS if not name.endswith("_frame")}
-SCALAR_ZH = {
-    PSI: "偏航角改为机头向地面右方偏时为负",
-    THETA: "俯仰角改为机头向地面上方偏时为负",
-    PHI: "滚转角改为向机体右侧滚转时为负",
-    VARPHI: "航迹方位角改为空速投影在 xg 右侧时为负",
-    MU: "航迹倾斜角改为空速向地面上方偏时为负",
-    GAMMA: "航迹滚转角改为飞行器向机体右方滚转时为负",
-    ALPHA: "迎角改为空速投影处于机体轴向下方时为负",
-    BETA: "侧滑角改为空速处于飞行器右方时为负",
+SCALAR_EN = {
+    PSI: "Yaw is negative when the nose yaws to the right of the ground",
+    THETA: "Pitch is negative when the nose pitches above the ground",
+    PHI: "Roll is negative when the aircraft rolls to its right",
+    VARPHI: "Track azimuth is negative when the horizontal airspeed projection lies to the right of Xg",
+    MU: "Track inclination is negative when the aircraft climbs",
+    GAMMA: "Track roll is negative when the aircraft rolls to its right",
+    ALPHA: "Angle of attack is negative when the airspeed projection lies below the airframe axis",
+    BETA: "Sideslip is negative when the airspeed lies to the right of the aircraft",
 }
 FRAME_TITLE = {
-    "ground_frame": "地面系",
-    "body_frame": "机体系",
-    "stability_frame": "稳定性坐标系",
-    "track_frame": "航迹系",
-    "airflow_frame": "气流系",
+    "ground_frame": "the ground frame",
+    "body_frame": "the airframe",
+    "stability_frame": "the stability frame",
+    "track_frame": "the track frame",
+    "airflow_frame": "the airflow frame",
 }
-_SPIN = "航迹旋转采用动轴内旋。"
-_SPIN_ALL = "姿态旋转、航迹旋转和气流角旋转采用动轴内旋。"
+_SPIN = "Attitude angles, track angles, and airflow angles use an intrinsic moving-axis sequence."
+_SPIN_ALL = "Attitude angles, track angles, and airflow angles use an intrinsic moving-axis sequence."
 
 
 def _width(tier: int) -> int:
@@ -86,22 +86,22 @@ def _width(tier: int) -> int:
 def _frame_phrase(title: str, spec: dict) -> str:
     shown = {"Xb": "xb", "Yb": "yb", "Zb": "zb"}
     declared = [
-        f"{shown.get(name, name)}沿{axis['along'].split('_', 1)[1]}指向{axis['points'].split('_', 1)[1]}"
+        f"{shown.get(name, name)} lies along {axis['along'].split('_', 1)[1]} and points {axis['points'].split('_', 1)[1]}"
         for name, axis in spec.items()
         if name != "chirality"
     ]
-    hand = "右手系" if spec["chirality"] == "right" else "左手系"
-    return f"{title}改为{hand}，" + "，".join(declared)
+    hand = "right-handed" if spec["chirality"] == "right" else "left-handed"
+    return f"{title} is {hand}, " + ", ".join(declared)
 
 
 def _change_text(tier: int, changed: list[str], spec: dict) -> str:
     phrases = []
     for key in changed:
-        if key in SCALAR_ZH:
-            phrases.append(SCALAR_ZH[key])
+        if key in SCALAR_EN:
+            phrases.append(SCALAR_EN[key])
         else:
             phrases.append(_frame_phrase(FRAME_TITLE[key], spec[key]))
-    return f"定义变更档{tier}%：13项可变定义中变更{len(changed)}项：" + "；".join(phrases) + "。"
+    return f"Tier {tier}%: {len(changed)} of 13 definitions differ from the standard definition: " + "; ".join(phrases) + "."
 
 
 def _layouts() -> dict[str, list[dict]]:
@@ -168,7 +168,7 @@ def _samples() -> list[dict]:
                 "tier": tier,
                 "changed_count": len(chosen),
                 "changed": chosen,
-                "title": f"定义变更{tier}%",
+                "title": f"change {tier}%",
                 "change": _change_text(tier, chosen, spec),
                 "spec": spec,
             })
@@ -182,7 +182,7 @@ def _domain_declaration(spec: dict) -> str:
         raise RuntimeError("The shared declaration no longer has the expected fixed lines.")
     text = text.replace(_SPIN, _SPIN_ALL, 1)
     _check_declaration(text)
-    leaked = [item for item in ("欧拉顺序", "航迹顺序", "气流顺序") if item in text]
+    leaked = [item for item in ("Euler order", "track order", "airflow order") if item in text]
     if leaked:
         raise RuntimeError("The composition order is still in the declaration.")
     return text
@@ -228,29 +228,29 @@ def _slim(sample: dict, declaration: str, questions: list[dict]) -> dict:
         "declaration": declaration,
         "prior": PRIOR,
         "questions": stored,
-        "domain": "飞行力学",
+        "domain": "flight mechanics",
     }
 
 
 def _markdown(sample: dict, declaration: str, sections: list[tuple[str, str]]) -> str:
     lines = [
-        f"# 数据 {sample['id']} {sample['title']}",
+        f"# Data {sample['id']} {sample['title']}",
         "",
-        "本文件是飞行力学领域的试跑样本。三个子过程编号连成 1 到 121。",
+        "This file is a flight-mechanics pilot sample. The three subprocesses are numbered 1 through 121.",
         "",
         sample["change"],
         "",
-        "## 定义声明",
+        "## Declaration",
         "",
         declaration.strip(),
         "",
-        "## 物理常识",
+        "## Background",
         "",
         PRIOR,
         "",
-        "## 完整过程",
+        "## Full process",
         "",
-        "下面每个槽都带标签和标准答案，便于直接审阅。这是审阅字段，不是模型在待填空上看到的字段。",
+        "Each slot below carries its label and the answer, for review. These are review fields. The model does not see them on an open blank.",
         "",
     ]
     for process, text in sections:
@@ -260,21 +260,21 @@ def _markdown(sample: dict, declaration: str, sections: list[tuple[str, str]]) -
 
 def _index(samples: list[dict]) -> str:
     lines = [
-        "# 飞行力学试跑样本",
+        "# Flight-mechanics pilot samples",
         "",
-        "分档方式和风洞试跑相同：25%、50%、75%、100% 四档，条数按 3、3、2、2，共 10 条。飞行力学进入填空的可变定义有 13 项：八个角度符号，以及地面系、机体系、稳定性坐标系、航迹系、气流系。一档改掉的项数是 13 乘以该档百分比后取整，即 3、6、9、13 项。欧拉顺序固定，不是可变定义。",
+        "The tiers match the wind-tunnel pilot: 25%, 50%, 75%, and 100%, with 3, 3, 2, and 2 samples, 10 in all. Flight mechanics has 13 definitions that enter a cloze: the eight angle signs, and the ground frame, the airframe, the stability frame, the track frame, and the airflow frame. A tier changes 13 times that percentage, truncated, so 3, 6, 9, and 13 items. The angle sequence is fixed and is not one of those definitions.",
         "",
-        "每条包含三个子过程。公共编号 1 到 32 是地面系到机体系，33 到 80 是地面系转航迹系和气流系，81 到 121 是体轴系到气流系。",
+        "Each sample contains three subprocesses. Public numbers 1 through 32 are ground to body, 33 through 80 are ground to track and airflow, and 81 through 121 are body to airflow.",
         "",
-        "| 档 | 变更项 | 条数 | 编号 |",
+        "| tier | items changed | count | ids |",
         "| --- | --- | --- | --- |",
     ]
     for tier in TIERS:
         ids = [sample["id"] for sample in samples if sample["tier"] == tier]
-        lines.append(f"| {tier}% | {_width(tier)}/13 | {len(ids)} | {'、'.join(ids)} |")
+        lines.append(f"| {tier}% | {_width(tier)}/13 | {len(ids)} | {', '.join(ids)} |")
     lines.extend([
         "",
-        f"抽样种子 {SEED}。数据在 data/flight/basic/pilot/samples.jsonl，每行一条，含定义声明和 103 个空的标准答案。",
+        f"Sample seed {SEED}. The data are in data/flight/basic/pilot/samples.jsonl, one sample per line, with the declaration and the answers of 103 blanks.",
         "",
     ])
     return "\n".join(lines)
@@ -298,7 +298,7 @@ def main() -> None:
         json.dumps({"ids": ids, "counts": TIER_COUNTS, "seed": SEED, "factors": len(FACTORS)}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    (OUT_DIR / "00_索引.md").write_text(_index(samples), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text(_index(samples), encoding="utf-8")
     print(f"Wrote {len(samples)} samples, {BLANK_COUNT} blanks each, to {OUT_DIR}")
 
 

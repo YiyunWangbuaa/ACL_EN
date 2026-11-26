@@ -15,9 +15,9 @@ from domains.wind_tunnel.t_final import T_FINAL, audit_finals, audit_repair_shap
 
 def main() -> None:
     audit_finals()
-    print("T_final 是没有下游的表达式，共 17 个。")
+    print("T_final is the expressions with no downstream, 17 of them.")
     print()
-    print("| 过程 | 节点 | 深度 | 题目 |")
+    print("| process | node | depth | question |")
     print("| --- | --- | ---: | --- |")
     for process, nodes in T_FINAL.items():
         for node in nodes:
@@ -25,7 +25,7 @@ def main() -> None:
             print(f"| {process} | ID{node} | {item.dependency_depth} | {item.role} |")
     print()
     audit_repair_shape()
-    print("修复骨架：单修 ID47 时 ID48 保持模型原文；联修 ID47 与 ID48 时 ID2 保持模型原文。路径上的 ID55/59/60/80 都留给计算器。")
+    print("Repair skeleton: a single repair of ID47 keeps the model text at ID48; a joint repair of ID47 and ID48 keeps the model text at ID2. ID55/59/60/80 on the path are left to the calculator.")
 
 
 if __name__ == "__main__":

@@ -57,7 +57,7 @@ def _layer() -> dict:
 
 
 def _options(blank: dict) -> list[str]:
-    return [item for item in (blank.get("options") or []) if item and item != "无"]
+    return [item for item in (blank.get("options") or []) if item and item != "none"]
 
 
 def _wording(blank: dict, raw: str) -> str:
@@ -215,9 +215,9 @@ def _component_expr(observations: dict, prefix: str, name: str):
 
 
 def _signed(sign: str, expr):
-    if sign == "正":
+    if sign == "positive":
         return expr
-    if sign == "负":
+    if sign == "negative":
         return -expr
     return None
 
@@ -237,16 +237,16 @@ def _angle_formula(observations: dict, prefix: str, spec: dict):
     if numerator is None or denominator is None or inverse not in {"arctan", "arcsin"}:
         return None
     sympy, _locals, _parse_expr, is_zero = _parser()
-    if den_name == "1" and den_sign == "正":
+    if den_name == "1" and den_sign == "positive":
         interior = numerator
     else:
         if is_zero(denominator, sympy):
             return None
         interior = numerator / denominator
     body = sympy.atan(interior) if inverse == "arctan" else sympy.asin(interior)
-    if outer == "负":
+    if outer == "negative":
         body = -body
-    elif outer != "正":
+    elif outer != "positive":
         return None
     return body
 
@@ -585,10 +585,10 @@ def _quadrant(recognition: str, execution: str) -> str:
     if recognition not in {"correct", "incorrect"} or execution not in {"consistent", "inconsistent"}:
         return ""
     table = {
-        ("correct", "consistent"): "契约识别—执行一致",
-        ("correct", "inconsistent"): "识别—执行不一致",
-        ("incorrect", "consistent"): "识别错误但敏感结果正确",
-        ("incorrect", "inconsistent"): "契约识别和执行均失败",
+        ("correct", "consistent"): "contract recognition and execution agree",
+        ("correct", "inconsistent"): "recognition and execution disagree",
+        ("incorrect", "consistent"): "recognition is wrong but the sensitive result is correct",
+        ("incorrect", "inconsistent"): "contract recognition and execution both fail",
     }
     return table[(recognition, execution)]
 
@@ -761,29 +761,29 @@ def _markdown(diagnosed: dict) -> str:
     lines = [
         f"# {diagnosed['item_id']} · {diagnosed['condition']}",
         "",
-        f"前缀 {summary['prefix']}。局部错误率 {summary['local_error_rate']}。"
-        f"契约识别率 {summary['contract_recognition']}。"
-        f"识别后的执行一致率 {summary['contract_execution_consistency']}。",
-        "下游错误按忠实传播、局部重算失败和恢复分开，不记成契约违规。",
+        f"Prefix {summary['prefix']}. Local error rate {summary['local_error_rate']}."
+        f"Contract recognition rate {summary['contract_recognition']}."
+        f"Execution consistency after recognition {summary['contract_execution_consistency']}.",
+        "Downstream errors are split into faithful propagation, a failed local recompute, and recovery. They are not recorded as a contract violation.",
         "",
-        "## 节点状态",
+        "## Node status",
         "",
-        "| ID | 类别 | 状态 | 转移 | 直接契约 |",
+        "| ID | Class | Status | Transfer | Direct contract |",
         "| --- | --- | --- | --- | --- |",
     ]
     for item in diagnosed["nodes"]:
         if item["state"] == "correct":
             continue
-        contracts = "、".join(item["contract_direct"]) or "无"
+        contracts = ", ".join(item["contract_direct"]) or "none"
         lines.append(
             f"| {item['id']} | {_cell(item['error_type'])} | {item['state']} | "
             f"{item['transition_status']} | {_cell(contracts)} |"
         )
     lines.extend([
         "",
-        "## 契约汇总",
+        "## Contract summary",
         "",
-        "| 契约 | 识别 | 直接执行 | 象限 | 下游错误 | 恢复 |",
+        "| Contract | Recognition | Direct execution | Quadrant | Downstream errors | Recovered |",
         "| --- | --- | --- | --- | --- | --- |",
     ])
     for item in diagnosed["contract_diagnosis"]:
@@ -797,8 +797,8 @@ def _markdown(diagnosed: dict) -> str:
                 recognition=item["recognition"],
                 execution=item["direct_execution_status"],
                 quadrant=item["quadrant"] or "—",
-                errors="、".join(item["indirect_errors"]) or "无",
-                recovered="、".join(item["recovered_nodes"]) or "无",
+                errors=", ".join(item["indirect_errors"]) or "none",
+                recovered=", ".join(item["recovered_nodes"]) or "none",
             )
         )
     return "\n".join(lines)
@@ -818,7 +818,7 @@ def _self_check() -> None:
         blank_id = str(question["id"])
         if blank_id not in NODE_BY_ID:
             continue
-        options = [item for item in (question.get("options") or []) if item and item != "无"]
+        options = [item for item in (question.get("options") or []) if item and item != "none"]
         answer = answer_letter(str(question["answer"]), options)
         observations[blank_id] = {
             "blank_id": blank_id,
@@ -829,51 +829,51 @@ def _self_check() -> None:
         }
     intact = diagnose_run(observations, "standard-default", "self-trunc")
     if any(item["state"] != "correct" for item in intact["nodes"]):
-        raise RuntimeError("金标预测不应产生错误状态。")
+        raise RuntimeError("A gold prediction should not produce an error status.")
     for blank_id in ("55", "59", "60", "61", "80", "81", "104"):
         expr = _recompute(blank_id, observations, "model")
         if expr is None or not _equal(expr, _gold_text(observations[blank_id])):
-            raise RuntimeError(f"ID{blank_id} 的标准转移没有回到金标。")
+            raise RuntimeError(f"The standard transfer of ID{blank_id} did not return to the gold.")
     flipped = json.loads(json.dumps(observations))
     flipped["43"]["prediction"] = "[[1, 0, 0], [0, cos(γ_M), -sin(γ_M)], [0, sin(γ_M), cos(γ_M)]]"
     flipped["43"]["normalized"] = False
     product = _recompute("55", flipped, "model")
     if product is None or _equal(product, _gold_text(observations["55"])):
-        raise RuntimeError("替换 ID43 后，ID55 的转移应离开金标。")
+        raise RuntimeError("After replacing ID43, the transfer of ID55 should leave the gold.")
     flipped["55"]["prediction"] = _show(product)
     flipped["55"]["normalized"] = False
     diagnosed = diagnose_run(flipped, "standard-default", "self-trunc")
     by_id = {item["id"]: item for item in diagnosed["nodes"]}
     if by_id["ID43"]["state"] != "local_error" or by_id["ID55"]["state"] != "propagated_error":
-        raise RuntimeError("ID43 应是局部错误，按错误矩阵相乘的 ID55 应是传播错误。")
+        raise RuntimeError("ID43 should be a local error, and ID55 multiplied by that wrong matrix should be a propagated error.")
     if by_id["ID55"]["transition_status"] != "faithful_propagation":
-        raise RuntimeError("ID55 忠实地使用了模型给出的 ID43。")
+        raise RuntimeError("ID55 faithfully used the ID43 given by the model.")
     if by_id["ID60"]["state"] != "recovered":
-        raise RuntimeError("父矩阵已错而 ID60 仍为金标时，应记恢复，不能串成错误路径。")
+        raise RuntimeError("When a parent matrix is already wrong and ID60 is still the gold, record a recovery. Do not string it into an error path.")
     link = next(item for item in diagnosed["edges"] if item["parent"] == "ID43" and item["child"] == "ID55")
     if link["error_path_active"] is not True:
-        raise RuntimeError("ID43 到 ID55 的忠实传播应是活动错误边。")
+        raise RuntimeError("The faithful propagation from ID43 to ID55 should be an active error edge.")
     blocked = next(item for item in diagnosed["edges"] if item["parent"] == "ID60" and item["child"] == "ID80")
     if blocked["error_path_active"] is not False:
-        raise RuntimeError("ID60 仍然正确，不能把 ID80 接到这条边上。")
+        raise RuntimeError("ID60 is still correct, so ID80 cannot be attached to this edge.")
     alpha = next(
         item for item in diagnosed["contract_diagnosis"]
         if item["contract"] == "C_SIGN_ALPHA@wind_to_body"
     )
     if any("ID60" in item["path"] for item in alpha["actual_error_paths"]):
-        raise RuntimeError("理论迎角符号的错误路径不能经过 ID60。")
+        raise RuntimeError("The error path of the theoretical angle-of-attack sign cannot pass through ID60.")
     if any("ID52" in item["path"] for item in diagnosed["contract_diagnosis"] for item in item["actual_error_paths"]):
-        raise RuntimeError("诊断路径不能使用已删除的 ID52。")
+        raise RuntimeError("A diagnosis path cannot use the removed ID52.")
     gold_seen = json.loads(json.dumps(observations))
     gold_seen["43"]["prediction"] = flipped["43"]["prediction"]
     gold_seen["43"]["normalized"] = False
     gold_prefix = diagnose_run(gold_seen, "standard-default", "gold-trunc")
     gold_nodes = {item["id"]: item for item in gold_prefix["nodes"]}
     if gold_nodes["ID43"]["state"] != "local_error" or gold_nodes["ID55"]["state"] != "correct":
-        raise RuntimeError("金标前缀里，ID43 记为局部错误，ID55 仍按看到的金标父节点保持正确。")
+        raise RuntimeError("Under the gold prefix, ID43 is a local error, and ID55 stays correct because the parent it sees is still the gold.")
     gold_link = next(item for item in gold_prefix["edges"] if item["parent"] == "ID43" and item["child"] == "ID55")
     if gold_link["error_path_active"] is not False:
-        raise RuntimeError("金标前缀不把 ID43 的存档错误当成 ID55 的活动传播边。")
+        raise RuntimeError("The gold prefix does not treat the archived error of ID43 as an active propagation edge of ID55.")
     print(
         "self-check ok: "
         f"nodes {len(intact['nodes'])}, "
@@ -884,9 +884,9 @@ def _self_check() -> None:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="为已完成的风洞评测写诊断表。")
-    parser.add_argument("--records", type=Path, help="records.jsonl。不给则只做自检。")
-    parser.add_argument("--out", type=Path, help="诊断表目录，默认为记录所在目录。")
+    parser = argparse.ArgumentParser(description="Write a diagnosis table for a finished wind-tunnel evaluation.")
+    parser.add_argument("--records", type=Path, help="records.jsonl. If omitted, only the self-check runs.")
+    parser.add_argument("--out", type=Path, help="Directory for the diagnosis table. Defaults to the directory of the records.")
     args = parser.parse_args()
     if args.records is None:
         _self_check()

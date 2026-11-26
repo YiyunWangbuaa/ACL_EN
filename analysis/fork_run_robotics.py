@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Session control for robotics theory endpoints (default F11 / public 11).
 
-Default --control-only. Walks 正运动学 through the public ID of --target.
+Default --control-only. Walks forward kinematics through the public ID of --target.
 CoT is not written back.
 """
 from __future__ import annotations
@@ -64,8 +64,8 @@ def _to_public(node: str) -> str:
 
 def _session_sample(target: str, samples: list[dict]) -> dict:
     if target.startswith("I"):
-        return next(item for item in samples if "逆" in item["title"])
-    return next(item for item in samples if "正" in item["title"])
+        return next(item for item in samples if "inverse" in item["title"].lower())
+    return next(item for item in samples if "forward" in item["title"].lower())
 
 
 def _sentences_through(sample: dict, stop_public: str) -> list[tuple[dict, int]]:
@@ -78,18 +78,18 @@ def _sentences_through(sample: dict, stop_public: str) -> list[tuple[dict, int]]
             found.append((chain, index))
             if str(item["id"]) == stop_public:
                 return found
-    raise RuntimeError(f"{sample['title']} 没有 ID{stop_public}")
+    raise RuntimeError(f"{sample['title']} has no ID{stop_public}")
 
 
 def _job(chain: dict, index: int, messages: list[dict], run: int, seed: int, max_tokens: int, condition: str) -> dict:
     item = chain["sentences"][index]["item"]
     question = "\n".join([
-        "填写当前这一句。",
+        "Fill the current sentence.",
         "",
-        "【子过程】",
+        "[Subprocess]",
         chain["process"],
         "",
-        "【问题】",
+        "[Question]",
         _turn_question(chain, index),
     ])
     blank = {
@@ -140,7 +140,7 @@ def run_trial(spec, sample, client, model, thinking, effort, run, seed, max_toke
             messages.append({"role": "user", "content": record["question"]})
             messages.append({"role": "assistant", "content": record["committed"]})
             continue
-        print(f"第 {run + 1} 趟 提问 ID{item['id']}", flush=True)
+        print(f"run {run + 1} asking ID{item['id']}", flush=True)
         result = score_one(client, model, 0.0, thinking, job)
         reply = result.get("response") or ""
         record = {
@@ -165,14 +165,14 @@ def run_trial(spec, sample, client, model, thinking, effort, run, seed, max_toke
                 if str(blank.get("blank_id")) == node:
                     kernel_rows[node] = _slim(blank)
         if node not in kernel_rows:
-            raise RuntimeError(f"核槽 ID{node} 没有进入会话")
+            raise RuntimeError(f"kernel slot ID{node} did not enter the session")
     wrong_ids = [node for node in public_kernel if not kernel_rows[node].get("normalized")]
     chain, sentence_index = steps[-1]
     control_path = run_dir / "control.json"
     if control_path.is_file() and not _load(control_path).get("error"):
         control = _load(control_path)
     else:
-        print(f"第 {run + 1} 趟 对照提问 ID{public_target}（错槽 {','.join(wrong_ids) or '无'}）", flush=True)
+        print(f"run {run + 1} control question ID{public_target}(wrong slots {','.join(wrong_ids) or 'none'})", flush=True)
         job = _job(chain, sentence_index, messages, run, seed, max_tokens, SESSION_MODEL)
         result = score_one(client, model, 0.0, thinking, job)
         blank = {}
@@ -198,9 +198,9 @@ def run_trial(spec, sample, client, model, thinking, effort, run, seed, max_toke
         status = "residue" if not control_blank.get("normalized") else "clean"
         return {"run": run, "status": status, "wrong_ids": [], "control": control_blank}
     if control_only:
-        print(f"第 {run + 1} 趟 对照已记下，错槽 {','.join(wrong_ids)}，暂不分叉", flush=True)
+        print(f"run {run + 1} control recorded, wrong slots {','.join(wrong_ids)}, not forking yet", flush=True)
         return {"run": run, "status": "control", "wrong_ids": wrong_ids, "control": control_blank}
-    raise RuntimeError("本轮默认不分叉")
+    raise RuntimeError("this round does not fork by default")
 
 
 def collect(out: Path, runs: int) -> list[dict]:
@@ -229,14 +229,14 @@ def render(model, thinking, effort, runs, rows, target, kernel) -> str:
     clean = [row for row in rows if row["status"] == "clean"]
     failed = [row for row in rows if row["status"] == "failed"]
     lines = [
-        f"# 会话分叉：机器人学理论 {target}",
+        f"# Session fork: robotics theory {target}",
         "",
-        f"样本 theory/sample_01，走到公开编号 ID{public_target}。模型 {model}，思考 {thinking}，强度 {effort}。",
-        f"核槽 {list(kernel)}（会话 ID {[f'ID{n}' for n in public_kernel]}）。对照 session-model；暂不分叉。",
+        f"Sample theory/sample_01, through public id ID{public_target}. Model {model}, thinking {thinking}, effort {effort}.",
+        f"Kernel slots {list(kernel)} (session ids {[f'ID{n}' for n in public_kernel]}). Control is session-model; not forking yet.",
         "",
-        f"计划 {runs} 趟，完成 {len(rows)}：待分叉 {len(waiting)}，残留 {len(residue)}，干净 {len(clean)}，失败 {len(failed)}。",
+        f"Planned {runs} runs, completed {len(rows)}: waiting to fork {len(waiting)}, residue {len(residue)}, clean {len(clean)}, failed {len(failed)}.",
         "",
-        "| 槽 | 对照答错 |",
+        "| slot | control wrong |",
         "| --- | ---: |",
     ]
     finished = [row for row in rows if row["status"] != "failed"]
@@ -250,15 +250,15 @@ def render(model, thinking, effort, runs, rows, target, kernel) -> str:
     lines.append("")
     base = len(residue) + len(clean)
     if base:
-        lines.append(f"核槽全对时 ID{public_target} 仍错：{len(residue)}/{base} = {len(residue) / base:.0%}。")
+        lines.append(f"When all kernel slots are correct, ID{public_target} is still wrong: {len(residue)}/{base} = {len(residue) / base:.0%}.")
     else:
-        lines.append(f"核槽全对时 ID{public_target} 仍错：—（没有核槽全对的趟）。")
+        lines.append(f"When all kernel slots are correct, ID{public_target} is still wrong: —(no run has every kernel slot correct).")
     lines.append("")
-    lines.append(f"| 趟 | 状态 | 错的核槽 | 对照 ID{public_target} |")
+    lines.append(f"| run | status | wrong kernel slots | control ID{public_target} |")
     lines.append("| ---: | --- | --- | --- |")
-    labels = {"control": "待分叉", "residue": "残留", "clean": "干净", "failed": "失败"}
+    labels = {"control": "waiting to fork", "residue": "residue", "clean": "clean", "failed": "failed"}
     for row in rows:
-        wrong = "、".join(f"ID{item}" for item in row.get("wrong_ids") or []) or "—"
+        wrong = ", ".join(f"ID{item}" for item in row.get("wrong_ids") or []) or "—"
         pred = (row.get("control") or {}).get("prediction") or "—"
         lines.append(f"| {row['run'] + 1} | {labels.get(row['status'], row['status'])} | {wrong} | {pred} |")
     lines.append("")
@@ -282,15 +282,15 @@ def main() -> None:
     kernel = tuple(minimal_fixes(target)[0])
     expected = _EXPECTED.get(target)
     if expected is not None and kernel != expected:
-        raise RuntimeError(f"{target} 核应为 {expected}，得到 {kernel}")
+        raise RuntimeError(f"{target} kernel should be {expected}, got {kernel}")
     for node in kernel:
         if node not in questions():
             raise RuntimeError(node)
         _ = gold_scored()[node]
     out = args.out or (ROOT / "results" / f"fork_robotics_{target.lower()}" / "sample_01")
-    report = args.report or (ROOT / "analysis" / f"会话分叉_机器人学_{target}.md")
+    report = args.report or (ROOT / "doc" / f"session_fork_robotics_{target}.md")
     control_only = False if args.allow_fork else True
-    print(f"形状检查通过：机器人学 {target} 核 {kernel}", flush=True)
+    print(f"shape check passed: robotics {target} kernel {kernel}", flush=True)
     if args.check:
         return
     load_env_file(ROOT / ".env")
@@ -314,11 +314,11 @@ def main() -> None:
         saved = _load(meta_path)
         keys = ("sample", "model", "thinking", "effort", "kernel", "target")
         if {key: saved.get(key) for key in keys} != {key: meta[key] for key in keys}:
-            raise SystemExit("已有结果的条件与这次不一致")
+            raise SystemExit("saved results were run under different conditions")
     _save(meta_path, meta)
     print(
-        f"样本 theory 模型 {model} 思考 {args.thinking} 强度 {args.effort} "
-        f"核 {kernel} 趟数 {args.runs} {'只跑对照' if control_only else '对照后分叉'}",
+        f"sample theory model {model} thinking {args.thinking} effort {args.effort} "
+        f"kernel {kernel} runs {args.runs} {'control only' if control_only else 'fork after control'}",
         flush=True,
     )
     try:
@@ -328,7 +328,7 @@ def main() -> None:
                 run, 20261102 + run, max_tokens, out, control_only, target, kernel,
             )
     except RunStop as exc:
-        print(f"调用中断：{exc}", flush=True)
+        print(f"call interrupted: {exc}", flush=True)
     rows = collect(out, args.runs)
     text = render(args.model, args.thinking, args.effort, args.runs, rows, target, kernel)
     report.parent.mkdir(parents=True, exist_ok=True)

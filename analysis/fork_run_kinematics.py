@@ -55,14 +55,14 @@ def main() -> None:
     kernel = tuple(minimal_fixes(target)[0])
     expected = _EXPECTED.get(target)
     if expected is not None and kernel != expected:
-        raise RuntimeError(f"{target} 核应为 {expected}，得到 {kernel}")
+        raise RuntimeError(f"{target} kernel should be {expected}, got {kernel}")
     for node in kernel:
         _ = gold_scored()[node]
         _ = questions()[node]
     out = args.out or (ROOT / "results" / f"fork_kinematics_{target.lower()}" / "sample_01")
-    report = args.report or (ROOT / "analysis" / f"会话分叉_机器人学运动学_{target}.md")
+    report = args.report or (ROOT / "doc" / f"session_fork_kinematics_{target}.md")
     control_only = False if args.allow_fork else True
-    print(f"形状检查通过：运动学 {target} 核 {kernel}", flush=True)
+    print(f"shape check passed: kinematics {target} kernel {kernel}", flush=True)
     if args.check:
         return
     load_env_file(ROOT / ".env")
@@ -86,11 +86,11 @@ def main() -> None:
         saved = _load(meta_path)
         keys = ("sample", "model", "thinking", "effort", "kernel", "target")
         if {key: saved.get(key) for key in keys} != {key: meta[key] for key in keys}:
-            raise SystemExit("已有结果的条件与这次不一致")
+            raise SystemExit("saved results were run under different conditions")
     _save(meta_path, meta)
     print(
-        f"样本 kinematics 模型 {model} 思考 {args.thinking} 强度 {args.effort} "
-        f"核 {kernel} 趟数 {args.runs} {'只跑对照' if control_only else '对照后分叉'}",
+        f"sample kinematics model {model} thinking {args.thinking} effort {args.effort} "
+        f"kernel {kernel} runs {args.runs} {'control only' if control_only else 'fork after control'}",
         flush=True,
     )
     try:
@@ -100,10 +100,10 @@ def main() -> None:
                 run, 20261102 + run, max_tokens, out, control_only, target, kernel,
             )
     except RunStop as exc:
-        print(f"调用中断：{exc}", flush=True)
+        print(f"call interrupted: {exc}", flush=True)
     rows = collect(out, args.runs)
     text = render(args.model, args.thinking, args.effort, args.runs, rows, target, kernel)
-    text = text.replace("机器人学理论", "机器人学运动学").replace("theory/sample_01", "kinematics/sample_01")
+    text = text.replace("robotics theory", "robotics kinematics").replace("theory/sample_01", "kinematics/sample_01")
     report.parent.mkdir(parents=True, exist_ok=True)
     report.write_text(text, encoding="utf-8")
     (out / "report.md").write_text(text, encoding="utf-8")

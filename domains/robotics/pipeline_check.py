@@ -13,7 +13,7 @@ from domains.robotics.t_final import check_t_final
 
 
 def main() -> None:
-    raise SystemExit("机器人学理论稿已删除：这些题已由运动学 1–156 覆盖。请使用 python -m domains.robotics.kin_pipeline_check。")
+    raise SystemExit("The robotics theory manuscript has been removed: those items are covered by kinematics 1-156. Use python -m domains.robotics.kin_pipeline_check.")
     check_stage0()
     check_graph()
     check_answer_form()
@@ -22,7 +22,7 @@ def main() -> None:
     check_attribution()
     check_t_final()
     check_stage7()
-    print("机器人学理论首块阶段 0–7 全部通过。", flush=True)
+    print("Robotics theory block stages 0-7 all passed.", flush=True)
 
 
 if __name__ == "__main__":

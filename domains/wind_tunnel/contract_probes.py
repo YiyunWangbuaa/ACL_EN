@@ -16,7 +16,7 @@ import hashlib
 import re
 
 from cloze_score import normalize, sympy_equal
-from domains.wind_tunnel.dataset_generate import PRIOR, SLOT_MARK, _sentence_groups
+from domains.wind_tunnel.dataset_generate import PRIOR, SLOT_MARK, _period_index, _sentence_groups
 
 # These items are not primary rollback probes. A two-way sign collides with the
 # other definition, ID80 is an ordinary formula miss, and ID104 can be produced
@@ -31,10 +31,10 @@ PROBES = (
         "subtype": "matrix_sign",
         "context_depth": "target_local",
         "writes_back": False,
-        "case": "机构滚转",
+        "case": "mechanism roll",
         "group": "roll",
         "sample_id": "roll-rule",
-        "process": "天平系到体轴系",
+        "process": "balance frame to body-axis frame",
         "after": "87",
         "target": "88",
         "kind": "cells",
@@ -42,11 +42,11 @@ PROBES = (
         "repair_parent": ("85", "86"),
         "repair_other": ("87",),
         "question": (
-            "根据前文已经确定的滚转方向，写入该旋转矩阵时，"
-            "第2行第3列和第3行第2列的 sin 项应分别取什么符号？"
-            "按 (2,3)=正或负,(3,2)=正或负 回答。不要写出完整矩阵。"
+            "From the roll direction already fixed above, when this rotation matrix is written, "
+            "what sign should the sin term in row 2 column 3 and the sin term in row 3 column 2 take? "
+            "Answer as (2,3)=positive or negative, (3,2)=positive or negative. Do not write the full matrix."
         ),
-        "hidden_stem": "对应的旋转矩阵R_(γ_M-γ_tp)为",
+        "hidden_stem": "R_(γ_M-γ_tp) is",
     },
     {
         "probe_id": "beta_cells",
@@ -55,10 +55,10 @@ PROBES = (
         "subtype": "matrix_sign",
         "context_depth": "target_local",
         "writes_back": False,
-        "case": "左手系",
+        "case": "left-handed frame",
         "group": "body",
         "sample_id": "body-rule",
-        "process": "风轴系到体轴系",
+        "process": "wind frame to body-axis frame",
         "after": "33",
         "target": "34",
         "kind": "cells",
@@ -66,10 +66,11 @@ PROBES = (
         "repair_parent": ("32", "33"),
         "repair_other": ("31",),
         "question": (
-            "根据前文已经确定的中间体轴系和旋转方向，R_β_M 中第1行第3列和第3行第1列的 sin(β_M) 应分别取什么符号？"
-            "按 (1,3)=正或负,(3,1)=正或负 回答。不要写出完整矩阵。"
+            "From the intermediate body-axis frame and the rotation direction already fixed above, "
+            "what sign should sin(β_M) take in row 1 column 3 and in row 3 column 1 of R_β_M? "
+            "Answer as (1,3)=positive or negative, (3,1)=positive or negative. Do not write the full matrix."
         ),
-        "hidden_stem": "对应的旋转矩阵R_β_M为",
+        "hidden_stem": "R_β_M is",
     },
     {
         "probe_id": "gamma_cells",
@@ -78,10 +79,10 @@ PROBES = (
         "subtype": "matrix_sign",
         "context_depth": "target_local",
         "writes_back": False,
-        "case": "左手系",
+        "case": "left-handed frame",
         "group": "body",
         "sample_id": "body-rule",
-        "process": "风轴系到体轴系",
+        "process": "wind frame to body-axis frame",
         "after": "42",
         "target": "43",
         "kind": "cells",
@@ -89,10 +90,11 @@ PROBES = (
         "repair_parent": ("41", "42"),
         "repair_other": ("40",),
         "question": (
-            "根据前文已经确定的中间体轴系和旋转方向，R_γ_M 中第2行第3列和第3行第2列的 sin(γ_M) 应分别取什么符号？"
-            "按 (2,3)=正或负,(3,2)=正或负 回答。不要写出完整矩阵。"
+            "From the intermediate body-axis frame and the rotation direction already fixed above, "
+            "what sign should sin(γ_M) take in row 2 column 3 and in row 3 column 2 of R_γ_M? "
+            "Answer as (2,3)=positive or negative, (3,2)=positive or negative. Do not write the full matrix."
         ),
-        "hidden_stem": "对应的旋转矩阵R_γ_M为",
+        "hidden_stem": "R_γ_M is",
     },
     {
         "probe_id": "mcn_cz_sign",
@@ -101,10 +103,10 @@ PROBES = (
         "subtype": "moment_sign",
         "context_depth": "target_local",
         "writes_back": False,
-        "case": "力矩公式",
+        "case": "moment formula",
         "group": "body",
         "sample_id": "body-rule",
-        "process": "力矩参考点",
+        "process": "moment reference point",
         "after": "191",
         "target": "198",
         "kind": "sign",
@@ -112,10 +114,11 @@ PROBES = (
         "repair_parent": ("184",),
         "repair_other": ("190",),
         "question": (
-            "根据前文已经确定的体轴系和力臂，等效力矩系数 MCN_CZ 的整体符号应取正号还是负号？"
-            "只回答正或负。不要写出完整公式。"
+            "From the body-axis frame and the moment arm already fixed above, "
+            "should the whole sign of the equivalent moment coefficient MCN_CZ be positive or negative? "
+            "Answer only positive or negative. Do not write the full formula."
         ),
-        "hidden_stem": "等效力矩系数MCN_CZ的符号为",
+        "hidden_stem": "The sign of MCN_CZ is",
     },
     {
         "probe_id": "mcn_cz_place",
@@ -124,20 +127,21 @@ PROBES = (
         "subtype": "sign_placement",
         "context_depth": "target_local",
         "writes_back": False,
-        "case": "力矩公式",
+        "case": "moment formula",
         "group": "body",
         "sample_id": "body-rule",
-        "process": "力矩参考点",
+        "process": "moment reference point",
         "after": "188",
         "target": "198",
         "kind": "placement",
         "repair_parent": ("184",),
         "repair_other": ("185",),
         "question": (
-            "根据前文已经确定的力臂，若 MCN_CZ 需要负号，这个负号应写在整个式子最外侧，还是写进力臂内部？"
-            "只回答外侧或内部。不要写出完整公式。"
+            "From the moment arm already fixed above, if MCN_CZ needs a minus sign, "
+            "should that minus sign be written outside the whole expression, or inside the moment arm? "
+            "Answer only outside or inside. Do not write the full formula."
         ),
-        "hidden_stem": "力臂内部必须为正",
+        "hidden_stem": "the arm itself must be positive",
     },
 )
 
@@ -156,7 +160,7 @@ CONSEQUENCE = {
     "group": "body",
     "sample_id": "body-rule",
     "target": "58",
-    "role": "组合后果节点",
+    "role": "combined consequence node",
 }
 
 
@@ -177,16 +181,16 @@ def filled_prefix(chain: dict, through_id: str, memory: dict[str, str]) -> str:
     groups = _groups(chain)
     index = next((i for i, group in enumerate(groups) if through in group), None)
     if index is None:
-        raise KeyError(f"{chain['process']} 没有题号 {through}")
+        raise KeyError(f"{chain['process']} has no blank {through}")
     if groups[index][-1] != through:
         raise RuntimeError(
-            f"探针锚点 {through} 不是所在句的最后一个空，所在句是 {groups[index]}。"
-            "切在半句会把同句后续空留在前缀里。"
+            f"Probe anchor {through} is not the last blank of its sentence; the sentence is {groups[index]}. "
+            "Cutting mid-sentence would leave later blanks of that sentence in the prefix."
         )
     filled = [blank_id for group in groups[: index + 1] for blank_id in group]
     missing = [blank_id for blank_id in filled if blank_id not in memory]
     if missing:
-        raise KeyError(f"前缀缺少这些空的答案：{missing}")
+        raise KeyError(f"The prefix is missing answers for these blanks: {missing}")
     template = _prepared(chain)
     pieces: list[str] = []
     cursor = 0
@@ -194,25 +198,25 @@ def filled_prefix(chain: dict, through_id: str, memory: dict[str, str]) -> str:
         blank_id = match.group(1)
         pieces.append(template[cursor:match.start()])
         if blank_id not in set(filled):
-            raise RuntimeError(f"探针前缀碰到了锚点 {through} 之后的空 {blank_id}")
+            raise RuntimeError(f"The probe prefix reached blank {blank_id} after anchor {through}")
         pieces.append(memory[blank_id])
         cursor = match.end()
         if blank_id == through:
             tail = template[match.end():]
-            period = tail.find("。")
+            period = _period_index(tail)
             if period < 0:
-                raise RuntimeError(f"{chain['process']} 的 {through} 所在句没有句号。")
+                raise RuntimeError(f"The sentence of {through} in {chain['process']} has no period.")
             if SLOT_MARK.search(tail[:period]):
-                raise RuntimeError(f"{through} 的句子里还有未填的空。")
+                raise RuntimeError(f"The sentence of {through} still has an unfilled blank.")
             pieces.append(tail[: period + 1])
             return "".join(pieces).strip()
-    raise RuntimeError(f"没有在题面里截到 {through}")
+    raise RuntimeError(f"Did not cut {through} out of the problem text")
 
 
 def _question(probe: dict, condition: str, phrases: dict[str, str]) -> str:
     text = probe["question"]
     if "{" in text or "}" in text:
-        raise RuntimeError(f"{probe['probe_id']} 的题干不能填入流程答案。")
+        raise RuntimeError(f"The stem of {probe['probe_id']} cannot be filled with a process answer.")
     if phrases:
         return text
     return text
@@ -230,11 +234,11 @@ def build_target_prompt(chain: dict, probe: dict, memory: dict[str, str]) -> str
     groups = _groups(chain)
     index = next((i for i, group in enumerate(groups) if target in group), None)
     if index is None:
-        raise KeyError(f"{chain['process']} 没有目标题号 {target}")
+        raise KeyError(f"{chain['process']} has no target blank {target}")
     needed = [blank_id for group in groups[:index] for blank_id in group]
     missing = [blank_id for blank_id in needed if blank_id not in memory]
     if missing:
-        raise KeyError(f"{probe['probe_id']} 的目标分支缺少这些空的答案：{missing}")
+        raise KeyError(f"The target branch of {probe['probe_id']} is missing answers for these blanks: {missing}")
     prompt = _injection(
         chain["declaration"],
         chain["process"],
@@ -246,51 +250,51 @@ def build_target_prompt(chain: dict, probe: dict, memory: dict[str, str]) -> str
         template=chain.get("process_text"),
     )
     if f"{{ID:{target}," not in prompt:
-        raise RuntimeError(f"{probe['probe_id']} 的目标分支没有留下 ID{target} 的待填槽。")
-    if "【探针】" in prompt:
-        raise RuntimeError(f"{probe['probe_id']} 的目标分支混入了探针题。")
-    process = prompt.split("【过程】", 1)[-1].split("【输出】", 1)[0]
+        raise RuntimeError(f"The target branch of {probe['probe_id']} did not leave the open slot for ID{target}.")
+    if "[Probe]" in prompt:
+        raise RuntimeError(f"The target branch of {probe['probe_id']} mixed in a probe question.")
+    process = prompt.split("[Process]", 1)[-1].split("[Output]", 1)[0]
     if index + 1 < len(groups) and f"{{ID:{groups[index + 1][0]}," in process:
-        raise RuntimeError(f"{probe['probe_id']} 的目标分支没有在目标句结束。")
+        raise RuntimeError(f"The target branch of {probe['probe_id']} did not stop at the target sentence.")
     return prompt
 
 
 def build_prompt(chain: dict, probe: dict, condition: str, memory: dict[str, str], phrases: dict[str, str] | None = None) -> str:
     """One isolated probe call. The returned text is the whole model input."""
     if probe["target"] in EXCLUDED_TARGETS:
-        raise RuntimeError(f"ID{probe['target']} 不作为这组契约探针的目标。")
+        raise RuntimeError(f"ID{probe['target']} is not a target of this contract-probe set.")
     anchor = probe["after"]
     prefix = filled_prefix(chain, anchor, memory)
     question = _question(probe, condition, phrases or {})
     if question in prefix:
-        raise RuntimeError(f"{probe['probe_id']} 的探针题干写进了流程前缀。")
+        raise RuntimeError(f"The probe stem of {probe['probe_id']} was written into the process prefix.")
     hidden = probe.get("hidden_stem") or ""
     if hidden and hidden in prefix:
-        raise RuntimeError(f"{probe['probe_id']} 的前缀含有应隐藏的题干：{hidden}")
+        raise RuntimeError(f"The prefix of {probe['probe_id']} contains a stem that should stay hidden: {hidden}")
     prior = chain.get("prior") or PRIOR
     return "\n".join([
-        "这是一次旁路探针。只回答下面这一个问题。",
-        "不要填写过程中的空，不要继续后面的句子。",
-        "这个答案只作记录，不会写回原流程。",
-        '只输出一个 JSON 对象 {"probe":"答案"}。',
+        "This is a side probe. Answer only the question below.",
+        "Do not fill blanks in the process and do not continue into later sentences.",
+        "This answer is only a record and is not written back into the original flow.",
+        'Write only one JSON object {"probe":"answer"}.',
         "",
-        "【定义声明】",
+        "[Declaration]",
         chain["declaration"],
         "",
-        "【物理常识】",
+        "[Background]",
         prior,
         "",
-        "【子过程】",
+        "[Subprocess]",
         chain["process"],
         "",
-        "【过程】",
+        "[Process]",
         prefix,
         "",
-        "【探针】",
+        "[Probe]",
         question,
         "",
-        "【输出】",
-        '{"probe":"答案"}',
+        "[Output]",
+        '{"probe":"answer"}',
     ])
 
 
@@ -308,13 +312,13 @@ def _cell_sign(matrix_text: str, row: int, col: int) -> str:
     expr = sympy.simplify(parsed[row - 1, col - 1])
     sins = list(expr.atoms(sympy.sin))
     if len(sins) != 1:
-        raise RuntimeError(f"矩阵第{row}行第{col}列不是单个 sin 项：{expr}")
+        raise RuntimeError(f"Row {row} column {col} of the matrix is not a single sin term: {expr}")
     coeff = sympy.simplify(expr / sins[0])
     if coeff == 1:
-        return "正"
+        return "positive"
     if coeff == -1:
-        return "负"
-    raise RuntimeError(f"sin 项系数不是 ±1：{expr}")
+        return "negative"
+    raise RuntimeError(f"The coefficient of the sin term is not ±1: {expr}")
 
 
 def _parsed_expr(text: str):
@@ -329,15 +333,15 @@ def _parsed_expr(text: str):
 def _entry_sign(matrix_text: str, row: int, col: int) -> str:
     expr = _parsed_expr(matrix_text)[row - 1, col - 1]
     if expr == 1:
-        return "正"
+        return "positive"
     if expr == -1:
-        return "负"
-    raise RuntimeError(f"矩阵第{row}行第{col}列不是 ±1：{expr}")
+        return "negative"
+    raise RuntimeError(f"Row {row} column {col} of the matrix is not ±1: {expr}")
 
 
 def _leading_sign(text: str) -> str:
     expr = _parsed_expr(text)
-    return "负" if expr.could_extract_minus_sign() else "正"
+    return "negative" if expr.could_extract_minus_sign() else "positive"
 
 
 def contract_key(probe: dict, gold_text: str) -> dict:
@@ -353,10 +357,11 @@ def contract_key(probe: dict, gold_text: str) -> dict:
     if probe["kind"] == "leading":
         return {"text": gold_text, "label": _leading_sign(gold_text)}
     if probe["kind"] == "sign":
-        label = "负" if "负" in normalize(gold_text) else "正" if "正" in normalize(gold_text) else ""
+        folded = normalize(gold_text)
+        label = "negative" if "negative" in folded else "positive" if "positive" in folded else ""
         return {"text": gold_text, "label": label}
     if probe["kind"] == "placement":
-        return {"text": "外侧", "label": "外侧"}
+        return {"text": "outside", "label": "outside"}
     if probe["kind"] == "expression":
         return {"text": gold_text}
     raise KeyError(probe["kind"])
@@ -365,7 +370,7 @@ def contract_key(probe: dict, gold_text: str) -> dict:
 def recognition_text(probe: dict, phrase_for) -> str:
     """Text the probe is judged against. Cell probes use the target matrix."""
     if probe["kind"] == "placement":
-        return "外侧"
+        return "outside"
     if probe["kind"] in {"sign", "direction"}:
         return phrase_for(probe["source_id"])
     return phrase_for(probe["target"])
@@ -373,10 +378,10 @@ def recognition_text(probe: dict, phrase_for) -> str:
 
 def _direction_label(text: str) -> str:
     raw = normalize(text)
-    if any(token in raw for token in ("逆", "反向", "负向")):
-        return "反向"
-    if any(token in raw for token in ("正向", "顺")) or raw in {"正", "+"}:
-        return "正向"
+    if any(token in raw for token in ("reverse", "negative", "opposite")):
+        return "reverse"
+    if "positive" in raw or raw in {"+", "positive"}:
+        return "positive"
     return ""
 
 
@@ -392,30 +397,30 @@ def parse_probe(probe: dict, response: str) -> dict:
         signs = {}
         for row, col in probe["cells"]:
             found = re.search(
-                rf"(?:\({row}\s*,\s*{col}\)|第{row}行第{col}列|{row}\s*行\s*{col}\s*列)"
-                r"\s*[=:：]?\s*(正号|负号|正向|反向|正|负|\+|−|-)",
+                rf"(?:\({row}\s*,\s*{col}\)|row {row} column {col})"
+                r"\s*[=:]?\s*(negative|positive|\+|−|-)",
                 body,
             )
             if not found:
                 signs[f"{row},{col}"] = ""
                 continue
             token = found.group(1)
-            signs[f"{row},{col}"] = "负" if token in {"负", "负号", "-", "−", "反向"} else "正"
+            signs[f"{row},{col}"] = "negative" if token in {"negative", "-", "−", "reverse"} else "positive"
         if not any(signs.values()):
-            parts = re.findall(r"负号|正号|负|正", body)
+            parts = re.findall(r"negative|positive", body)
             if len(parts) == len(probe["cells"]):
                 for (row, col), token in zip(probe["cells"], parts):
-                    signs[f"{row},{col}"] = "负" if "负" in token else "正"
+                    signs[f"{row},{col}"] = "negative" if "negative" in token else "positive"
         return {"text": body, "signs": signs, "parsed": all(signs.values())}
     if probe["kind"] in {"sign", "entry", "leading"}:
-        negative = "负" in body
-        positive = "正" in body
-        label = "负" if negative and not positive else "正" if positive and not negative else ""
+        negative = "negative" in body
+        positive = "positive" in body
+        label = "negative" if negative and not positive else "positive" if positive and not negative else ""
         return {"text": body, "label": label, "parsed": bool(label)}
     if probe["kind"] == "placement":
-        outside = "外侧" in body
-        inside = "内部" in body
-        label = "外侧" if outside and not inside else "内部" if inside and not outside else ""
+        outside = "outside" in body
+        inside = "inside" in body
+        label = "outside" if outside and not inside else "inside" if inside and not outside else ""
         return {"text": body, "label": label, "parsed": bool(label)}
     return {"text": body, "parsed": bool(body)}
 
@@ -452,28 +457,28 @@ def classify(facts: dict) -> list[str]:
     target_gold = facts["target_gold_run"]
     deep_b_standard = facts["deep_b_standard"]
     if deep_b and target_b in {"contract", "both"}:
-        labels.append("契约识别能够转化为契约一致执行")
+        labels.append("contract recognition transfers to contract-consistent execution")
     if deep_b and target_b == "standard":
-        labels.append("契约识别与执行不一致")
+        labels.append("contract recognition and execution disagree")
     if deep_b_standard and target_b == "standard":
-        labels.append("探针表现为标准定义一致，尚不能区分契约丢失、模板和普通错误")
+        labels.append("the probe matches the standard definition and cannot yet separate a lost contract, a template, and an ordinary error")
     if deep_b and target_b == "neither":
-        labels.append("能识别契约，但执行计算失败")
+        labels.append("the contract is recognized, but the execution fails")
     if (
         deep_b
         and deep_gold
         and target_b not in {"contract", "both"}
         and target_gold not in {"contract", "both"}
     ):
-        labels.append("错误更可能位于执行或公式组合，而不是契约识别")
+        labels.append("the error is more likely in execution or formula assembly than in contract recognition")
     if facts["deep_b_parsed"] and not deep_b and not deep_b_standard:
-        labels.append("探针答案既不是契约也不是标准")
+        labels.append("the probe answer is neither the contract nor the standard")
     if not facts["parents_correct"] and target_b not in {"contract", "both"}:
-        labels.append("直接父节点存在错误，执行结果不能单独解释")
-    return labels or ["未落入既定解释"]
+        labels.append("a direct parent is wrong, so the execution result cannot be explained alone")
+    return labels or ["does not fall under a stated explanation"]
 
 
-_LEAKS = ("左手", "右手", "重新推导", "重新写出", "被定义为反", "{", "}")
+_LEAKS = ("left-hand", "right-hand", "re-derive", "write it again", "defined as opposite", "{", "}")
 
 
 def _chains() -> tuple[dict[str, dict], dict[str, dict]]:
@@ -525,20 +530,20 @@ def check_probes() -> None:
             question = _question(probe, condition, {})
             for leak in _LEAKS:
                 if leak in question:
-                    raise RuntimeError(f"{probe['probe_id']} 的题干含有 {leak}")
-            if "不要写出完整" not in question:
-                raise RuntimeError(f"{probe['probe_id']} 没有禁止写出完整目标")
+                    raise RuntimeError(f"The stem of {probe['probe_id']} contains {leak}")
+            if "Do not write the full" not in question:
+                raise RuntimeError(f"{probe['probe_id']} does not forbid writing the full target")
             prompt = build_prompt(chain, probe, condition, memory, {})
             target_prompt = build_target_prompt(chain, probe, memory)
             if f"{{ID:{probe['target']}," not in target_prompt:
-                raise RuntimeError(f"{probe['probe_id']} 的目标分支没有待填的目标空")
-            if "不会写回原流程" not in prompt:
-                raise RuntimeError(f"{probe['probe_id']} 没有声明答案不写回")
-            if prompt.index("【探针】") < prompt.index("【过程】"):
-                raise RuntimeError(f"{probe['probe_id']} 的探针不在过程之后")
-            prefix = prompt.split("【探针】", 1)[0]
+                raise RuntimeError(f"The target branch of {probe['probe_id']} has no open target blank")
+            if "is not written back into the original flow" not in prompt:
+                raise RuntimeError(f"{probe['probe_id']} does not say the answer is not written back")
+            if prompt.index("[Probe]") < prompt.index("[Process]"):
+                raise RuntimeError(f"The probe of {probe['probe_id']} does not come after the process")
+            prefix = prompt.split("[Probe]", 1)[0]
             if f"@@{probe['target']}@@" in prefix:
-                raise RuntimeError(f"{probe['probe_id']} 的前缀留着目标槽")
+                raise RuntimeError(f"The prefix of {probe['probe_id']} still has the target slot")
         contract = contract_key(probe, recognition_text(probe, lambda blank_id: memory[blank_id]))
         standard_memory = _gold_memory(standard_chains[probe["process"]])
         standard = contract_key(
@@ -546,9 +551,9 @@ def check_probes() -> None:
             recognition_text(probe, lambda blank_id, bank=standard_memory: bank[blank_id]),
         )
         if probe["kind"] in {"cells", "sign", "entry", "leading"} and contract == standard:
-            raise RuntimeError(f"{probe['probe_id']} 的契约和标准定义没有可区分的局部答案")
-        if probe["kind"] == "placement" and contract.get("label") != "外侧":
-            raise RuntimeError(f"{probe['probe_id']} 的位置规则不是外侧")
+            raise RuntimeError(f"The contract and the standard definition of {probe['probe_id']} have no distinguishable local answer")
+        if probe["kind"] == "placement" and contract.get("label") != "outside":
+            raise RuntimeError(f"The placement rule of {probe['probe_id']} is not outside")
         deep_ids = []
         for group in _groups(chain):
             deep_ids.extend(group)
@@ -556,11 +561,11 @@ def check_probes() -> None:
                 break
         for parent in probe["repair_parent"] + probe["repair_other"]:
             if parent not in deep_ids:
-                raise RuntimeError(f"{probe['probe_id']} 的修复点 ID{parent} 不在探针前缀里")
+                raise RuntimeError(f"Repair point ID{parent} of {probe['probe_id']} is not in the probe prefix")
         if probe["kind"] == "sign" and probe["source_id"] in deep_ids:
-            raise RuntimeError(f"{probe['probe_id']} 的探针前缀已经包含要测量的符号空")
+            raise RuntimeError(f"The probe prefix of {probe['probe_id']} already contains the sign blank being measured")
         if probe["target"] not in blanks or probe["target"] not in standard_blanks:
-            raise RuntimeError(f"{probe['probe_id']} 缺少目标空")
+            raise RuntimeError(f"{probe['probe_id']} is missing the target blank")
     labels = " ".join(classify({
         "deep_b_hit": True,
         "deep_gold_hit": True,
@@ -570,8 +575,8 @@ def check_probes() -> None:
         "target_gold_run": "contract",
         "parents_correct": True,
     }))
-    if "契约识别与执行不一致" not in labels or "回退" in labels:
-        raise RuntimeError(f"探针解释标签不对：{labels}")
+    if "contract recognition and execution disagree" not in labels or "rollback" in labels:
+        raise RuntimeError(f"Unexpected probe explanation labels: {labels}")
     print(f"probe check ok: {len(PROBES)} side probes")
 
 

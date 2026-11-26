@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Vision scene view of the shared wind-tunnel diagnosis口径."""
+"""Vision scene view of the shared diagnosis criteria."""
 from __future__ import annotations
 
 from domains.computer_vision.scene_answer_form import answers_equal
@@ -16,13 +16,13 @@ def _question(node: str) -> dict:
 
 def _equal(left: str, right: str, node: str) -> bool:
     row = questions()[node]
-    fmt = row["format"] if not row["options"] else "表达式"
+    fmt = row["format"] if not row["options"] else "expression"
     return answers_equal(left, right, fmt)
 
 
 def view() -> DomainView:
     return DomainView(
-        name="机器视觉",
+        name="computer vision",
         node_ids=tuple(NODE_IDS),
         parents=input_ids,
         gold=gold_texts,

@@ -29,7 +29,7 @@ from domains.robotics.kin_contract_verifiers import (
 OUT = Path(DOMAINS["robotics"]["kinematics"]["review"])
 SOURCE = OUT / "sample_01.md"
 SLOT = re.compile(
-    r"\{ID:(\d+), 选项:(.*?), 输出格式:(.*?), 标签:(.*?), 答案:(.*?)\}",
+    r"\{ID:(\d+), options:(.*?), format:(.*?), label:(.*?), answer:(.*?)\}",
     re.S,
 )
 Q1, Q2, Q3 = sp.symbols("q1 q2 q3")
@@ -38,28 +38,51 @@ S = sp.Matrix([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
 EXAMPLE = {Q1: 0, Q2: sp.rad(30), Q3: sp.rad(-60)}
 JOINT = {"q1": "F12", "q2": "F17", "q3": "F22"}
 BULLET = {
-    "q1": "绕法向轴时，正方向与绕上方的右手定则相同。",
-    "q2": "绕侧向轴时，正方向与绕右侧的右手定则相同。",
-    "q3": "绕轴向轴时，正方向与绕前方的右手定则相同。",
+    "q1": "- About the normal axis, the positive sense agrees with the right-hand rule about up.",
+    "q2": "- About the lateral axis, the positive sense agrees with the right-hand rule about right.",
+    "q3": "- About the axial axis, the positive sense agrees with the right-hand rule about forward.",
+}
+BULLET_OPPOSITE = {
+    "q1": "- About the normal axis, the positive sense is opposite the right-hand rule about up.",
+    "q2": "- About the lateral axis, the positive sense is opposite the right-hand rule about right.",
+    "q3": "- About the axial axis, the positive sense is opposite the right-hand rule about forward.",
 }
 VARIANTS = (
-    ("02", "q1 正方向相反", ("q1",)),
-    ("03", "q2 正方向相反", ("q2",)),
-    ("04", "q1 与 q2 正方向相反", ("q1", "q2")),
-    ("05", "三个关节正方向相反", ("q1", "q2", "q3")),
+    ("02", "q1 sense reversed", ("q1",)),
+    ("03", "q2 sense reversed", ("q2",)),
+    ("04", "q1 and q2 sense reversed", ("q1", "q2")),
+    ("05", "all three joint senses reversed", ("q1", "q2", "q3")),
 )
+_ROLL_DEFAULT = (
+    "In this example the tool-roll task angle may be written "
+    "arcsin(1/2) or atan2(1, sqrt(3)) or as an equivalent inverse trigonometric form."
+)
+
+
+def _roll_clause(angle: str) -> str | None:
+    if angle.startswith("-arcsin(1/2)"):
+        form = "-arcsin(1/2)"
+    elif angle.startswith("atan2(1/2"):
+        form = "atan2(1/2"
+    else:
+        return None
+    return (
+        "In this example the tool-roll task angle may be written "
+        + form
+        + " or as an equivalent inverse trigonometric form."
+    )
 
 
 def _cascade(flips: tuple[str, ...]) -> dict[str, str]:
     texts = dict(gold_texts())
-    texts.update({JOINT[name]: "相反" for name in flips})
+    texts.update({JOINT[name]: "opposite" for name in flips})
     pending = set(DERIVED_NODES)
     guard = 0
     while pending and guard < 400:
         guard += 1
         ready = [node for node in list(pending) if all(parent not in pending for parent in input_ids(node))]
         if not ready:
-            raise RuntimeError("派生节点没有可计算的顺序")
+            raise RuntimeError("derived nodes have no computable order")
         for node in ready:
             got = derive(None, node, texts)
             if not got.ok:
@@ -109,7 +132,7 @@ def _split_top(text: str) -> tuple[str, str]:
             depth -= 1
         elif char == "," and depth == 0:
             return text[:index], text[index + 1:]
-    raise RuntimeError(f"公式缺少逗号：{text}")
+    raise RuntimeError(f"formula is missing a comma: {text}")
 
 
 def _same(left: sp.Matrix, right: sp.Matrix) -> bool:
@@ -143,10 +166,10 @@ def _check_formula(r1: sp.Matrix, r2: sp.Matrix, r3: sp.Matrix, formula: str) ->
                 pose = sp.simplify((r1 * r2 * r3).subs({Q1: sp.rad(a), Q2: sp.rad(b), Q3: sp.rad(c)}))
                 got = _extract_degrees(formula, pose)
                 if max(abs(got[0] - a), abs(got[1] - b), abs(got[2] - c)) > 1e-6:
-                    raise RuntimeError(f"提取公式在 ({a}, {b}, {c}) 得到 {got}")
+                    raise RuntimeError(f"extraction at ({a}, {b}, {c}) gave {got}")
     example = _extract_degrees(formula, sp.simplify((r1 * r2 * r3).subs(EXAMPLE)))
     if max(abs(example[0]), abs(example[1] - 30), abs(example[2] + 60)) > 1e-6:
-        raise RuntimeError(f"例题关节角提取为 {example}")
+        raise RuntimeError(f"example joint angles extracted as {example}")
 
 
 def _task_angles(pose: sp.Matrix) -> tuple[sp.Expr, sp.Expr, sp.Expr]:
@@ -211,7 +234,7 @@ def _show_scalar(expr: sp.Expr) -> str:
     if text == "0":
         return "0"
     if "L" not in text:
-        raise RuntimeError(f"位置表达式里没有长度：{text}")
+        raise RuntimeError(f"position expression has no length: {text}")
     return text.replace("L", "(L + L_mount)")
 
 
@@ -246,45 +269,50 @@ def _pair(flips: tuple[str, ...]) -> str:
             second[index] *= -1
     for triple in (first, second):
         if not (-60 <= triple[0] <= 60 and -90 <= triple[1] <= 90 and -90 <= triple[2] <= 90):
-            raise RuntimeError(f"奇异配对超出声明范围：{triple}")
+            raise RuntimeError(f"singular pair is outside the declared range: {triple}")
 
     def fmt(number: int) -> str:
         return f"{number}°"
 
     return (
-        f"q=({fmt(first[0])}, {fmt(first[1])}, {fmt(first[2])}) 和 "
+        f"q=({fmt(first[0])}, {fmt(first[1])}, {fmt(first[2])}) and "
         f"q=({fmt(second[0])}, {fmt(second[1])}, {fmt(second[2])})"
     )
 
 
 def _inverse_sentence(flips: tuple[str, ...]) -> str:
-    names = {"q1": "q1", "q2": "q2", "q3": "q3"}
-    opposite = [names[name] for name in ("q1", "q2", "q3") if name in flips]
-    same = [names[name] for name in ("q1", "q2", "q3") if name not in flips]
-    if not same:
-        return "正方向都与绕所对应绝对正方向的右手定则相反。"
-    return (
-        f"{'、'.join(opposite)} 的正方向与绕所对应绝对正方向的右手定则相反，"
-        f"{'、'.join(same)} 相同。"
-    )
+    if flips == ("q1",):
+        return (
+            "The positive sense of q1 is opposite the right-hand rule about its absolute direction, "
+            "and q2 and q3 agree with it."
+        )
+    if flips == ("q2",) or flips == ("q1", "q2"):
+        return (
+            "The positive sense of q2 is opposite the right-hand rule about its absolute direction, "
+            "and q1 and q3 agree with it."
+        )
+    if flips == ("q3",):
+        return (
+            "The positive sense of q3 is opposite the right-hand rule about its absolute direction, "
+            "and q1 and q2 agree with it."
+        )
+    return "Every positive sense agrees with the right-hand rule about the corresponding absolute direction."
 
 
 def _replace_once(text: str, old: str, new: str) -> str:
     count = text.count(old)
     if count != 1:
-        raise RuntimeError(f"文句出现 {count} 次：{old}")
+        raise RuntimeError(f"phrase appears {count} times: {old}")
     return text.replace(old, new, 1)
 
 
 def _options(raw: str) -> list[str]:
-    if raw.strip() == "无":
+    if raw.strip() == "none":
         return []
     found = []
-    for part in raw.split("；"):
+    for part in raw.split(";"):
         part = part.strip()
-        if "：" in part:
-            found.append(part.split("：", 1)[1].strip())
-        elif ":" in part:
+        if ":" in part:
             found.append(part.split(":", 1)[1].strip())
     return found
 
@@ -300,14 +328,14 @@ def _apply_slots(section: str, prefix: str, updates: dict[str, str]) -> str:
         if options:
             if answer not in options:
                 letter = chr(ord("A") + len(options))
-                raw_options = f"{raw_options}；{letter}：{answer}"
+                raw_options = f"{raw_options}; {letter}: {answer}"
             else:
                 letter = chr(ord("A") + options.index(answer))
             stored = letter
         else:
             stored = answer
         return (
-            "{ID:%s, 选项:%s, 输出格式:%s, 标签:%s, 答案:%s}"
+            "{ID:%s, options:%s, format:%s, label:%s, answer:%s}"
             % (match.group(1), raw_options, match.group(3), match.group(4), stored)
         )
 
@@ -323,10 +351,16 @@ def _positive(value: sp.Expr) -> bool:
 
 def _direction(alpha: sp.Expr, beta: sp.Expr) -> tuple[str, str, str]:
     if alpha == 0 or beta == 0:
-        raise RuntimeError("例题任务角有一个为 0，指向句需要另写")
-    vertical = "下方" if _positive(alpha) else "上方"
-    lateral = "右侧" if _positive(beta) else "左侧"
-    return vertical, lateral, f"{vertical}且{lateral}"
+        raise RuntimeError("an example task angle is 0, so the direction sentence needs another wording")
+    vertical = "downward" if _positive(alpha) else "upward"
+    lateral = "right" if _positive(beta) else "left"
+    pointed = {
+        ("downward", "right"): "down and right",
+        ("downward", "left"): "down and left",
+        ("upward", "right"): "up and right",
+        ("upward", "left"): "up and left",
+    }[(vertical, lateral)]
+    return vertical, lateral, pointed
 
 
 def build_text(sample_id: str, title: str, flips: tuple[str, ...]) -> str:
@@ -335,24 +369,24 @@ def build_text(sample_id: str, title: str, flips: tuple[str, ...]) -> str:
     r1, r2, r3 = _rotations(texts)
     pose = _pose(r1, r2, r3)
     if not _same(pose, sp.simplify(_matrix(texts["F45"]))):
-        raise RuntimeError(f"{sample_id} 的姿态矩阵和关节矩阵乘积不一致")
+        raise RuntimeError(f"{sample_id} attitude matrix does not match the joint-matrix product")
     s31, s21, s23 = _signs(flips)
     formula = _formula(s31, s21, s23)
     _check_formula(r1, r2, r3, formula)
     alpha, beta, gamma = _task_angles(pose)
     rebuilt = _rebuild(alpha, beta, gamma)
     if not _same(rebuilt, pose):
-        raise RuntimeError(f"{sample_id} 的任务角不能还原姿态矩阵")
+        raise RuntimeError(f"{sample_id} task angles do not recover the attitude matrix")
     angles = ", ".join(_angle_text(item) for item in (alpha, beta, gamma))
     q2_degree = -30 if "q2" in flips else 30
     roll_degree = 150 if "q3" in flips else 30
-    phrase = f"绕 Z 的 {q2_degree}° 乘绕 X 的 {roll_degree}°"
+    phrase = f"{q2_degree}° about Z times {roll_degree}° about X"
     if not _same(_standard_rotation("Z", q2_degree) * _standard_rotation("X", roll_degree), pose):
-        raise RuntimeError(f"{sample_id} 的姿态口诀和矩阵不一致")
+        raise RuntimeError(f"{sample_id} attitude phrase does not match the matrix")
     combined = -150 if "q3" in flips else 30
     target = sp.simplify(r3.subs({Q3: sp.rad(-60)}) * S)
     if not _same(sp.simplify(r3.subs({Q3: sp.rad(combined)})), target):
-        raise RuntimeError(f"{sample_id} 的合成转角不是 {combined}°")
+        raise RuntimeError(f"{sample_id} combined angle is not {combined}°")
     pair = _pair(flips)
     numbers = [int(item[:-1]) for item in re.findall(r"-?\d+°", pair)]
     first_pose = (r1 * r2 * r3).subs({
@@ -362,17 +396,17 @@ def build_text(sample_id: str, title: str, flips: tuple[str, ...]) -> str:
         Q1: sp.rad(numbers[3]), Q2: sp.rad(numbers[4]), Q3: sp.rad(numbers[5]),
     })
     if not _same(sp.simplify(first_pose), sp.simplify(other)):
-        raise RuntimeError(f"{sample_id} 的两组边界关节角不是同一姿态")
+        raise RuntimeError(f"{sample_id} boundary joint triples are not the same attitude")
     vertical, lateral, pointed = _direction(alpha, beta)
     positions = _positions(r1, r2)
     updates = {node: texts[node] for node in texts if texts[node] != gold[node]}
     updates["F39"] = f"{combined}°"
     updates["F40"] = phrase
     updates["F65"] = angles
-    updates["F64"] = "正" if _positive(gamma) else "负"
+    updates["F64"] = "positive" if _positive(gamma) else "negative"
     updates["F53"] = pointed
-    updates["F59"] = "正" if vertical == "下方" else "负"
-    updates["F60"] = "正" if lateral == "右侧" else "负"
+    updates["F59"] = "positive" if vertical == "downward" else "negative"
+    updates["F60"] = "positive" if lateral == "right" else "negative"
     updates.update(positions)
     updates["I7"] = texts["F48"]
     updates["I9"] = texts["F45"]
@@ -381,79 +415,84 @@ def build_text(sample_id: str, title: str, flips: tuple[str, ...]) -> str:
     updates = {node: answer for node, answer in updates.items() if answer != gold[node]}
 
     text = SOURCE.read_text(encoding="utf-8")
-    text = _replace_once(text, "# 数据 01 球腕正装", f"# 数据 {sample_id} {title}")
+    text = _replace_once(text, "# Data 01 upright wrist", f"# Data {sample_id} {title}")
     text = _replace_once(
         text,
-        "关节角的正方向绑定在所绕的绝对方向轴上，按该绝对正方向的右手定则，不随坐标轴反向而翻转。",
-        "关节角的正方向绑定在所绕的绝对方向轴上，与该绝对正方向的右手定则相同或相反以可变定义为准，不随坐标轴反向而翻转。",
+        "The positive sense of a joint angle follows the right-hand rule about that absolute direction, and it does not flip when a coordinate axis is reversed.",
+        "The positive sense of a joint angle agrees or disagrees with the right-hand rule about that absolute direction according to the variable definition, and it does not flip when a coordinate axis is reversed.",
     )
     text = _replace_once(
         text,
-        "这是可变定义。正方向一律按所绕绝对方向轴的右手定则，不按坐标轴 X、Y、Z 的指向另行规定。",
-        "这是可变定义。正方向以下列三项为准，不按坐标轴 X、Y、Z 的指向另行规定。",
+        "This is a variable definition. The positive sense follows the right-hand rule about the absolute axis being turned, not a separate rule based on axes X, Y, and Z.",
+        "This is a variable definition. The positive sense is the three items below, not a separate rule based on axes X, Y, and Z.",
     )
     for name in flips:
-        text = _replace_once(text, BULLET[name], BULLET[name].replace("相同", "相反"))
+        text = _replace_once(text, BULLET[name], BULLET_OPPOSITE[name])
     text = _replace_once(
         text,
-        "关节角的正方向按所绕绝对方向轴的右手定则，不随坐标轴反向而翻转。",
-        "关节角的正方向以关节转角正方向的定义为准，不随坐标轴反向而翻转。",
+        "The positive sense of a joint angle follows the right-hand rule about the absolute axis it turns about, and it does not flip when a coordinate axis is reversed.",
+        "The positive sense of a joint angle follows the declared joint-angle sign, and it does not flip when a coordinate axis is reversed.",
     )
     text = _replace_once(
         text,
-        "正方向都与绕所对应绝对正方向的右手定则相同。",
+        "Every positive sense agrees with the right-hand rule about the corresponding absolute direction.",
         _inverse_sentence(flips),
     )
     text = _replace_once(
         text,
-        "q=(0°, 90°, 0°) 和 q=(30°, 90°, -30°)",
-        pair,
+        "Both joint triples are inside the declared range: q=(0°, 90°, 0°) and q=(30°, 90°, -30°).",
+        "Both joint triples are inside the declared range: " + pair + ".",
     )
-    if vertical != "下方":
-        text = _replace_once(text, "59.本例任务方向指向工具下方，", f"59.本例任务方向指向工具{vertical}，")
-    if lateral != "右侧":
-        text = _replace_once(text, "60.本例任务方向指向工具右侧，", f"60.本例任务方向指向工具{lateral}，")
-    if angles.split(", ")[2] != "arcsin(1/2)":
+    if vertical != "downward":
         text = _replace_once(
             text,
-            "本例工具滚转任务角写成 arcsin(1/2) 或 atan2(1, sqrt(3)) 都对。",
-            f"本例工具滚转任务角写成 {angles.split(', ')[2]} 或与之等价的反三角写法都对。",
+            "59. In this example the task direction points tool-down,",
+            "59. In this example the task direction points tool-up,",
         )
+    if lateral != "right":
+        text = _replace_once(
+            text,
+            "60. In this example the task direction points tool-right,",
+            "60. In this example the task direction points tool-left,",
+        )
+    clause = _roll_clause(angles.split(", ")[2])
+    if clause is not None:
+        text = _replace_once(text, _ROLL_DEFAULT, clause)
     text = _replace_once(
         text,
-        "默认顺序下的提取式是 atan2(-h31, h11); atan2(h21, sqrt(h11^2 + h31^2)); atan2(-h23, h22)。",
-        f"本样本的提取式是 {formula}。",
+        "Under the default order the extraction is atan2(-h31, h11); atan2(h21, sqrt(h11^2 + h31^2)); atan2(-h23, h22).",
+        f"The extraction for this sample is {formula}.",
     )
-    forward, inverse = text.split("# 逆运动学样本", 1)
-    inverse, tail = inverse.split("# 层间对应", 1)
+    forward, inverse = text.split("# Inverse kinematics", 1)
+    inverse, tail = inverse.split("# Cross-layer correspondence", 1)
     forward = _apply_slots(forward, "F", updates)
     inverse = _apply_slots(inverse, "I", updates)
-    return forward + "# 逆运动学样本" + inverse + "# 层间对应" + tail
+    return forward + "# Inverse kinematics" + inverse + "# Cross-layer correspondence" + tail
 
 
 def _check_written(path: Path, flips: tuple[str, ...]) -> None:
     text = path.read_text(encoding="utf-8")
-    forward, inverse = text.split("# 逆运动学样本", 1)
-    inverse = inverse.split("# 层间对应", 1)[0]
+    forward, inverse = text.split("# Inverse kinematics", 1)
+    inverse = inverse.split("# Cross-layer correspondence", 1)[0]
     for prefix, section, last in (("F", forward, 140), ("I", inverse, 16)):
         found = [int(match.group(1)) for match in SLOT.finditer(section)]
         if found != list(range(1, last + 1)):
-            raise RuntimeError(f"{path.name} {prefix} 编号不是 1–{last}")
+            raise RuntimeError(f"{path.name} {prefix} ids are not 1-{last}")
     for name, node in JOINT.items():
         number = node[1:]
-        match = re.search(rf"\{{ID:{number}, 选项:(.*?), 输出格式:无, 标签:C1, 答案:(.)\}}", forward)
+        match = re.search(rf"\{{ID:{number}, options:(.*?), format:choice, label:C1, answer:(.)\}}", forward)
         if match is None:
-            raise RuntimeError(f"{path.name} 缺少 {node}")
+            raise RuntimeError(f"{path.name} missing {node}")
         options = _options(match.group(1))
         letter = match.group(2)
-        expected = "相反" if name in flips else "相同"
+        expected = "opposite" if name in flips else "same"
         if options[ord(letter) - ord("A")] != expected:
-            raise RuntimeError(f"{path.name} {node} 不是{expected}")
+            raise RuntimeError(f"{path.name} {node} is not {expected}")
 
 
 def main() -> None:
     if not SOURCE.is_file():
-        raise RuntimeError(f"缺少 {SOURCE}")
+        raise RuntimeError(f"missing {SOURCE}")
     # The unflipped matrices must reproduce the published expressions and angles.
     base = _cascade(())
     r1, r2, r3 = _rotations(base)
@@ -461,9 +500,9 @@ def main() -> None:
     alpha, beta, gamma = _task_angles(pose)
     published = ", ".join(_angle_text(item) for item in (alpha, beta, gamma))
     if published != gold_texts()["F65"]:
-        raise RuntimeError(f"统一默认的任务角写成了 {published}")
+        raise RuntimeError(f"default task angles were written as {published}")
     if _positions(r1, r2) != {node: gold_texts()[node] for node in ("F118", "F119", "F124", "F125")}:
-        raise RuntimeError("统一默认的位置表达式没有还原")
+        raise RuntimeError("default position expressions were not recovered")
     _check_formula(r1, r2, r3, _formula(-1, 1, -1))
     for sample_id, title, flips in VARIANTS:
         text = build_text(sample_id, title, flips)

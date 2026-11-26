@@ -12,7 +12,7 @@ from domains.wind_tunnel.error_workflow import ANCHOR_AXIS, PHI, PROCESS_SLUG, C
 from domains.wind_tunnel.fault_layers import JOINT_GROUPS, LEVELS, audit_layers, closure, level_of, major
 
 VALIDATOR_VERSION = "v1"
-COLUMNS = ("主因L0", "主因L1", "主因L2", "主因L3", "多故障", "当前层条件失败", "未解决")
+COLUMNS = ("primary L0", "primary L1", "primary L2", "primary L3", "multiple faults", "current-layer condition failed", "unresolved")
 
 
 def _bare(node_id: str) -> str:
@@ -31,7 +31,7 @@ def _same(left: str, right: str) -> bool:
 
 def _label(node_id: str) -> str:
     label, _subtype = TARGETS.get(_bare(node_id), ("", ""))
-    return label or "未标注"
+    return label or "unlabeled"
 
 
 def _stamp(observations: list[Observation]) -> None:
@@ -95,8 +95,8 @@ def _minimal(model, node_id: str, parents: tuple[str, ...], observed: dict[str, 
 
 def _status(item: Observation | None) -> str:
     if item is None:
-        return "未配对"
-    return "对" if item.correct else "错"
+        return "unpaired"
+    return "right" if item.correct else "wrong"
 
 
 def _pair(case: Case, own: dict[str, Observation], other: dict[str, Observation] | None) -> None:
@@ -475,12 +475,12 @@ def column_of(case: Case) -> str | None:
     if case.case_origin != "wrong_answer" or not case.node_level or major(case.node_level) == "L0":
         return None
     if case.evidence_level == "conditional":
-        return "当前层条件失败"
+        return "current-layer condition failed"
     if case.evidence_level == "high" and case.mixed_fault and case.minimal_fault_set:
-        return "多故障"
+        return "multiple faults"
     if case.evidence_level == "high" and len(case.minimal_fault_set) == 1 and case.cause_level in {"L0", "L1", "L2", "L3"}:
-        return f"主因{case.cause_level}"
-    return "未解决"
+        return f"primary {case.cause_level}"
+    return "unresolved"
 
 
 def edges_of(cases: list[Case]) -> list[dict]:
@@ -491,17 +491,17 @@ def edges_of(cases: list[Case]) -> list[dict]:
         if case.final_class == "RESULT_EQUIVALENCE" and case.minimal_fault_set:
             sources = case.minimal_fault_set
             rows.append(_edge(
-                "、".join(sources),
+                ", ".join(sources),
                 case,
-                "错误契约与目标矩阵相同",
-                "、".join(_label(item) for item in sources),
+                "the wrong contract and the target matrix are the same",
+                ", ".join(_label(item) for item in sources),
             ))
             continue
         if case.evidence_level != "high" or not case.minimal_fault_set:
             continue
         if case.minimal_fault_set == [case.node_id]:
             continue
-        kind = "多故障共同解释" if case.mixed_fault else "已验证传播"
+        kind = "explained by several faults together" if case.mixed_fault else "verified propagation"
         for source in case.minimal_fault_set:
             if source != case.node_id:
                 rows.append(_edge(source, case, kind))
@@ -510,12 +510,12 @@ def edges_of(cases: list[Case]) -> list[dict]:
 
 def _edge(source: str, case: Case, kind: str, source_label: str | None = None) -> dict:
     return {
-        "source": source if "、" in source else _tagged(source),
+        "source": source if ", " in source else _tagged(source),
         "source_label": source_label or _label(source),
         "target": case.node_id,
         "target_label": _label(case.node_id),
         "kind": kind,
-        "status": "已验证",
+        "status": "verified",
         "validator_id": case.validator_id,
         "validator_version": case.validator_version,
     }
@@ -551,16 +551,16 @@ def assert_invariants(cases: list[Case], found_edges: list[dict]) -> None:
     audit_layers()
     seen = [_bare(case.node_id) for case in cases if case.case_origin == "wrong_answer"]
     if len(seen) != len(set(seen)):
-        raise RuntimeError("同一道错题出现了多条案例。")
+        raise RuntimeError("One wrong question produced more than one case.")
     for case in cases:
         upper = bool(case.node_level) and major(case.node_level) != "L0"
         if upper and case.cause_level == "L0" and (not case.phi_verified or not case.minimal_fault_set):
-            raise RuntimeError(f"{case.node_id} 把主因写成 L0，但没有已验证的故障集。")
+            raise RuntimeError(f"{case.node_id} records the primary cause as L0, but it has no verified fault set.")
         if _bare(case.node_id) == "80" and case.case_origin == "wrong_answer" and case.cause_level == "L0":
-            raise RuntimeError("ID80 在没有公式验证器时不能归因到 L0。")
+            raise RuntimeError("ID80 cannot be attributed to L0 when it has no formula verifier.")
     for edge in found_edges:
         if not edge["validator_id"] or not edge["validator_version"]:
-            raise RuntimeError("已验证故障链缺少验证器编号或版本。")
+            raise RuntimeError("A verified fault chain is missing a verifier id or version.")
     buckets: dict[str, dict[str, int]] = {}
     for case in cases:
         column = column_of(case)
@@ -571,7 +571,7 @@ def assert_invariants(cases: list[Case], found_edges: list[dict]) -> None:
     for node_id, counts in buckets.items():
         total = sum(1 for case in cases if case.case_origin == "wrong_answer" and case.node_id == node_id)
         if sum(counts.values()) != total:
-            raise RuntimeError(f"{node_id} 的归因列之和不等于错题数。")
+            raise RuntimeError(f"The attribution columns of {node_id} do not sum to the number of wrong questions.")
     for node_id, expected in {
         "20": "L1-SPACE", "28": "L1-SPACE", "36": "L1-SPACE",
         "149": "L0-CDEF", "150": "L0-CDEF",
@@ -579,32 +579,32 @@ def assert_invariants(cases: list[Case], found_edges: list[dict]) -> None:
         "57": "L0-CPATH", "85": "L0-CPATH", "80": "L3-TARGET",
     }.items():
         if LEVELS[node_id] != expected:
-            raise RuntimeError(f"ID{node_id} 的层级不是 {expected}。")
+            raise RuntimeError(f"The level of ID{node_id} is not {expected}.")
 
 
 def render(runs: list[tuple[str, list[Observation], list[Case]]]) -> str:
     layer = audit_layers()
     lines = [
-        "# 分层故障诊断",
+        "# Layered fault diagnosis",
         "",
-        "层级按题面固定。主因只在验证器给出唯一充分故障集，并且答案没有额外偏离时填写。",
-        "gold 前缀下的错题记为当前层条件失败，不进入主因列。变换顺序 ID16–ID18 除外：它由定义声明直接推出，两种前缀下答错都记为契约根错误，主因在 L0。R1、R2、R3 再除外：题面给出的变换顺序是对的，矩阵位置写错记为契约局部执行不一致，主因在该空自己的层级。每组一个样本，表中的数是这一次的对错，不是概率。",
-        "机构顺序留在 L0，由定义声明直接推出。连乘阶段顺序留在 L2a。R1、R2、R3 依赖已经确定的变换顺序；顺序答对而乘法位置写错，是契约局部执行不一致，不是契约根错误。",
+        "Levels are fixed by the problem text. A primary cause is filled only when a verifier gives one sufficient fault set and the answer has no extra deviation.",
+        "A wrong question under the gold prefix is current-layer condition failed and does not enter a primary-cause column. The transform order ID16-ID18 is the exception: it is derived directly from the declaration, a wrong answer under either prefix is a contract root error, and the primary cause is L0. R1, R2, and R3 are a further exception: the transform order given in the problem is right, a matrix written in the wrong place is local contract execution inconsistency, and the primary cause is that blank's own level. Each group has one sample. A cell is right or wrong for that sample, not a probability.",
+        "The mechanism order stays in L0 and is derived directly from the declaration. The product-stage order stays in L2a. R1, R2, and R3 depend on a transform order that is already fixed. A right order with a product written in the wrong place is local contract execution inconsistency, not a contract root error.",
         "",
-        "## 层级审计",
+        "## Level audit",
         "",
-        f"可分层节点 {layer['nodes']}。L0 {layer['L0']}，L1 {layer['L1']}，L2 {layer['L2']}，L3 {layer['L3']}。未分层 0，层级冲突 0。",
+        f"Layered nodes {layer['nodes']}. L0 {layer['L0']}, L1 {layer['L1']}, L2 {layer['L2']}, L3 {layer['L3']}. Unlayered 0, level conflicts 0.",
         "",
-        "ID20、ID28、ID36 在 L1-SPACE，不进入 L0 契约识别率。ID149、ID150 在 L0-CDEF，不进入 L2。ID179、ID180 在 L3。ID57、ID85 在 L0-CPATH。",
+        "ID20, ID28, and ID36 are in L1-SPACE and do not enter the L0 contract-recognition rate. ID149 and ID150 are in L0-CDEF and do not enter L2. ID179 and ID180 are in L3. ID57 and ID85 are in L0-CPATH.",
         "",
     ]
     for name, observations, cases in runs:
         lines.extend(_run_section(name, observations, cases))
     lines.extend([
-        "## 边界",
+        "## Boundary",
         "",
-        "A 类空都有计算器。能由模型前置答案决定的，按那些答案生成；题面写死的规则和声明按样本声明生成。变换顺序使用 path_order v1，只读定义声明。R1、R2、R3 使用 product_order v1，按已答的变换顺序生成。验证器先用金标契约复核。",
-        "ID23 只进入 L0 能力统计。表三提到它，只发生在轴跟随或姿态矩阵验证器证明下游没有额外偏离的时候。",
+        "Every A blank has a calculator. A blank that the model's earlier answers decide is generated from those answers. A rule or declaration written into the problem is generated from the sample declaration. The transform order uses path_order v1 and reads only the declaration. R1, R2, and R3 use product_order v1 and are generated from the answered transform order. A verifier is first checked against the gold contract.",
+        "ID23 enters only the L0 ability count. Table three mentions it only when an axis-following verifier or an attitude-matrix verifier shows that the downstream answer has no extra deviation.",
         "",
     ])
     return "\n".join(lines)
@@ -613,7 +613,7 @@ def render(runs: list[tuple[str, list[Observation], list[Case]]]) -> str:
 def _run_section(name: str, observations: list[Observation], cases: list[Case]) -> list[str]:
     found = edges_of(cases)
     assert_invariants(cases, found)
-    lines = [f"## {name}", "", "### 表一 分层能力", ""]
+    lines = [f"## {name}", "", "### Table 1 layered ability", ""]
     lines.extend(_level_table(observations))
     lines.extend(_joint_table(observations))
     lines.extend(_conditional_table(observations))
@@ -624,12 +624,12 @@ def _run_section(name: str, observations: list[Observation], cases: list[Case]) 
 
 
 def _level_table(observations: list[Observation]) -> list[str]:
-    lines = ["| 层级 | 设问数 | 正确数 |", "| --- | ---: | ---: |"]
+    lines = ["| Level | Questions | Correct |", "| --- | ---: | ---: |"]
     for level in ("L0", "L1", "L2", "L3"):
         rows = [item for item in observations if major(item.node_level) == level]
         lines.append(f"| {level} | {len(rows)} | {sum(item.correct for item in rows)} |")
     lines.append("")
-    lines.append("| 细分 | 设问数 | 正确数 |")
+    lines.append("| Split | Questions | Correct |")
     lines.append("| --- | ---: | ---: |")
     names: list[str] = []
     for item in observations:
@@ -644,13 +644,13 @@ def _level_table(observations: list[Observation]) -> list[str]:
 
 def _joint_table(observations: list[Observation]) -> list[str]:
     observed = _by_id(observations)
-    lines = ["预先声明的联合组。没有设问的空不在组内。", "", "| 层 | 组 | 在卷题 | 全对 |", "| --- | --- | --- | --- |"]
+    lines = ["Joint groups declared in advance. A blank that is not asked is not in a group.", "", "| Level | Group | Questions on the paper | All correct |", "| --- | --- | --- | --- |"]
     for layer, title, members in JOINT_GROUPS:
         present = [node_id for node_id in members if node_id in observed]
         if not present:
             continue
         ok = all(observed[node_id].correct for node_id in present)
-        lines.append(f"| {layer} | {title} | {', '.join(_tagged(node_id) for node_id in present)} | {'是' if ok else '否'} |")
+        lines.append(f"| {layer} | {title} | {', '.join(_tagged(node_id) for node_id in present)} | {'yes' if ok else 'no'} |")
     lines.append("")
     return lines
 
@@ -660,11 +660,11 @@ def _conditional_table(observations: list[Observation]) -> list[str]:
     wrong = sorted((row for row in rows if row["raw_correct"] == 0), key=lambda item: int(item["node_id"]))
     blocked = sorted((row for row in rows if row["raw_correct"] == 1 and row["eligible_n"] == 0), key=lambda item: int(item["node_id"]))
     lines = [
-        "### 表一 条件执行",
+        "### Table 1 conditional execution",
         "",
-        "条件样本指诊断闭包里实际设问的上游全部答对。下表只列原始答错的上层题。原始正确数为 0。",
+        "A conditional sample means every upstream question that is actually asked in the diagnosis closure was answered correctly. The table below lists only the upper questions that were originally wrong. The original correct count is 0.",
         "",
-        "| 题号 | 层级 | 原始样本数 | 原始正确数 | 条件样本数 | 条件正确数 |",
+        "| Id | Level | Original samples | Original correct | Conditional samples | Conditional correct |",
         "| --- | --- | ---: | ---: | ---: | ---: |",
     ]
     if not wrong:
@@ -676,10 +676,10 @@ def _conditional_table(observations: list[Observation]) -> list[str]:
         )
     lines.append("")
     if blocked:
-        names = "、".join(_tagged(row["node_id"]) for row in blocked)
-        lines.append(f"另有 {len(blocked)} 道上层题本身答对，但上游未全对，不进入条件样本：{names}。")
+        names = ", ".join(_tagged(row["node_id"]) for row in blocked)
+        lines.append(f"Another {len(blocked)} upper questions are themselves correct, but their upstream is not all correct, so they do not enter the conditional sample: {names}.")
     else:
-        lines.append("没有「本身答对、但上游未全对」的上层题。")
+        lines.append("There is no upper question that is itself correct while its upstream is not all correct.")
     lines.append("")
     return lines
 
@@ -691,20 +691,20 @@ def _pair_notes(cases: list[Case]) -> list[str]:
             continue
         if case.node_id not in chosen or case.prefix == "model":
             chosen[case.node_id] = case
-    buckets = {("错", "对"): [], ("对", "错"): [], ("错", "错"): []}
+    buckets = {("wrong", "right"): [], ("right", "wrong"): [], ("wrong", "wrong"): []}
     for node_id in sorted(chosen, key=lambda item: int(_bare(item))):
         case = chosen[node_id]
         pair = (case.model_prefix_status, case.gold_prefix_status)
         if pair in buckets:
             buckets[pair].append(case.node_id)
-    lines = ["### 两种前缀", "", "这里只统计本前缀记录里的错题，并配上另一前缀的对错。", ""]
-    lines.append(f"model 错、gold 对：{len(buckets[('错', '对')])}。这是传播候选，仍要验证器才能写成传播。")
-    if buckets[("错", "对")]:
-        lines.append("、".join(buckets[("错", "对")]))
-    lines.append(f"model 对、gold 错：{len(buckets[('对', '错')])}。单独列出，不记成能力好。")
-    if buckets[("对", "错")]:
-        lines.append("、".join(buckets[("对", "错")]))
-    lines.append(f"两种前缀都错：{len(buckets[('错', '错')])}。这不是已经证明的根因。")
+    lines = ["### Two prefixes", "", "This counts only the wrong questions in this prefix and pairs them with the other prefix.", ""]
+    lines.append(f"model wrong, gold right: {len(buckets[('wrong', 'right')])}. These are propagation candidates. A verifier is still required before they are written as propagation.")
+    if buckets[("wrong", "right")]:
+        lines.append(", ".join(buckets[("wrong", "right")]))
+    lines.append(f"model right, gold wrong: {len(buckets[('right', 'wrong')])}. Listed separately, and not recorded as a strong ability.")
+    if buckets[("right", "wrong")]:
+        lines.append(", ".join(buckets[("right", "wrong")]))
+    lines.append(f"Both prefixes wrong: {len(buckets[('wrong', 'wrong')])}. This is not a proven root cause.")
     lines.append("")
     return lines
 
@@ -720,11 +720,11 @@ def _cause_table(cases: list[Case]) -> list[str]:
         grouped[case.node_id][column] += 1
         levels[case.node_id] = case.node_level
     lines = [
-        "### 表二 目标错误归因",
+        "### Table 2 target-error attribution",
         "",
-        "一行一道 L1、L2 或 L3 错题。gold 前缀的错题在「当前层条件失败」。没有高证据故障集的案例在「未解决」。",
+        "One row is one L1, L2, or L3 wrong question. A wrong question under the gold prefix is in current-layer condition failed. A case with no high-evidence fault set is unresolved.",
         "",
-        "| 题号 | 层级 | 错题数 | " + " | ".join(COLUMNS) + " |",
+        "| Id | Level | Wrong questions | " + " | ".join(COLUMNS) + " |",
         "| --- | --- | ---: | " + " | ".join("---:" for _ in COLUMNS) + " |",
     ]
     if not grouped:
@@ -733,21 +733,21 @@ def _cause_table(cases: list[Case]) -> list[str]:
         counts = grouped[node_id]
         body = " | ".join(str(counts[name]) for name in COLUMNS)
         lines.append(f"| {node_id} | {levels[node_id]} | {sum(counts.values())} | {body} |")
-    pending = [case for case in cases if column_of(case) == "未解决"]
+    pending = [case for case in cases if column_of(case) == "unresolved"]
     if pending:
-        lines.extend(["", "未解决的题可以列出上游错题，这些名单不是主因。", ""])
+        lines.extend(["", "An unresolved question may list upstream wrong questions. That list is not the primary cause.", ""])
         for case in sorted(pending, key=lambda item: int(_bare(item.node_id))):
-            upstream = "、".join(case.upstream_wrong) or "无"
-            lines.append(f"- {case.node_id}（{case.node_level}）上游错题：{upstream}")
+            upstream = ", ".join(case.upstream_wrong) or "none"
+            lines.append(f"- {case.node_id} ({case.node_level}) upstream wrong questions: {upstream}")
     lines.append("")
     return lines
 
 
 def _chain_table(found: list[dict]) -> list[str]:
     lines = [
-        "### 表三 已验证故障链",
+        "### Table 3 verified fault chains",
         "",
-        "| 根故障 | 下游 | 类型 | 状态 | 验证器 | 版本 |",
+        "| Root fault | Downstream | Kind | Status | Verifier | Version |",
         "| --- | --- | --- | --- | --- | --- |",
     ]
     if not found:

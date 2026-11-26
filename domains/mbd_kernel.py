@@ -30,12 +30,30 @@ from typing import Callable
 
 FAULT_MODES = (DIR, RSN, EXE, ALG, RES)
 ROW_CLASSES = frozenset({DIR, RSN, EXE, ALG})
-REASONS = frozenset({"不可注入", "稿件未改动", "被掩蔽"})
-MATH_FORMATS = frozenset({"矩阵", "向量", "表达式", "公式"})
+REASONS = frozenset({"not injectable", "manuscript unchanged", "masked"})
+MATH_FORMATS = frozenset({"matrix", "vector", "expression", "formula"})
+
+
+def canon_format(fmt: str) -> str:
+    """English format name. Legacy manuscript codes take the same branches."""
+    key = str(fmt or "").strip()
+    return {
+        "matrix": "matrix",
+        "vector": "vector",
+        "expression": "expression",
+        "formula": "formula",
+        "none": "none",
+        "choice": "choice",
+        "\u77e9\u9635": "matrix",
+        "\u5411\u91cf": "vector",
+        "\u8868\u8fbe\u5f0f": "expression",
+        "\u516c\u5f0f": "formula",
+        "\u65e0": "none",
+    }.get(key, key)
 
 
 def outside() -> tuple[tuple[str, str], ...]:
-    return ((RES, "残差没有注入器"),)
+    return ((RES, "residual has no injector"),)
 
 
 def sort_key(node: str):
@@ -90,16 +108,17 @@ class InstanceResult:
 def _fmt(view: DomainView, node: str) -> str:
     row = view.question(node)
     if row.get("options"):
-        return "无"
-    return str(row.get("format") or "无")
+        return "none"
+    return canon_format(str(row.get("format") or "none"))
 
 
 def _kind(fmt: str) -> str:
-    if fmt == "矩阵":
+    fmt = canon_format(fmt)
+    if fmt == "matrix":
         return "matrix"
-    if fmt == "向量":
+    if fmt == "vector":
         return "vector"
-    if fmt in {"表达式", "公式"}:
+    if fmt in {"expression", "formula"}:
         return "expression"
     return "scalar"
 
@@ -180,9 +199,10 @@ def _sibling(view: DomainView, node: str) -> str | None:
 
 def _slip(gold: str, fmt: str) -> str:
     text = str(gold).strip()
-    if fmt == "矩阵" and text.startswith("[["):
+    fmt = canon_format(fmt)
+    if fmt == "matrix" and text.startswith("[["):
         return text.replace("1", "0", 1) if "1" in text else text[:-2] + ", 0]]"
-    if fmt == "向量" and text.startswith("["):
+    if fmt == "vector" and text.startswith("["):
         return "[0, 0, 0]" if text != "[0, 0, 0]" else "[1, 0, 0]"
     if text.startswith("-"):
         return text[1:].strip() or "0"
@@ -191,7 +211,22 @@ def _slip(gold: str, fmt: str) -> str:
 
 _SLOT_BODY = re.compile(r"\{ID:(\d+),.*?\}", re.S)
 _AXIS_TOKEN = re.compile(r"^-?[XYZ][A-Za-z0-9_]*$")
-_ABS_ROLE = re.compile(r"绝对(?:轴向|法向|侧向)正方向（[^）]+）")
+_ABS_ROLE = re.compile(
+    "\u7edd\u5bf9(?:\u8f74\u5411|\u6cd5\u5411|\u4fa7\u5411)\u6b63\u65b9\u5411\uff08[^\uff09]+\uff09"
+)
+_CLAUSE_DIRECTION = "\u8f6c\u6362\u65b9\u5411\u662f"
+_CLAUSE_RP1 = "RP1\u4e3a"
+_CLAUSE_FRAMES = "\u6240\u6709\u5750\u6807\u7cfb\u7684\u53d8\u6362\u91c7\u7528"
+_CLAUSE_FIRST = "\u7b2c\u4e00\u4e2a\u662f"
+_CLAUSE_SECOND = "\u7b2c\u4e8c\u4e2a\u662f"
+_CLAUSE_THIRD = "\u7b2c\u4e09\u4e2a\u662f"
+_SHORT_CLAUSES = frozenset({
+    _CLAUSE_DIRECTION, _CLAUSE_RP1, _CLAUSE_FRAMES,
+    _CLAUSE_FIRST, _CLAUSE_SECOND, _CLAUSE_THIRD,
+})
+_EULER_CLAUSES = frozenset({_CLAUSE_FIRST, _CLAUSE_SECOND, _CLAUSE_THIRD})
+_SIGN_OPTIONS = frozenset({"positive", "negative", "\u6b63", "\u8d1f"})
+_ANGLE_OPTIONS = _SIGN_OPTIONS | frozenset({"same", "opposite", "\u76f8\u540c", "\u76f8\u53cd"})
 _SLOT_ID = re.compile(r"\{ID:(\d+),")
 
 
@@ -212,7 +247,7 @@ def question_clauses(text: str) -> dict[str, str]:
         clause = re.sub(r"\s+", "", left + right)
         clause = re.sub(r"^[0-9]+[.、]", "", clause)
         clause = clause.strip("，,、；;：:。？?")
-        if clause in {"转换方向是", "RP1为", "所有坐标系的变换采用", "第一个是", "第二个是", "第三个是"}:
+        if clause in _SHORT_CLAUSES:
             clause = _with_previous_sentence(text, match.start(), clause)
         found[match.group(1)] = clause
         order.append(match.group(1))
@@ -236,27 +271,30 @@ def _with_previous_sentence(text: str, start: int, clause: str) -> str:
     sentence = sentence.replace("#", "")
     sentence = re.sub(r"\s+", "", sentence).split("。")[-1]
     sentence = re.sub(r"^[0-9]+[.、]", "", sentence)
-    sentence = re.sub(r"^首先确定", "", sentence).strip("，,、")
-    if clause == "转换方向是":
-        match = re.search(r"([\u4e00-\u9fff0-9]{2,16}到[\u4e00-\u9fff0-9]{2,16})的转换矩阵", sentence)
+    sentence = re.sub(r"^\u9996\u5148\u786e\u5b9a", "", sentence).strip("，,、")
+    if clause == _CLAUSE_DIRECTION:
+        match = re.search(
+            r"([\u4e00-\u9fff0-9]{2,16}\u5230[\u4e00-\u9fff0-9]{2,16})\u7684\u8f6c\u6362\u77e9\u9635",
+            sentence,
+        )
         if match:
-            owner = match.group(1).split("首先确定")[-1]
-            return owner + "的转换方向"
-    if clause == "RP1为":
-        match = re.search(r"将([\u4e00-\u9fff0-9]{2,16})的坐标轴", sentence)
+            owner = match.group(1).split("\u9996\u5148\u786e\u5b9a")[-1]
+            return owner + " conversion direction"
+    if clause == _CLAUSE_RP1:
+        match = re.search(r"\u5c06([\u4e00-\u9fff0-9]{2,16})\u7684\u5750\u6807\u8f74", sentence)
         if match:
-            return match.group(1) + "前置矩阵RP1"
-        return "前置矩阵RP1"
-    if clause in {"第一个是", "第二个是", "第三个是"}:
-        return "欧拉角顺序" + clause
+            return match.group(1) + " pre-rotation RP1"
+        return "pre-rotation RP1"
+    if clause in _EULER_CLAUSES:
+        return "Euler angle order " + clause
     if not sentence:
         return clause
     return sentence + clause
 
 
 def _name_correspondences(text: str, found: dict[str, str]) -> None:
-    """A、B、C 分别对应 three blanks. Each blank keeps its own absolute axis."""
-    for marker in re.finditer("分别对应", text):
+    """A, B, and C each correspond to one blank. Each blank keeps its own absolute axis."""
+    for marker in re.finditer("\u5206\u522b\u5bf9\u5e94", text):
         left = text[max(0, marker.start() - 220):marker.start()]
         roles = _ABS_ROLE.findall(left)
         if len(roles) < 2:
@@ -264,7 +302,7 @@ def _name_correspondences(text: str, found: dict[str, str]) -> None:
         head = left[max(left.rfind("。"), left.rfind("\n")) + 1:]
         first = _ABS_ROLE.search(head)
         owner = head[:first.start()] if first else ""
-        owner = re.sub(r"^[由于在把将和与及\s]+", "", owner).strip("，,、")
+        owner = re.sub(r"^[\u7531\u4e8e\u5728\u628a\u5c06\u548c\u4e0e\u53ca\s]+", "", owner).strip("，,、")
         right = text[marker.end():marker.end() + 4000]
         ids = []
         cursor = 0
@@ -293,22 +331,26 @@ def _cjk(char: str) -> bool:
 def _subject(row: dict) -> str:
     text = re.sub(r"\s+", "", str(row.get("stem") or ""))
     text = text.replace("#", "")
-    text = re.sub(r"（(?:前方|后方|上方|下方|左侧|右侧|左方|右方)）", "", text)
+    text = re.sub(
+        r"\uff08(?:\u524d\u65b9|\u540e\u65b9|\u4e0a\u65b9|\u4e0b\u65b9|\u5de6\u4fa7|\u53f3\u4fa7|\u5de6\u65b9|\u53f3\u65b9)\uff09",
+        "",
+        text,
+    )
     text = re.sub(r"^[0-9]+[.、]", "", text)
     text = text.strip("，,、；;：:。？?")
     options = [str(item) for item in (row.get("options") or [])]
-    if options and set(options) <= {"正", "负"} and len(text) < 6:
-        return "转向"
+    if options and set(options) <= _SIGN_OPTIONS and len(text) < 6:
+        return "sense"
     if options and len(text) < 6 and len(options) == 2 and all(len(item) <= 8 for item in options):
-        return f"{options[0]}或{options[1]}"
+        return f"{options[0]} or {options[1]}"
     if len(text) > 42:
         cut = len(text) - 42
-        if cut > 0 and text[cut - 1:cut + 1] in {"相机", "目标", "图像", "同一"}:
+        if cut > 0 and text[cut - 1:cut + 1] in {"\u76f8\u673a", "\u76ee\u6807", "\u56fe\u50cf", "\u540c\u4e00"}:
             cut -= 1
         text = text[cut:]
         if not _cjk(text[0]):
             for index, char in enumerate(text):
-                if char in "，、时" and index + 1 < len(text) and _cjk(text[index + 1]):
+                if char in "，、\u65f6" and index + 1 < len(text) and _cjk(text[index + 1]):
                     text = text[index + 1:]
                     break
     return text.strip("，,、；;：:")
@@ -319,28 +361,37 @@ def _judgment(row: dict) -> str:
     options = [str(item) for item in (row.get("options") or [])]
     subject = _subject(row)
     if not options:
-        return "判断失败"
-    if set(options) <= {"正", "负", "相同", "相反"}:
-        return "角度判断失败"
+        return "judgment failed"
+    if set(options) <= _ANGLE_OPTIONS:
+        return "angle judgment failed"
     blob = subject + "".join(options)
-    if any(token in blob for token in ("坐标轴", "绝对法向", "绝对轴向", "绝对侧向", "正方向")):
-        return "轴向判断失败"
-    if "法向" in subject or "侧向" in subject or "轴向" in subject:
-        return "轴向判断失败"
-    if any(token in subject for token in ("偏", "转向", "右手", "迎角", "侧滑", "滚转", "俯仰", "方位")):
-        return "角度判断失败"
+    if any(token in blob for token in (
+        "\u5750\u6807\u8f74",
+        "\u7edd\u5bf9\u6cd5\u5411",
+        "\u7edd\u5bf9\u8f74\u5411",
+        "\u7edd\u5bf9\u4fa7\u5411",
+        "\u6b63\u65b9\u5411",
+    )):
+        return "axis judgment failed"
+    if any(token in subject for token in ("\u6cd5\u5411", "\u4fa7\u5411", "\u8f74\u5411")):
+        return "axis judgment failed"
+    if any(token in subject for token in (
+        "\u504f", "\u8f6c\u5411", "\u53f3\u624b", "\u8fce\u89d2", "\u4fa7\u6ed1",
+        "\u6eda\u8f6c", "\u4fef\u4ef0", "\u65b9\u4f4d",
+    )):
+        return "angle judgment failed"
     if options and all(_AXIS_TOKEN.fullmatch(item.strip()) for item in options):
-        return "轴向判断失败"
-    return "判断失败"
+        return "axis judgment failed"
+    return "judgment failed"
 
 
 def _concept(view: DomainView, node: str, kind: str) -> str:
     row = view.question(node)
     subject = _subject(row)
     if not subject:
-        raise RuntimeError(f"{view.name} ID{node} 没有可概括的题面。")
-    if kind == "角度判断失败" and len(subject) < 4:
-        subject = "转向"
+        raise RuntimeError(f"{view.name} ID{node} has no stem that can be summarized.")
+    if kind == "angle judgment failed" and len(subject) < 4:
+        subject = "sense"
     return f"{view.name}·{subject}·{kind}"
 
 
@@ -349,7 +400,7 @@ def _named(used: dict[str, int], klass: str, concept: str) -> str:
     used[base] = used.get(base, 0) + 1
     if used[base] == 1:
         return base
-    return f"{base}（{used[base]}）"
+    return f"{base} ({used[base]})"
 
 
 def _reach(view: DomainView, injected: tuple[str, ...]) -> tuple[frozenset[str], frozenset[str]]:
@@ -417,7 +468,7 @@ def instances(view: DomainView) -> tuple[FaultInstance, ...]:
     for node, choice_slots in joints:
         direct, potential = _reach(view, tuple(slot for slot, _alt in choice_slots))
         found.append(FaultInstance(
-            _named(used, RSN, _concept(view, node, "推理识别")),
+            _named(used, RSN, _concept(view, node, "reasoned recognition")),
             RSN,
             view.name,
             choice_slots,
@@ -434,7 +485,7 @@ def instances(view: DomainView) -> tuple[FaultInstance, ...]:
             continue
         direct, potential = _reach(view, (node,))
         found.append(FaultInstance(
-            _named(used, ALG, _concept(view, node, "数理错误")),
+            _named(used, ALG, _concept(view, node, "algebraic error")),
             ALG,
             view.name,
             ((node, alt),),
@@ -444,10 +495,10 @@ def instances(view: DomainView) -> tuple[FaultInstance, ...]:
     found = _resolve_duplicate_site(found)
     ids = [item.id for item in found]
     if len(ids) != len(set(ids)):
-        raise RuntimeError(f"{view.name} 故障实例 id 重复")
+        raise RuntimeError(f"{view.name} fault instance ids are duplicated")
     bad = sorted({item.klass for item in found} - ROW_CLASSES)
     if bad:
-        raise RuntimeError(f"{view.name} 库外的类进了行：{bad}")
+        raise RuntimeError(f"{view.name} has a class outside the library in a row: {bad}")
     return tuple(found)
 
 
@@ -622,7 +673,7 @@ def evaluate(view: DomainView) -> tuple[InstanceResult, ...]:
         if support:
             found.append(InstanceResult(item, 1, "", support))
         else:
-            found.append(InstanceResult(item, 0, "不可注入", ()))
+            found.append(InstanceResult(item, 0, "not injectable", ()))
     found.sort(key=lambda item: item.instance.id)
     return tuple(found)
 
@@ -660,28 +711,28 @@ def _check_results(view: DomainView, results: tuple[InstanceResult, ...], summar
     library = {item.id for item in instances(view)}
     seen = {item.instance.id for item in results}
     if seen != library:
-        raise RuntimeError(f"{view.name} 的 det 没有盖住实例库")
+        raise RuntimeError(f"{view.name} det does not cover the instance library")
     if RES in summary["counts"]:
-        raise RuntimeError(f"{view.name} 把 RES 当成了行")
+        raise RuntimeError(f"{view.name} treated RES as a row")
     if summary["counts"].get(DIR, 0) <= 0:
-        raise RuntimeError(f"{view.name} 没有 DIR 直接识别行")
+        raise RuntimeError(f"{view.name} has no DIR direct-recognition row")
     if summary["counts"].get(EXE, 0) <= 0:
-        raise RuntimeError(f"{view.name} 没有 EXE 执行行")
+        raise RuntimeError(f"{view.name} has no EXE execution row")
     if summary["counts"].get(ALG, 0) <= 0:
-        raise RuntimeError(f"{view.name} 没有 ALG 数理行")
+        raise RuntimeError(f"{view.name} has no ALG algebra row")
     for item in results:
         if item.det not in (0, 1):
-            raise RuntimeError(f"{item.instance.id} det 非法")
+            raise RuntimeError(f"{item.instance.id} det is illegal")
         if item.det == 0 and item.reason not in REASONS:
-            raise RuntimeError(f"{item.instance.id} det=0 原因 {item.reason!r}")
+            raise RuntimeError(f"{item.instance.id} det=0 reason {item.reason!r}")
         if item.det == 1 and item.reason:
-            raise RuntimeError(f"{item.instance.id} det=1 仍带原因")
+            raise RuntimeError(f"{item.instance.id} det=1 still carries a reason")
         for mid in item.entries:
             if not mid:
-                raise RuntimeError(f"{item.instance.id} 的支持集里有空测点")
+                raise RuntimeError(f"{item.instance.id} support set contains an empty measurement")
     kinds = summary["measurements"]
     if kinds.get("node", 0) != len(view.node_ids) or kinds.get("format", 0) != 3:
-        raise RuntimeError(f"{view.name} 测点层不齐：{dict(kinds)}")
+        raise RuntimeError(f"{view.name} measurement layers are uneven: {dict(kinds)}")
 
 
 def _digest(view: DomainView, results: tuple[InstanceResult, ...]) -> str:
@@ -702,7 +753,7 @@ def audit_stage4(view: DomainView) -> dict:
     first = evaluate(view)
     second = evaluate(view)
     if _digest(view, first) != _digest(view, second):
-        raise RuntimeError(f"{view.name} 支持层重跑哈希不一致")
+        raise RuntimeError(f"{view.name} support-layer rerun hash does not match")
     summary = summarize(view, first)
     _check_results(view, first, summary)
     from domains.conflict_diagnosis import remember
@@ -710,11 +761,11 @@ def audit_stage4(view: DomainView) -> dict:
     remember(view, first)
     counts = summary["counts"]
     print(
-        f"阶段4 二值支持：行 {len(first)}（"
+        f"Stage 4 binary support: rows {len(first)} ("
         + " ".join(f"{key} {counts.get(key, 0)}" for key in (DIR, RSN, EXE, ALG))
-        + f"），可达 {summary['det1']}，空可达 {summary['det0']}，"
-        + f"DIR 模糊组 {summary['e1_blocks']}（最大 {summary['e1_max_block']}），"
-        + f"全库模糊组 {summary['isolation_blocks']}，RES 不进矩阵。",
+        + f"), reachable {summary['det1']}, empty reach {summary['det0']}, "
+        + f"DIR ambiguity groups {summary['e1_blocks']} (max {summary['e1_max_block']}), "
+        + f"library ambiguity groups {summary['isolation_blocks']}, RES is not in the matrix.",
         flush=True,
     )
     return summary

@@ -31,7 +31,7 @@ from domains.computer_vision.cv_generate import (
 SEED = 20261103
 TIERS = (25, 50, 75, 100)
 TIER_COUNTS = {25: 3, 50: 3, 75: 2, 100: 2}
-ROLE_ZH = {"axial": "轴向", "normal": "法向", "lateral": "侧向"}
+ROLE_EN = {"axial": "axial", "normal": "normal", "lateral": "lateral"}
 
 
 def _width(tier: int) -> int:
@@ -56,10 +56,11 @@ def _frame_phrase(key: str, spec: dict) -> str:
     for name in names:
         vector = axes[name]
         role = cv.cm.role_of(vector)
-        pointing = cv.DIR_CN[cv.DIR_NAME[vector]]
-        parts.append(f"{name}沿{ROLE_ZH[role]}指向{pointing}")
-    hand = "左手系" if spec["chirality"] == "left" else "右手系"
-    return f"{FRAME_TITLE[key]}改为{hand}，" + "，".join(parts)
+        pointing = cv.DIR_NAME[vector]
+        parts.append(f"{name} is {ROLE_EN[role]} and points {pointing}")
+    hand = "left-handed" if spec["chirality"] == "left" else "right-handed"
+    body = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + ", and " + parts[-1]
+    return f"The {FRAME_TITLE[key]} is {hand}: {body}."
 
 
 def _change_text(tier: int, changed: list[str], spec: dict) -> str:
@@ -69,7 +70,12 @@ def _change_text(tier: int, changed: list[str], spec: dict) -> str:
             phrases.append(ANGLE_ZH[key])
         else:
             phrases.append(_frame_phrase(key, spec[key]))
-    return f"定义变更档{tier}%：10项可变定义中变更{len(changed)}项：" + "；".join(phrases) + "。"
+    cleaned = [phrase.rstrip(".") for phrase in phrases]
+    return (
+        f"Definition change tier {tier}%: {len(changed)} of 10 variable definitions changed: "
+        + "; ".join(cleaned)
+        + "."
+    )
 
 
 def _samples() -> list[dict]:
@@ -111,7 +117,7 @@ def _samples() -> list[dict]:
                 "tier": tier,
                 "changed_count": len(chosen),
                 "changed": chosen,
-                "title": f"计算机视觉双目姿态估计 定义变更{tier}% 样本{made}",
+                "title": f"stereo pose definition change {tier}% sample {made}",
                 "change": _change_text(tier, chosen, spec),
                 "spec": spec,
             })
@@ -147,7 +153,7 @@ def _repair_wind_frame(spec_wind: dict, used: set[tuple]) -> dict:
         prefer = (alt["Yw"]["along"], alt["Yw"]["points"]) in old_dirs
         candidates.append((0 if prefer else 1, alt_signature, alt))
     if not candidates:
-        raise RuntimeError("没有剩余的世界坐标系可以在固定 Xw 后继续区分另外两轴。")
+        raise RuntimeError("No remaining world frame can separate the other two axes after Xw is fixed.")
     candidates.sort(key=lambda item: (item[0], item[1]))
     return candidates[0][2]
 
@@ -169,7 +175,7 @@ def refresh_locked_wind() -> None:
         used.add(_wind_signature(row["spec"]["wind"]))
         changed = _changed(row["spec"])
         if set(changed) != set(row["changed"]):
-            raise RuntimeError(f"{row['id']} 的变更项从 {row['changed']} 变成 {changed}。")
+            raise RuntimeError(f"{row['id']} changed factors moved from {row['changed']} to {changed}.")
         row["change"] = _change_text(row["tier"], row["changed"], row["spec"])
     declarations = []
     written = []

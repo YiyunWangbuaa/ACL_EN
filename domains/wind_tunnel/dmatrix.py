@@ -18,10 +18,10 @@ def check_dmatrix() -> None:
         counts = item.summary["counts"]
         empty = sum(item.summary["det0"].values())
         print(
-            f"阶段4 二值支持：{item.sample} 行 {len(item.results)}（"
+            f"stage 4 binary support: {item.sample} rows {len(item.results)} ("
             + " ".join(f"{key} {counts.get(key, 0)}" for key in (DIR, RSN, EXE, ALG))
-            + f"），可达 {item.summary['det1']}，空可达 {empty}，"
-            + f"DIR 模糊组 {len(item.summary['e1_blocks'])}（最大 {item.summary['e1_max_block']}）。",
+            + f"), reachable {item.summary['det1']}, empty reach {empty}, "
+            + f"DIR ambiguity groups {len(item.summary['e1_blocks'])} (largest {item.summary['e1_max_block']}).",
             flush=True,
         )
 

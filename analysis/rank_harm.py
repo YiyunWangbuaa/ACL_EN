@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""频率、传播深度、危害度三张对照榜。
+"""Three comparison rankings: frequency, propagation depth, and harm.
 
-危害度使用已经算完的最小修复集，不再重跑反事实：
+Harm uses the minimal repair sets that have already been computed. It does not rerun the counterfactual:
 
-    C_i = P(E_i) × Σ_j w_j × [E_i 属于终点 j 的最小修复集]
+    C_i = P(E_i) x sum_j w_j x [E_i belongs to the minimal repair set of terminal j]
 
-P 是该故障在两份自答里作为本地故障出现的份数 / 2。
-终点自身的直接命中也算进它自己的最小修复集。
-全部上游仍不能修好的终点没有最小修复集，不给其中任何一个故障加分。
-权重：真实角和体轴力/力矩 3，弹性补偿 2，等效力矩 1。
-同一份答卷里，二元集合的两个成员都拿到该终点的全部权重。
+P is the number of the two self-answers in which the fault appears as a local fault, divided by 2.
+A direct hit on the terminal itself is counted in that terminal's own minimal repair set.
+A terminal that still fails after every upstream fault is restored has no minimal repair set, and none of its faults receives a point.
+Weights: true angles and body-axis force/moment 3, elastic compensation 2, equivalent moment 1.
+In one answer sheet, both members of a pair set receive the full weight of that terminal.
 """
 from __future__ import annotations
 
@@ -30,14 +30,16 @@ from domains.wind_tunnel.eval_scope import scope_of  # noqa: E402
 from domains.wind_tunnel.t_final import T_FINAL, final_nodes  # noqa: E402
 
 def _known_grade(grade: str) -> bool:
-    if grade in {"单因素", "无上游", "单修失败", "全上游仍失败", "≥3"}:
+    if grade in {"single-factor", "no-upstream", "single-repair-failed", "all-upstream-still-fail", "≥3"}:
         return True
-    head = grade[:-1]
-    return grade.endswith("元") and head.isdigit() and int(head) >= 2
+    if not grade.endswith("-factor"):
+        return False
+    head = grade[: -len("-factor")]
+    return head.isdigit() and int(head) >= 2
 
 
-FIXES = ROOT / "analysis" / "CR最小修复集.md"
-OUT = ROOT / "analysis" / "危害度榜.md"
+FIXES = ROOT / "doc" / "CR_minimal_repair_sets.md"
+OUT = ROOT / "doc" / "harm_ranking.md"
 SAMPLES = ("body-rule", "roll-rule")
 WEIGHT = {}
 for _node in ("80", "81", "111", "112", "113", "114", "115", "116"):
@@ -67,8 +69,8 @@ def _load_fixes(path: Path) -> dict[str, dict[str, dict]]:
         if line.startswith("### ID"):
             current = line.split()[1].removeprefix("ID")
             continue
-        if line.startswith("上游：") and current:
-            found[sample][current]["upstream"] = _ids(line.split("。", 1)[0])
+        if line.startswith("Upstream:") and current:
+            found[sample][current]["upstream"] = _ids(line.split(".", 1)[0])
             continue
         if not line.startswith("| ID"):
             continue
@@ -78,13 +80,13 @@ def _load_fixes(path: Path) -> dict[str, dict[str, dict]]:
         target = cells[0].removeprefix("ID")
         groups = []
         if cells[3] != "—":
-            for piece in cells[3].split("或"):
+            for piece in cells[3].split(" or "):
                 groups.append(_ids(piece))
         row = found[sample].get(target, {})
         row.update({
             "grade": cells[2],
             "minimal": tuple(groups),
-            "direct": cells[4] == "直接命中",
+            "direct": cells[4] == "direct hit",
             "upstream": row.get("upstream", ()),
         })
         found[sample][target] = row
@@ -122,25 +124,25 @@ def _boards(fixes: dict[str, dict[str, dict]], faults: dict[str, dict[str, str]]
             for fault in members:
                 credited[fault].append((sample, target, WEIGHT[target]))
     for sample, rows in fixes.items():
-        short = "机体" if sample.startswith("body") else "滚转"
+        short = "body" if sample.startswith("body") else "roll"
         for target, row in rows.items():
-            if row["grade"] not in {"≥3", "单修失败", "全上游仍失败"}:
+            if row["grade"] not in {"≥3", "single-repair-failed", "all-upstream-still-fail"}:
                 continue
             for fault in row.get("upstream", ()):
                 unresolved[fault].append(f"{short} ID{target}")
 
     lines = [
-        "# 契约错误的频率、深度与危害度",
+        "# Frequency, depth, and harm of contract errors",
         "",
-        "本地故障只计 DIR、RSN、EXE、ALG。传播不单独成行。",
-        "频率 P 是两份自答里出现的份数 / 2。",
-        "危害度 C = P × Σ w。真实角和体轴力/力矩的权重是 3，弹性补偿是 2，等效力矩是 1。",
-        "只有写进最小修复集的故障才计入，包含终点自身的直接命中。",
-        "同一组最小修复里的每个故障都拿该终点的全部权重。全部上游仍不能修好的终点没有最小修复集，C 不加分，另列在「未解开」。",
+        "Local faults count only DIR, RSN, EXE, and ALG. Propagation is not a row of its own.",
+        "Frequency P is the number of the two self-answers in which the fault appears, divided by 2.",
+        "Harm C = P x sum w. True angles and body-axis force/moment have weight 3, elastic compensation has weight 2, and equivalent moment has weight 1.",
+        "Only a fault written into a minimal repair set is counted, including a direct hit on the terminal itself.",
+        "Every fault in one minimal repair set receives the full weight of that terminal. A terminal that still fails after every upstream fault is restored has no minimal repair set, C gets no point, and those faults are listed under unresolved.",
         "",
-        "## 频率榜",
+        "## Frequency ranking",
         "",
-        "| 故障 | 层 | 题目 | 份数 | P |",
+        "| fault | layer | question | count | P |",
         "| --- | --- | --- | ---: | ---: |",
     ]
     by_freq = sorted(nodes, key=lambda node: (-sum(node in faults[sample] for sample in SAMPLES), int(node)))
@@ -152,11 +154,11 @@ def _boards(fixes: dict[str, dict[str, dict]], faults: dict[str, dict[str, str]]
         )
     lines.extend([
         "",
-        "## 深度榜",
+        "## Depth ranking",
         "",
-        "下游跨度是最深终点的依赖深度减去故障自己的深度。跨度大的排在前面。",
+        "Downstream span is the dependency depth of the deepest terminal minus the fault's own depth. A larger span ranks first.",
         "",
-        "| 故障 | 层 | 自身深度 | 最深终点 | 下游跨度 | 能到达的终点 |",
+        "| fault | layer | own depth | deepest terminal | downstream span | reachable terminals |",
         "| --- | --- | ---: | ---: | ---: | --- |",
     ])
 
@@ -170,14 +172,14 @@ def _boards(fixes: dict[str, dict[str, dict]], faults: dict[str, dict[str, str]]
         reached = _reach(node)
         own = NODE_BY_ID[node].dependency_depth
         deepest = max((NODE_BY_ID[item].dependency_depth for item in reached), default=own)
-        shown = "、".join(f"ID{item}" for item in reached) or "—"
+        shown = ", ".join(f"ID{item}" for item in reached) or "—"
         layer = next(faults[sample][node] for sample in SAMPLES if node in faults[sample])
         lines.append(f"| ID{node} | {layer} | {own} | {deepest} | {deepest - own} | {shown} |")
     lines.extend([
         "",
-        "## 危害度榜",
+        "## Harm ranking",
         "",
-        "| 故障 | 层 | P | 计入的终点 | C | 未解开 |",
+        "| fault | layer | P | credited terminals | C | unresolved |",
         "| --- | --- | ---: | --- | ---: | --- |",
     ])
 
@@ -189,20 +191,20 @@ def _boards(fixes: dict[str, dict[str, dict]], faults: dict[str, dict[str, str]]
         count = sum(node in faults[sample] for sample in SAMPLES)
         hits = credited[node]
         shown = "、".join(
-            f"{'机体' if sample.startswith('body') else '滚转'} ID{target}×{weight}"
+            f"{'body' if sample.startswith('body') else 'roll'} ID{target}x{weight}"
             for sample, target, weight in hits
         ) or "—"
-        pending = "、".join(unresolved[node]) or "—"
+        pending = ", ".join(unresolved[node]) or "—"
         layer = next(faults[sample][node] for sample in SAMPLES if node in faults[sample])
         lines.append(f"| ID{node} | {layer} | {count / 2:.2f} | {shown} | {harm_of(node):.2f} | {pending} |")
     lines.extend([
         "",
-        "终点权重来自四个过程：",
+        "Terminal weights come from four processes:",
         "",
     ])
     for process, group in T_FINAL.items():
         weight = WEIGHT[group[0]]
-        lines.append(f"- {process}：{'、'.join(f'ID{node}' for node in group)}，权重 {weight}")
+        lines.append(f"- {process}: {', '.join(f'ID{node}' for node in group)}, weight {weight}")
     lines.append("")
     return "\n".join(lines)
 
@@ -210,11 +212,11 @@ def _boards(fixes: dict[str, dict[str, dict]], faults: dict[str, dict[str, str]]
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     if not FIXES.exists():
-        raise RuntimeError("还没有最小修复集，先运行 analysis.compute_cr。")
+        raise RuntimeError("No minimal repair set yet. Run analysis.compute_cr first.")
     fixes = _load_fixes(FIXES)
     for sample in SAMPLES:
         if not fixes[sample]:
-            raise RuntimeError(f"{sample} 没有读到终点修复结果。")
+            raise RuntimeError(f"{sample} has no terminal repair result.")
     text = _boards(fixes, _locals())
     OUT.write_text(text, encoding="utf-8")
     print(text)

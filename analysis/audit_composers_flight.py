@@ -22,48 +22,48 @@ from domains.aerodynamics.manuscript import gold_texts, questions  # noqa: E402
 
 
 def _bind(question_id: str, options: tuple[str, ...]) -> dict:
-    return {"绑定": (question_id, options)}
+    return {"bound": (question_id, options)}
 
 
 def _hide(options: tuple[str, ...], source: str, repair: str) -> dict:
-    if repair not in {"独立", "派生"}:
+    if repair not in {"independent", "derived"}:
         raise RuntimeError(repair)
-    return {"内部": (options, source, repair)}
+    return {"internal": (options, source, repair)}
 
 
 def _kind(slot: dict) -> str:
-    if set(slot) == {"绑定"}:
-        return "绑定"
-    if set(slot) == {"内部"}:
-        return "内部"
+    if set(slot) == {"bound"}:
+        return "bound"
+    if set(slot) == {"internal"}:
+        return "internal"
     raise RuntimeError(slot)
 
 
 def _options(slot: dict) -> tuple[str, ...]:
     kind = _kind(slot)
-    if kind == "绑定":
-        return tuple(slot["绑定"][1])
-    return tuple(slot["内部"][0])
+    if kind == "bound":
+        return tuple(slot["bound"][1])
+    return tuple(slot["internal"][0])
 
 
 def latent(table: dict) -> int:
     if not table:
-        raise RuntimeError("空表是未填")
-    return sum(1 for slot in table.values() if _kind(slot) == "内部")
+        raise RuntimeError("an empty table is unfilled")
+    return sum(1 for slot in table.values() if _kind(slot) == "internal")
 
 
 def sources(table: dict) -> tuple[tuple[str, str, str], ...]:
     found = []
     for name, slot in table.items():
-        if _kind(slot) == "内部":
-            _opts, source, repair = slot["内部"]
+        if _kind(slot) == "internal":
+            _opts, source, repair = slot["internal"]
             found.append((name, source, repair))
     return tuple(found)
 
 
 def alias(table: dict, render) -> int:
     if render is None:
-        raise RuntimeError("没有合成函数时不能把 alias 当成 0")
+        raise RuntimeError("alias is not 0 when there is no composer")
     counts: dict[str, int] = {}
     lists = [_options(slot) for slot in table.values()]
     for values in product(*lists):
@@ -132,26 +132,26 @@ RENDER = {
 def check() -> None:
     for name, table in FACTORS.items():
         if latent(table) != 0:
-            raise RuntimeError(f"{name} latent 应为 0")
+            raise RuntimeError(f"{name} latent should be 0")
         render = RENDER[name]
         if alias(table, render) < 0:
             raise RuntimeError(name)
         # Gold assignment must reproduce gold endpoint text.
-        values = tuple(slot["绑定"][1][0] for slot in table.values())
+        values = tuple(slot["bound"][1][0] for slot in table.values())
         got = render(*values)
         target = {
-            "nose_ground/ID15": ("15", "向量"),
-            "track_speed/ID34": ("34", "向量"),
-            "body_speed/ID45": ("45", "向量"),
-            "air_from_body/ID81": ("81", "矩阵"),
-            "body_from_air/ID83": ("83", "矩阵"),
+            "nose_ground/ID15": ("15", "vector"),
+            "track_speed/ID34": ("34", "vector"),
+            "body_speed/ID45": ("45", "vector"),
+            "air_from_body/ID81": ("81", "matrix"),
+            "body_from_air/ID83": ("83", "matrix"),
         }[name]
         if not answers_equal(got, GOLD[target[0]], target[1]):
-            raise RuntimeError(f"{name} 金标合成不一致：{got!r} vs {GOLD[target[0]]!r}")
+            raise RuntimeError(f"{name} gold composition disagrees: {got!r} vs {GOLD[target[0]]!r}")
     print(
-        f"阶段7 测点：已填 {len(FACTORS)}，"
-        + "，".join(f"{name} latent={latent(table)} alias={alias(table, RENDER[name])}" for name, table in FACTORS.items())
-        + f"；未填 {len(PENDING)}。",
+        f"stage 7 probes: filled {len(FACTORS)}, "
+        + ", ".join(f"{name} latent={latent(table)} alias={alias(table, RENDER[name])}" for name, table in FACTORS.items())
+        + f"; unfilled {len(PENDING)}.",
         flush=True,
     )
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Flight view of the shared wind-tunnel diagnosis口径."""
+"""Flight view of the shared wind-tunnel diagnosis."""
 from __future__ import annotations
 
 from domains.aerodynamics.answer_form import answers_equal
@@ -16,13 +16,13 @@ def _question(node: str) -> dict:
 
 def _equal(left: str, right: str, node: str) -> bool:
     row = questions()[node]
-    fmt = row["format"] if not row["options"] else "表达式"
+    fmt = row["format"] if not row["options"] else "expression"
     return answers_equal(left, right, fmt)
 
 
 def view() -> DomainView:
     return DomainView(
-        name="飞行力学",
+        name="flight mechanics",
         node_ids=tuple(NODE_IDS),
         parents=input_ids,
         gold=gold_texts,

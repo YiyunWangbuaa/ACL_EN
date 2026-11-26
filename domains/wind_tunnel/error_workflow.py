@@ -30,10 +30,10 @@ from domains.wind_tunnel.fault_layers import level_of, major
 
 VERSION = "v1"
 PROCESS_SLUG = {
-    "风轴系到体轴系": "wind_to_body",
-    "天平系到体轴系": "balance_to_body",
-    "天平系到风轴系": "balance_to_wind",
-    "力矩参考点": "moment_reference",
+    "wind frame to body-axis frame": "wind_to_body",
+    "balance frame to body-axis frame": "balance_to_body",
+    "balance frame to wind frame": "balance_to_wind",
+    "moment reference point": "moment_reference",
 }
 PHI = {
     "26": ("attitude", ALPHA_SYM, ("23", "24", "25"), "alpha"),
@@ -43,10 +43,10 @@ PHI = {
 }
 ANCHOR_AXIS = {"24": "23", "32": "31", "41": "40"}
 FRAME_FAMILY = {
-    "中间体轴系": "TZ",
-    "机体系": "TZ",
-    "风轴系": "FD",
-    "天平系": "TP",
+    "intermediate body-axis frame": "TZ",
+    "body-axis frame": "TZ",
+    "wind frame": "FD",
+    "balance frame": "TP",
 }
 AXIS_SLOT = {
     "XTZ": "X", "XFD": "X", "XTP": "X",
@@ -79,17 +79,17 @@ SURFACE_OF_LABEL = {
     "A-SPATIAL": "CHOICE_VALUE",
 }
 CLASS_ZH = {
-    "ROOT_ERROR": "根错误",
-    "CONDITIONAL_FAILURE": "当前层条件失败",
-    "PROPAGATED_ERROR": "已验证的传播",
-    "NEW_LOCAL_ERROR": "新的局部执行错误",
-    "LOCAL_CONTRACT_INCONSISTENCY": "契约局部执行不一致",
-    "CONTRACT_TARGET_DISCONNECT": "答案正确但未遵循自述契约",
-    "RESULT_EQUIVALENCE": "错误契约下结果等价",
-    "FORMAT_ERROR": "格式错误",
-    "UNPARSEABLE_PENDING_REVIEW": "无法解析，待复核",
-    "AMBIGUOUS": "答案歧义，待复核",
-    "UNRESOLVED": "未解决",
+    "ROOT_ERROR": "root error",
+    "CONDITIONAL_FAILURE": "current-layer condition failed",
+    "PROPAGATED_ERROR": "verified propagation",
+    "NEW_LOCAL_ERROR": "new local execution error",
+    "LOCAL_CONTRACT_INCONSISTENCY": "local contract execution inconsistency",
+    "CONTRACT_TARGET_DISCONNECT": "answer correct but does not follow the stated contract",
+    "RESULT_EQUIVALENCE": "result equivalent under the wrong contract",
+    "FORMAT_ERROR": "format error",
+    "UNPARSEABLE_PENDING_REVIEW": "cannot parse, pending review",
+    "AMBIGUOUS": "ambiguous answer, pending review",
+    "UNRESOLVED": "unresolved",
 }
 
 
@@ -165,7 +165,7 @@ class Case:
 
 def _phrase(raw: str, options: list[str]) -> str:
     text = str(raw or "").strip()
-    usable = [item for item in options if item not in {"", "无"}]
+    usable = [item for item in options if item not in {"", "none"}]
     if not usable:
         return text
     _letter, body = resolve_choice(text, usable)
@@ -173,7 +173,7 @@ def _phrase(raw: str, options: list[str]) -> str:
 
 
 def _options(blank: dict) -> list[str]:
-    return [str(item) for item in (blank.get("options") or []) if str(item) not in {"", "无"}]
+    return [str(item) for item in (blank.get("options") or []) if str(item) not in {"", "none"}]
 
 
 def _label(node_id: str) -> tuple[str, str]:
@@ -193,7 +193,7 @@ def _parse_status(prediction: str, options: list[str], accepted: bool, format_co
                 return "ambiguous"
             return "wrong"
         return "wrong"
-    if format_code in {"矩阵", "向量", "表达式"}:
+    if format_code in {"matrix", "vector", "expression"}:
         try:
             sympy, names = _sympy_modules()
             _parse_expr(text, sympy, names)
@@ -203,11 +203,11 @@ def _parse_status(prediction: str, options: list[str], accepted: bool, format_co
 
 
 def _surface(label: str, format_code: str) -> str:
-    if format_code == "矩阵":
+    if format_code == "matrix":
         return "MATRIX_STRUCTURE"
-    if format_code == "向量":
+    if format_code == "vector":
         return "VECTOR_COMPONENT"
-    if format_code == "表达式":
+    if format_code == "expression":
         return "EXPRESSION"
     return SURFACE_OF_LABEL.get(label, "CHOICE_VALUE")
 
@@ -223,7 +223,7 @@ def _matrix_findings(prediction: str, gold: str) -> list[dict]:
         return []
     findings = []
     if (left.rows, left.cols) != (right.rows, right.cols):
-        findings.append({"type": "MATRIX_STRUCTURE", "detail": "行列尺寸不同"})
+        findings.append({"type": "MATRIX_STRUCTURE", "detail": "row and column sizes differ"})
         return findings
     for row in range(left.rows):
         for col in range(left.cols):
@@ -232,7 +232,7 @@ def _matrix_findings(prediction: str, gold: str) -> list[dict]:
             flipped = sympy.simplify(left[row, col] + right[row, col]) == 0
             findings.append({
                 "type": "EXEC_SIGN" if flipped else "EXEC_VALUE",
-                "detail": f"第{row + 1}行第{col + 1}列",
+                "detail": f"row {row + 1} column {col + 1}",
             })
     return findings
 
@@ -390,8 +390,8 @@ def diagnose(model, observations: list[Observation], gold: dict[str, str]) -> li
 
 def _diagnose_wrong(model, obs: Observation, by_id: dict[str, Observation], gold: dict[str, str]) -> Case:
     case = _base_case(obs, "wrong_answer")
-    case.findings.append({"type": case.surface_type, "detail": obs.error_kind or "答案与本题金标不同"})
-    if obs.format_code == "矩阵":
+    case.findings.append({"type": case.surface_type, "detail": obs.error_kind or "differs from the gold of this question"})
+    if obs.format_code == "matrix":
         case.findings.extend(_matrix_findings(obs.model_answer, obs.gold_answer))
     if obs.parse_status == "unparseable":
         case.final_class = "UNPARSEABLE_PENDING_REVIEW"
@@ -416,7 +416,7 @@ def _diagnose_wrong(model, obs: Observation, by_id: dict[str, Observation], gold
             case.propagation_status = "verified_axis_follows_declared_frame"
             case.causal_relation = "propagated_from"
             case.propagated_from = [f"ID{parent}"]
-            case.findings.append({"type": "WRONG_PATH_AXIS", "detail": f"轴落在 ID{parent} 声明的坐标系内"})
+            case.findings.append({"type": "WRONG_PATH_AXIS", "detail": f"the axis lies in the frame declared by ID{parent}"})
             return case
         case.final_class = "NEW_LOCAL_ERROR"
         case.propagation_status = "parent_wrong_but_not_reflected"
@@ -535,12 +535,12 @@ def _latent(model, obs: Observation, by_id: dict[str, Observation], gold: dict[s
         case.propagation_status = "verified_phi"
         case.causal_relation = "wrong_contract_same_result"
         case.propagated_from = [f"ID{parent}" for parent in wrong_parents]
-        case.findings.append({"type": "RESULT_EQUIVALENCE", "detail": "错误契约推出的矩阵等于本题金标，模型答案也等于该矩阵"})
+        case.findings.append({"type": "RESULT_EQUIVALENCE", "detail": "the matrix derived from the wrong contract equals the gold of this question, and the model answer equals that matrix"})
     else:
         case.final_class = "CONTRACT_TARGET_DISCONNECT"
         case.propagation_status = "parent_wrong_but_not_reflected"
         case.causal_relation = "answer_matches_gold_not_phi"
-        case.findings.append({"type": "CONTRACT_TARGET_DISCONNECT", "detail": "答案等于本题金标，但不等于模型契约推出的矩阵"})
+        case.findings.append({"type": "CONTRACT_TARGET_DISCONNECT", "detail": "the answer equals the gold of this question, but it does not equal the matrix derived from the model contract"})
     for parent in wrong_parents:
         case.relations.append({"related_error_id": f"ID{parent}", "relation_type": "upstream_wrong"})
     return [case]
@@ -551,24 +551,24 @@ def audit(observations: list[Observation], cases: list[Case]) -> dict:
     wrong_cases = [item for item in cases if item.case_origin == "wrong_answer"]
     ids = [item.node_id for item in wrong_cases]
     if len(ids) != len(set(ids)):
-        raise RuntimeError("同一个错题生成了多条错误案例。")
+        raise RuntimeError("One wrong question produced more than one error case.")
     if len(wrong_cases) != len(wrong):
-        raise RuntimeError(f"错题 {len(wrong)} 条，登记 {len(wrong_cases)} 条。")
+        raise RuntimeError(f"There are {len(wrong)} wrong questions and {len(wrong_cases)} registered cases.")
     missing = {f"ID{item.node_id}" for item in wrong} - {item.node_id for item in wrong_cases}
     if missing:
-        raise RuntimeError(f"这些错题没有案例：{sorted(missing)}")
+        raise RuntimeError(f"These wrong questions have no case: {sorted(missing)}")
     for case in wrong_cases:
         if case.final_class == "PROPAGATED_ERROR" and not case.propagated_from:
-            raise RuntimeError(f"{case.error_id} 标成传播但没有父节点。")
+            raise RuntimeError(f"{case.error_id} is marked propagated but has no parent.")
         if case.final_class == "ROOT_ERROR" and case.propagated_from:
-            raise RuntimeError(f"{case.error_id} 标成根错误但仍指向父节点。")
+            raise RuntimeError(f"{case.error_id} is marked a root error but still points at a parent.")
         if case.bucket not in {"closed", "review", "unresolved"}:
-            raise RuntimeError(f"{case.error_id} 没有归入审计桶。")
+            raise RuntimeError(f"{case.error_id} was not placed in an audit bucket.")
     closed = [item for item in wrong_cases if item.bucket == "closed"]
     review = [item for item in wrong_cases if item.bucket == "review"]
     unresolved = [item for item in wrong_cases if item.bucket == "unresolved"]
     if len(closed) + len(review) + len(unresolved) != len(wrong_cases):
-        raise RuntimeError("错题案例没有全部进入关闭、复核或未解决。")
+        raise RuntimeError("Not every wrong-question case is closed, in review, or unresolved.")
     return {
         "nodes": len(observations),
         "correct": sum(item.correct for item in observations),
@@ -622,11 +622,11 @@ def write_run(directory: Path, observations: list[Observation], cases: list[Case
 
 def render_report(runs: list[tuple[str, dict, list[Case]]]) -> str:
     lines = [
-        "# 错误优先诊断",
+        "# Error-first diagnosis",
         "",
-        "每一道错题有且只有一条错误案例。链路只解释已登记的错题，不决定哪些题进入分析。",
-        "矛盾契约和不存在验证器的错题仍留在审计里。它们可以不进入契约一致性比例。",
-        "答案与金标代数等价的，不记为错题。答案正确但和模型契约不一致的，另记为隐性案例，不混进错题等式。",
+        "Each wrong question has exactly one error case. A chain only explains a registered wrong question. It does not decide which questions enter the analysis.",
+        "Wrong questions with a contradictory contract or with no verifier stay in the audit. They may be left out of the contract-consistency rate.",
+        "An answer that is algebraically equivalent to the gold is not a wrong question. An answer that is correct but inconsistent with the model contract is a separate latent case and is not mixed into the wrong-question identity.",
         "",
     ]
     for name, summary, cases in runs:
@@ -641,23 +641,23 @@ def _run_section(name: str, summary: dict, cases: list[Case], latent: list[Case]
     lines = [
         f"## {name}",
         "",
-        "| 项目 | 数量 |",
+        "| Item | Count |",
         "| --- | ---: |",
-        f"| 可评测节点总数 | {summary['nodes']} |",
-        f"| 判定正确节点 | {summary['correct']} |",
-        f"| 判定错误节点 | {summary['wrong']} |",
-        f"| 已登记错误案例 | {summary['registered']} |",
-        f"| 已完成自动诊断 | {summary['auto']} |",
-        f"| 已进入人工复核 | {summary['review']} |",
-        f"| 已关闭案例 | {summary['closed']} |",
-        f"| 未解决案例 | {summary['unresolved']} |",
-        f"| 隐性案例 | {summary['latent']} |",
+        f"| Scorable nodes | {summary['nodes']} |",
+        f"| Nodes judged correct | {summary['correct']} |",
+        f"| Nodes judged wrong | {summary['wrong']} |",
+        f"| Registered error cases | {summary['registered']} |",
+        f"| Automatically diagnosed | {summary['auto']} |",
+        f"| Sent to review | {summary['review']} |",
+        f"| Closed cases | {summary['closed']} |",
+        f"| unresolved cases | {summary['unresolved']} |",
+        f"| Latent cases | {summary['latent']} |",
         "",
-        "判定错误节点 = 已登记错误案例 = 已关闭案例 + 人工复核中案例 + 未解决案例。",
+        "Nodes judged wrong = registered error cases = closed cases + cases in review + unresolved cases.",
         "",
-        "### 错误案例",
+        "### Error cases",
         "",
-        "| 最终归类 | 案例数 |",
+        "| Final class | Cases |",
         "| --- | ---: |",
     ]
     counts: dict[str, int] = {}
@@ -665,24 +665,24 @@ def _run_section(name: str, summary: dict, cases: list[Case], latent: list[Case]
         counts[case.final_class] = counts.get(case.final_class, 0) + 1
     for key, count in sorted(counts.items(), key=lambda item: (-item[1], item[0])):
         lines.append(f"| {CLASS_ZH.get(key, key)} | {count} |")
-    lines.extend(["", "### 根因与传播", ""])
+    lines.extend(["", "### Root cause and propagation", ""])
     roots = sum(item.final_class == "ROOT_ERROR" for item in cases)
     propagated = sum(item.final_class == "PROPAGATED_ERROR" for item in cases)
     local = sum(item.final_class == "NEW_LOCAL_ERROR" for item in cases)
     lines.extend([
-        f"- 根错误 {roots}。传播 {propagated}。契约局部执行不一致 {sum(item.final_class == 'LOCAL_CONTRACT_INCONSISTENCY' for item in cases)}。新的局部执行错误 {local}。当前层条件失败 {sum(item.final_class == 'CONDITIONAL_FAILURE' for item in cases)}。",
-        "- gold 前缀下的错题只说明正确前置仍然失败，不记成已经证明的根因。R1、R2、R3 除外：题面给出的变换顺序是对的，矩阵位置写错记为契约局部执行不一致。",
-        "- 传播只在轴跟随所声明坐标系，或目标矩阵等于 Φ(模型契约) 时成立。没有验证器的 L1、L2、L3 错题留在未解决，即使上游都对。L0 错题记为根错误；轴跟随验证器已经解释的除外。变换顺序 ID16–ID18 由定义声明直接推出，答错记为根错误。连乘位置依赖这份顺序，顺序答对而位置写错只记为契约局部执行不一致。",
+        f"- Root errors {roots}. Propagation {propagated}. Local contract execution inconsistency {sum(item.final_class == 'LOCAL_CONTRACT_INCONSISTENCY' for item in cases)}. New local execution errors {local}. Current-layer condition failed {sum(item.final_class == 'CONDITIONAL_FAILURE' for item in cases)}.",
+        "- A wrong question under the gold prefix only says that a correct prefix still fails. It is not recorded as a proven root cause. R1, R2, and R3 are the exception: the transform order given in the problem is right, and a matrix written in the wrong place is local contract execution inconsistency.",
+        "- Propagation holds only when an axis follows the declared frame, or when the target matrix equals phi of the model contract. L1, L2, and L3 wrong questions with no verifier stay unresolved even when every upstream answer is right. An L0 wrong question is a root error, except where an axis-following verifier already explains it. The transform order ID16-ID18 is derived directly from the declaration, and a wrong answer is a root error. Product positions depend on that order. A right order with a matrix in the wrong place is only local contract execution inconsistency.",
         *(
             [
-                f"- 图上候选 {summary['conflict_status']}。修复基数 {summary['repair_cardinality']}。修复集是终点祖先锥里的局部偏差，由局部重算读出。"
+                f"- Graph candidates {summary['conflict_status']}. Repair cardinality {summary['repair_cardinality']}. The repair set is the local deviation inside the ancestor cone of the endpoint, read by a local recompute."
                 + target_note(summary.get("targets") or [])
             ]
             if "conflict_status" in summary
             else []
         ),
         "",
-        "### 优先复核",
+        "### Priority review",
         "",
     ])
     highlighted = [
@@ -695,11 +695,11 @@ def _run_section(name: str, summary: dict, cases: list[Case], latent: list[Case]
         or (item.final_class in {"UNRESOLVED", "ROOT_ERROR", "NEW_LOCAL_ERROR", "CONDITIONAL_FAILURE"} and item.surface_type == "MATRIX_STRUCTURE")
     ]
     if not highlighted:
-        lines.append("这组没有落入优先复核的案例。")
+        lines.append("This group has no case in priority review.")
         lines.append("")
         return lines
     lines.extend([
-        "| 案例 | 节点 | 归类 | 模型答案 | 正确答案 |",
+        "| Case | Node | Class | Model answer | Correct answer |",
         "| --- | --- | --- | --- | --- |",
     ])
     for case in highlighted:

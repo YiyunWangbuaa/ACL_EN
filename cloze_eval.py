@@ -60,6 +60,11 @@ from semi_auto_eval import call_model, load_env_file, make_client, resolve_api_c
 ROOT = Path(__file__).resolve().parent
 SHANGHAI = timezone(timedelta(hours=8))
 
+
+_MATRIX_CODE = {"matrix"}
+_CHOICE_CODE = {"choice", "none"}
+_END_TO_END_LABEL = "end-to-end"
+
 # Condition names state the injection. Old letters still resolve to these names.
 #   gold-trunc  gold prefix, truncated at the current sentence          (was A)
 #   self-trunc  own prefix,  truncated                                  (was B)
@@ -86,14 +91,14 @@ _SESSION = {SESSION_GOLD, SESSION_MODEL}
 _KEEP_SUFFIX = {GOLD_KEEP, SELF_KEEP}
 _END_TO_END = {PROC_E2E, FINAL_E2E}
 CONDITION_GLOSS = {
-    GOLD_TRUNC: "标准前缀，句号截断",
-    SELF_TRUNC: "自身前缀，句号截断",
-    GOLD_KEEP: "标准前缀，保留后文",
-    SELF_KEEP: "自身前缀，保留后文",
-    PROC_E2E: "子过程一次，全部空待填",
-    FINAL_E2E: "只问最终问题，不给分步填空",
-    SESSION_GOLD: "单次定义，会话逐题，前文用金标",
-    SESSION_MODEL: "单次定义，会话逐题，前文用模型回答",
+    GOLD_TRUNC: "gold prefix, truncated at the period",
+    SELF_TRUNC: "own prefix, truncated at the period",
+    GOLD_KEEP: "gold prefix, later text kept",
+    SELF_KEEP: "own prefix, later text kept",
+    PROC_E2E: "one call per subprocess, every blank open",
+    FINAL_E2E: "final question only, no step-by-step cloze",
+    SESSION_GOLD: "definition once, one chat, earlier turns use gold",
+    SESSION_MODEL: "definition once, one chat, earlier turns use the model's answers",
 }
 # Old spellings still accepted so that archived commands keep working.
 # Note: the old code "D" meant end to end, which is now proc-e2e.
@@ -119,7 +124,7 @@ def canonical_condition(raw: str) -> str:
 def condition_label(code: str) -> str:
     resolved = canonical_condition(code) or code
     gloss = CONDITION_GLOSS.get(resolved)
-    return f"{resolved}（{gloss}）" if gloss else str(code)
+    return f"{resolved} ({gloss})" if gloss else str(code)
 
 # DeepSeek prices per 1M tokens, peak then off-peak.
 # https://api-docs.deepseek.com/quick_start/pricing
@@ -137,7 +142,7 @@ _DOCUMENTED_VERSION = {
     "deepseek-v4-flash-vision-exp": "DeepSeek-V4.1-Flash-1017",
     "deepseek-v4-pro": "DeepSeek-V4-Pro-0813",
 }
-# 国务院办公厅 2026 年放假安排。只用于判断 DeepSeek 的高峰/低谷，不替代官方账单。
+# 2026 public-holiday dates from the State Council. Used only to tell DeepSeek peak from off-peak, not as a substitute for the official bill.
 _HOLIDAYS_2026 = {
     date(2026, 1, 1), date(2026, 1, 2), date(2026, 1, 3),
     *{date(2026, 2, day) for day in range(15, 24)},
@@ -180,7 +185,7 @@ def load_samples(path: Path, wanted: set[str] | None, strict_graph: bool = True)
         found = {row["id"] for row in rows}
         missing = wanted - found
         if missing:
-            raise SystemExit("样本里没有这些编号：" + "、".join(sorted(missing)))
+            raise SystemExit("These ids are not in the samples: " + ", ".join(sorted(missing)))
     return rows
 
 
@@ -196,7 +201,7 @@ def contexts_for(row: dict) -> list[dict]:
         if item["process"] in custom:
             slot_id = str(item["id"])
         else:
-            # 批量样本只存连续公开编号。模板槽位仍是各子过程内的原稿编号。
+            # Batch samples store consecutive public ids. Template slots still use the manuscript ids inside each subprocess.
             slot_id = str(item.get("local_id") or _local_id(item["process"], str(item["id"])))
         grouped.setdefault(item["process"], {})[slot_id] = item
     chains = []
@@ -291,9 +296,9 @@ def _cv_end_to_end(chain: dict) -> str:
 def _cv_module(process: str | None = None):
     from domains.computer_vision import cv_basic_dataset, cv_ctrl_dataset, cv_dataset
 
-    if process == "世界系到相机":
+    if process == "world to camera":
         return cv_ctrl_dataset
-    if process == "机器视觉基础理论":
+    if process == "vision basics":
         return cv_basic_dataset
     return cv_dataset
 
@@ -323,7 +328,7 @@ def contexts_for_cv(row: dict) -> list[dict]:
             "local_ids": list(sentence),
             "blanks": blanks,
         })
-    process_name = process if process == "纯机器视觉双目姿态估计" else module.PROCESS
+    process_name = process if process == "pure stereo pose" else module.PROCESS
     return [{
         "sample_id": row["id"],
         "tier": row.get("tier", 0),
@@ -341,11 +346,11 @@ def _flight_modules() -> dict:
     from domains.flight_ctrl import fm_ctrl_dataset
 
     return {
-        "地面系到机体系": dataset_generate,
-        "地面系转航迹系和气流系": ground_track_air_dataset,
-        "体轴系到气流系": body_air_dataset,
-        "机体系相对地面系": fm_ctrl_dataset,
-        "气流系到机体系": fm_ctrl_dataset,
+        "ground to body": dataset_generate,
+        "ground to track and airflow": ground_track_air_dataset,
+        "body to airflow": body_air_dataset,
+        "body relative to ground": fm_ctrl_dataset,
+        "airflow to body": fm_ctrl_dataset,
     }
 
 
@@ -356,7 +361,7 @@ def contexts_for_flight(row: dict) -> list[dict]:
     processes: list[str] = []
     for item in row["questions"]:
         if item["process"] not in modules:
-            raise KeyError(f"飞行力学样本没有这个子过程：{item['process']}")
+            raise KeyError(f"This flight-mechanics sample has no such subprocess: {item['process']}")
         if item["process"] not in grouped:
             processes.append(item["process"])
         grouped.setdefault(item["process"], {})[str(item["local_id"])] = item
@@ -402,50 +407,50 @@ def _flight_end_to_end(chain: dict) -> str:
     by_id = chain["by_id"]
     local_ids = [blank_id for group in module._sentence_groups() for blank_id in group]
     items = [by_id[blank_id] for blank_id in local_ids]
-    control = chain["process"] in {"机体系相对地面系", "气流系到机体系"}
+    control = chain["process"] in {"body relative to ground", "airflow to body"}
     if control:
         lead = (
-            "本次是端到端问答。填写这个子过程里的全部待填槽，只调用这一次。"
-            "只输出一个 JSON 对象，键是空的编号，值是答案。"
-            "这个对象要包含本子过程的每一个编号，不要拆成多个对象，不要按句子分开作答。"
-            "选择题的值是字母，不加引号。公式、矩阵、向量、表达式和距离的值用英文双引号包成字符串。"
-            "不要输出句子原文，不要解释。"
+            "This is an end-to-end question. Fill every open slot in this subprocess, and call the model only once. "
+            "Output one JSON object. The keys are the blank ids and the values are the answers. "
+            "The object must contain every id in this subprocess. Do not split it into several objects and do not answer sentence by sentence. "
+            "A choice value is a letter, with no quotation marks. Formulas, matrices, vectors, expressions, and distances are strings inside English double quotes. "
+            "Do not output the original sentence and do not explain."
         )
         output = "\n".join([
-            "【输出】",
-            "所有答案放在同一个 JSON 对象中。键是空的编号，值是答案。",
-            '例如 {1:A, 2:C, 11:"[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"}。示例不是本题答案。',
-            "选择题的值只写字母，不加引号。公式、矩阵、向量、表达式和距离必须用英文双引号包成字符串。",
-            "只输出这一行 JSON，不要解释、Markdown或LaTeX。",
+            "[Output]",
+            "Put every answer in the same JSON object. The keys are the blank ids and the values are the answers.",
+            'For example {1:A, 2:C, 11:"[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"}. The example is not the answer to this item.',
+            "A choice value is only the letter, with no quotation marks. Formulas, matrices, vectors, expressions, and distances must be strings inside English double quotes.",
+            "Output only that one JSON line. Do not explain, and do not use Markdown or LaTeX.",
         ])
     else:
         lead = (
-            "本次是端到端问答。填写这个子过程里的全部待填槽，只调用这一次。"
-            "只输出一个 JSON 对象，键是空的编号，值是答案。"
-            "这个对象要包含本子过程的每一个编号，不要拆成多个对象，不要按句子分开作答。"
-            "选择题的值是字母，不加引号。矩阵的值用英文双引号包成字符串。"
-            "不要输出句子原文，不要解释。"
+            "This is an end-to-end question. Fill every open slot in this subprocess, and call the model only once. "
+            "Output one JSON object. The keys are the blank ids and the values are the answers. "
+            "The object must contain every id in this subprocess. Do not split it into several objects and do not answer sentence by sentence. "
+            "A choice value is a letter, with no quotation marks. A matrix value is a string inside English double quotes. "
+            "Do not output the original sentence and do not explain."
         )
         output = "\n".join([
-            "【输出】",
-            "所有答案放在同一个 JSON 对象中。键是空的编号，值是答案。",
-            "选择题的值只写字母，不加引号。矩阵必须用英文双引号包成字符串。",
-            f"只输出一行 {module._json_object(items)}。",
-            f"格式示例（不是本题答案）：{module._json_object(items, example=True)}",
+            "[Output]",
+            "Put every answer in the same JSON object. The keys are the blank ids and the values are the answers.",
+            "A choice value is only the letter, with no quotation marks. A matrix must be a string inside English double quotes.",
+            f"Output one line {module._json_object(items)}.",
+            f"Format example (not the answer to this item): {module._json_object(items, example=True)}",
         ])
     return "\n".join([
         lead,
         "",
-        "【定义声明】",
+        "[Declaration]",
         chain["declaration"].strip(),
         "",
-        "【物理常识】",
+        "[Background]",
         module.PRIOR,
         "",
-        "【子过程】",
+        "[Subprocess]",
         chain["process"],
         "",
-        "【过程】",
+        "[Process]",
         module._render_process(by_id, targets=local_ids, keep_suffix=True),
         "",
         output,
@@ -456,74 +461,73 @@ def _flight_end_to_end(chain: dict) -> str:
 # generator's local ids, which drifted from a few handwritten cloze numbers:
 # ground-to-body SθψΦ is local 28, and body-to-air Sαβ is local 35.
 _FINAL_SOURCES = (
-    ("地面系转换机体系.md", "地面系到机体系", {"1": "28"}),
-    ("地面系转航迹系和气流系.md", "地面系转航迹系和气流系", {"1": "27", "2": "38", "3": "41"}),
-    ("体轴系转换气流系.md", "体轴系到气流系", {"1": "21", "2": "32", "3": "35"}),
+    (ROOT / "doc" / "ground to body.md", "ground to body", {"1": "28"}),
+    (ROOT / "doc" / "ground to track and airflow.md", "ground to track and airflow", {"1": "27", "2": "38", "3": "41"}),
+    (ROOT / "doc" / "body to airflow.md", "body to airflow", {"1": "21", "2": "32", "3": "35"}),
 )
 _FINAL_MARK = re.compile(
-    r"端到端问题\s*[:：]\s*(.+?)[。．]\s*[^{]{0,80}\{DID\s*[:：]\s*(\d+)",
-    re.S,
+    r"end-to-end question\s*:\s*(.+?)\.\s*[^{]{0,80}\{DID\s*:\s*(\d+)",
+    re.S | re.I,
 )
 
 
 def load_final_questions() -> list[dict]:
     """Read the end-to-end questions the manuscripts added after each final matrix."""
     found = []
-    for filename, process, gold in _FINAL_SOURCES:
-        path = ROOT / filename
+    for path, process, gold in _FINAL_SOURCES:
         if not path.is_file():
-            raise SystemExit(f"找不到端到端题面：{path}")
+            raise SystemExit(f"End-to-end question file not found: {path}")
         matches = _FINAL_MARK.findall(path.read_text(encoding="utf-8"))
         dids = [did for _question, did in matches]
         if set(dids) != set(gold) or len(dids) != len(gold):
             raise SystemExit(
-                f"{filename} 的端到端题应是 DID {sorted(gold)}，实际读到 {dids or '空'}。"
+                f"{path.name} end-to-end items should be DID {sorted(gold)}, but the file has {dids or 'nothing'}."
             )
         for question, did in matches:
             found.append({
                 "process": process,
                 "did": did,
                 "local_id": gold[did],
-                "question": " ".join(question.split()) + "。",
+                "question": " ".join(question.split()) + ".",
             })
     return found
 
 
-# λ、ω 不在飞行力学定义里。九个元素都用同一个因式，避免 0、1 和单独的三角函数露出旋转矩阵的样子。
+# λ and ω are not angles in the flight-mechanics declaration. All nine cells use the same factor so that 0, 1, and a lone trig function do not reveal the shape of the rotation matrix.
 _MATRIX_EXAMPLE_CELL = "sin(λ)*cos(ω)"
 _MATRIX_EXAMPLE_BODY = "[[" + "], [".join(
     ", ".join(_MATRIX_EXAMPLE_CELL for _cell in range(3)) for _row in range(3)
 ) + "]]"
 _MATRIX_FORMAT_RULES = (
-    "矩阵固定写成一行 3×3，形如 [[a, b, c], [d, e, f], [g, h, i]]。"
-    "因式之间必须写 *，数字和函数之间也必须写 *。"
-    "sin、cos、tan 必须带圆括号，括号里用定义声明中的希腊字母，写成 cos(λ) 这种样子。"
-    "角度符号与定义声明里的希腊字母一致。"
-    "整个矩阵用英文双引号包进 JSON，只输出这一行。不要使用 LaTeX。"
+    "Write the matrix as one 3×3 line, in the form [[a, b, c], [d, e, f], [g, h, i]]. "
+    "Write * between factors, and also between a number and a function. "
+    "sin, cos, and tan must have parentheses, and the parentheses must use the Greek letters from the declaration, as in cos(λ). "
+    "The angle symbols must match the Greek letters in the declaration. "
+    "Wrap the whole matrix in English double quotes inside the JSON, and output only that line. Do not use LaTeX."
 )
 
 
 def _flight_final_prompt(declaration: str, question: str, public_id: str) -> str:
     if any(char in _MATRIX_EXAMPLE_BODY for char in "θψΦφμγαβ"):
-        raise RuntimeError("格式示例使用了本题的角度。")
-    asked = f'{{{public_id}:"答案"}}'
+        raise RuntimeError("The format example used an angle from this item.")
+    asked = f'{{{public_id}:"answer"}}'
     example = f'{{{public_id}:"{_MATRIX_EXAMPLE_BODY}"}}'
     return "\n".join([
-        "本次只问最终结果，不提供分步填空。请根据定义声明自己推导，并把推导留在思维链里。",
-        f"最终答案只输出一个 JSON 对象 {asked}。",
+        "This call asks only for the final result and does not give a step-by-step cloze. Derive it from the declaration yourself, and leave the derivation in the chain of thought.",
+        f"The final answer is one JSON object {asked}.",
         _MATRIX_FORMAT_RULES,
         "",
-        "【定义声明】",
+        "[Declaration]",
         declaration.strip(),
         "",
-        "【问题】",
+        "[Question]",
         question.strip(),
         "",
-        "【输出】",
+        "[Output]",
         _MATRIX_FORMAT_RULES,
-        "示例里的 λ、ω 只说明字符怎么排，不是本题角度，不要写进答案。",
-        f"只输出一行 {asked}。",
-        f"格式示例（不是本题答案）：{example}",
+        "The λ and ω in the example only show how the characters are arranged. They are not this item's angles, so do not write them in the answer.",
+        f"Output only one line {asked}.",
+        f"Format example (not the answer to this item): {example}",
     ])
 
 
@@ -544,9 +548,9 @@ def final_question_jobs(
     for spec in questions:
         item = indexed.get((spec["process"], spec["local_id"]))
         answer = "" if item is None else str(item.get("answer") or "")
-        if item is None or item.get("format_code") != "矩阵" or not answer.startswith("[["):
+        if item is None or item.get("format_code") not in _MATRIX_CODE or not answer.startswith("[["):
             raise SystemExit(
-                f"样本 {row['id']} 的 {spec['process']} 局部编号 {spec['local_id']} 不是最终矩阵。"
+                f"Sample {row['id']} subprocess {spec['process']} local id {spec['local_id']} is not the final matrix."
             )
         public_id = str(item["id"])
         jobs.append({
@@ -556,8 +560,8 @@ def final_question_jobs(
             "blank_ids": [public_id],
             "blanks": [{
                 "blank_id": public_id,
-                "label": "端到端",
-                "format_code": "矩阵",
+                "label": _END_TO_END_LABEL,
+                "format_code": "matrix",
                 "answer": item["answer"],
                 "options": [],
                 **_dependency_fields(item),
@@ -573,55 +577,56 @@ def final_question_jobs(
     return jobs
 
 
-# 示例字母不出现在风洞答案里。同一题的每个空都填同一个示例，避免露出哪一项带负号。
+# The example letters do not appear in the wind-tunnel answers. Every blank in one item uses the same example, so the example does not reveal which term carries the minus sign.
 _WIND_FORMAT_EXAMPLE = {
-    "表达式": "sin(λ)*cos(ω)",
+    "expression": "sin(λ)*cos(ω)",
     "arctan": "-arctan((sin(λ))/(cos(ω)))",
     "arcsin": "-arcsin(sin(λ))",
-    "力臂": "-P·(Q+R)/L_RT",
+    "moment-arm": "-P·(Q+R)/L_RT",
 }
 _WIND_FORMAT_RULE = {
-    "表达式": (
-        "表达式固定写成一行。乘号必须写 *。sin、cos、tan 必须带圆括号，括号里用本题的角度符号。"
-        "负号直接写在对应项前面。不要使用 LaTeX，不要写等号。"
+    "expression": (
+        "Write the expression on one line. Multiplication must be written as *. "
+        "sin, cos, and tan must have parentheses, and the parentheses must use this item's angle symbols. "
+        "Write a minus sign directly in front of the term it belongs to. Do not use LaTeX and do not write an equals sign."
     ),
     "arctan": (
-        "arctan 固定写成一行，且只能有一个 arctan。分子和分母都必须为正。"
-        "角度正负写在整个 arctan 外面：正角度写成 arctan((分子)/(分母))，负角度写成 -arctan((分子)/(分母))。"
-        "不要把负号放进分子或分母。不要使用 LaTeX。"
+        "Write arctan on one line, and use only one arctan. The numerator and the denominator must both be positive. "
+        "Put the sign of the angle outside the whole arctan: a positive angle is arctan((numerator)/(denominator)), and a negative angle is -arctan((numerator)/(denominator)). "
+        "Do not put the minus sign inside the numerator or the denominator. Do not use LaTeX."
     ),
     "arcsin": (
-        "arcsin 固定写成一行，且只能有一个 arcsin。分子必须为正。"
-        "角度正负写在整个 arcsin 外面：正角度写成 arcsin(分子)，负角度写成 -arcsin(分子)。"
-        "不要写成分式，不要把负号放进分子。不要使用 LaTeX。"
+        "Write arcsin on one line, and use only one arcsin. The numerator must be positive. "
+        "Put the sign of the angle outside the whole arcsin: a positive angle is arcsin(numerator), and a negative angle is -arcsin(numerator). "
+        "Do not write it as a fraction, and do not put the minus sign inside the numerator. Do not use LaTeX."
     ),
-    "力臂": (
-        "力臂固定写成一行，形如力系数·力臂/L_RT。力系数与力臂之间用中点 ·。"
-        "负号写在整个式子最外侧，力臂内部必须为正。"
-        "力系数只能是 CA、CZ、CN 之一。力臂只能由 Xg、Yg、Zg、Xr 组成，含减法时加圆括号。"
-        "分母保持 L_RT。不要留下字母 C 或 L_c，不要写等号。不要使用 LaTeX。"
+    "moment-arm": (
+        "Write the moment arm on one line, in the form force-coefficient·arm/L_RT. Use a middle dot · between the force coefficient and the arm. "
+        "Put the minus sign outside the whole expression. The arm itself must be positive. "
+        "The force coefficient must be one of CA, CZ, and CN. The arm is built only from Xg, Yg, Zg, and Xr; add parentheses when it contains a subtraction. "
+        "Keep L_RT as the denominator. Do not leave the letters C or L_c, do not write an equals sign, and do not use LaTeX."
     ),
 }
 _WIND_FINALS = (
     (
-        "风轴系到体轴系",
+        "wind frame to body-axis frame",
         (
             ("1", "77", "α_t"),
             ("2", "78", "β_t"),
         ),
-        "初始状态，体轴保持平正，已知来流在与风轴系轴向重合，吹向机头。"
-        "当机构产生α_M、β_M、γ_M变化之后，机体处于一个新的姿态位置。"
-        "现在需要根据已知量α_M、β_M、γ_M，推导新姿态位置下，机体的理论气流角α_t、β_t的表达式（不考虑天平形变和气流补偿）。"
-        "这里给出公式模版：理论迎角α_t的计算公式模板为[角度符号][反三角函数符号]([分子]/[分母])，"
-        "β_t的计算公式模板为[角度符号][反三角函数符号]([分子]/[分母])。"
-        "要求分子和分母都必须为正。该正值只表示角度大小的绝对值；角度正负必须单独判断，并且只能写在反三角函数外面。"
-        "禁止把正负号放进反三角函数内部来代替外层符号。"
-        "要求分子和分母都必须为正。该正值只表示角度大小的绝对值；角度正负必须单独判断，并且只能写在反三角函数外面。"
-        "禁止把正负号放进反三角函数内部来代替外层符号。"
-        "求得理论迎角α_t和理论侧滑角β_t。",
+        "Initially the body axes are level. The incoming flow lies on the wind-axis axial direction and blows toward the nose. "
+        "After the mechanism changes α_M, β_M, and γ_M, the body is in a new attitude. "
+        "From the known α_M, β_M, and γ_M, derive the expressions for the theoretical airflow angles α_t and β_t in that new attitude. Ignore balance deformation and airflow compensation. "
+        "Use this formula template: the template for the theoretical angle of attack α_t is [sign][inverse trig function]([numerator]/[denominator]), "
+        "and the template for β_t is [sign][inverse trig function]([numerator]/[denominator]). "
+        "The numerator and the denominator must both be positive. That positive value is only the absolute size of the angle. Judge the sign separately, and write it only outside the inverse trig function. "
+        "Do not put the sign inside the inverse trig function in place of the outer sign. "
+        "The numerator and the denominator must both be positive. That positive value is only the absolute size of the angle. Judge the sign separately, and write it only outside the inverse trig function. "
+        "Do not put the sign inside the inverse trig function in place of the outer sign. "
+        "Find the theoretical angle of attack α_t and the theoretical sideslip β_t.",
     ),
     (
-        "天平系到体轴系",
+        "balance frame to body-axis frame",
         (
             ("1", "27", "CN_TZ"),
             ("2", "28", "CA_TZ"),
@@ -630,24 +635,24 @@ _WIND_FINALS = (
             ("5", "31", "MA_TZ"),
             ("6", "32", "MZ_TZ"),
         ),
-        "已知天平系中测量到的 6 分量分别是 CN_TP、MN_TP、CA_TP、MA_TP、CZ_TP、MZ_TP。"
-        "请根据当前定义和这些天平测量量，推导体轴系中的 CN_TZ、CA_TZ、CZ_TZ、MN_TZ、MA_TZ、MZ_TZ。",
+        "The six components measured in the balance frame are CN_TP, MN_TP, CA_TP, MA_TP, CZ_TP, and MZ_TP. "
+        "From the current declaration and these balance measurements, derive CN_TZ, CA_TZ, CZ_TZ, MN_TZ, MA_TZ, and MZ_TZ in the body-axis frame.",
     ),
     (
-        "天平系到风轴系",
+        "balance frame to wind frame",
         (
             ("1", "60", "Δα_e"),
             ("2", "61", "Δβ_e"),
         ),
-        "Δα_e 的定义是天平变形后天平轴向在过风洞轴向铅垂面的投影与风洞轴向的夹角，"
-        "Δβ_e 的定义是天平变形后天平轴向与过风洞轴向的铅垂面的夹角。"
-        "天平处于平正位置时与风洞轴重合。在存在天平安装角的情况下，当天平发生形变后，"
-        "Δα_e 和 Δβ_e 与天平弹性角的关系是什么？"
-        "采用 sinθ=θ、cosθ=1 的原则简化，计算中直接使用弹性角的弧度值来近似表示。"
-        "给出 Δα_e 和 Δβ_e。",
+        "Δα_e is the angle between the wind-tunnel axis and the projection of the balance axis, after balance deformation, onto the vertical plane through the wind-tunnel axis. "
+        "Δβ_e is the angle between the balance axis after deformation and the vertical plane through the wind-tunnel axis. "
+        "When the balance is level it coincides with the wind-tunnel axis. When a balance installation angle is present and the balance then deforms, "
+        "what is the relation between Δα_e, Δβ_e, and the balance elastic angles? "
+        "Simplify with sinθ=θ and cosθ=1, and use the elastic angles in radians directly as that approximation. "
+        "Give Δα_e and Δβ_e.",
     ),
     (
-        "力矩参考点",
+        "moment reference point",
         (
             ("1", "15", "MCN_CA"),
             ("2", "16", "MCZ_CA"),
@@ -656,13 +661,13 @@ _WIND_FINALS = (
             ("5", "19", "MCA_CN"),
             ("6", "20", "MCZ_CN"),
         ),
-        "天平系转到体轴系后，体轴系原点在天平校心。工程上会给出力矩参考点，需要把体轴系上的力矩等效到力矩参考点。"
-        "天平校心到模型顶点的距离为 Xr，由已测得的模型总长 L、模型底部到支杆底部的距离 L_t、天平校心到支杆底部的距离 L_r 间接算出。"
-        "力矩参考点的工程约定坐标为 [Xg,Yg,Zg]。沿模型轴向的分量是参考点到模型顶点的距离，工程正方向指向模型后方；"
-        "其余两分量的正方向遵循体轴系中对应坐标轴的正方向。"
-        "MCA_g=MCA+[MCN_CA]+[MCZ_CA]，MCZ_g=MCZ+[MCA_CZ]+[MCN_CZ]，MCN_g=MCN+[MCA_CN]+[MCZ_CN]。"
-        "每一项等效力矩系数只写成力系数乘力臂再除以固定参考长度 L_RT。"
-        "给出 MCN_CA、MCZ_CA、MCA_CZ、MCN_CZ、MCA_CN、MCZ_CN。",
+        "After the balance frame is transformed into the body-axis frame, the body-axis origin is at the balance calibration center. Engineering practice gives a moment reference point, and the body-axis moments must be transferred to that moment reference point. "
+        "The distance from the balance calibration center to the model nose is Xr. It is computed indirectly from the measured model length L, the distance L_t from the model base to the sting base, and the distance L_r from the balance calibration center to the sting base. "
+        "The engineering coordinates of the moment reference point are [Xg, Yg, Zg]. The axial component is the distance from the reference point to the model nose, and the engineering positive direction points toward the rear of the model. "
+        "The positive directions of the other two components follow the positive directions of the corresponding body-axis coordinates. "
+        "MCA_g=MCA+[MCN_CA]+[MCZ_CA], MCZ_g=MCZ+[MCA_CZ]+[MCN_CZ], and MCN_g=MCN+[MCA_CN]+[MCZ_CN]. "
+        "Write each equivalent moment coefficient only as a force coefficient times an arm, divided by the fixed reference length L_RT. "
+        "Give MCN_CA, MCZ_CA, MCA_CZ, MCN_CZ, MCA_CN, and MCZ_CN.",
     ),
 )
 
@@ -671,7 +676,7 @@ def _wind_final_prompt(declaration: str, question: str, blanks: list[dict]) -> s
     for blank in blanks:
         example = _WIND_FORMAT_EXAMPLE[blank["format_code"]]
         if any(char in example for char in "αβγθφψμα"):
-            raise RuntimeError("风洞格式示例使用了本题符号。")
+            raise RuntimeError("The wind-tunnel format example used a symbol from this item.")
     rules = []
     seen = set()
     for blank in blanks:
@@ -679,55 +684,55 @@ def _wind_final_prompt(declaration: str, question: str, blanks: list[dict]) -> s
         if code in seen:
             continue
         seen.add(code)
-        rules.append(_WIND_FORMAT_RULE[code] + f"示例（不是本题答案）：{_WIND_FORMAT_EXAMPLE[code]}。")
+        rules.append(_WIND_FORMAT_RULE[code] + f" Example (not the answer to this item): {_WIND_FORMAT_EXAMPLE[code]}.")
     asked = ", ".join(
-        f'{blank["symbol"]} 写入键 {blank["blank_id"]}' for blank in blanks
+        f'{blank["symbol"]} goes in key {blank["blank_id"]}' for blank in blanks
     )
     fields = ", ".join(
         f'{blank["blank_id"]}:"{_WIND_FORMAT_EXAMPLE[blank["format_code"]]}"'
         for blank in blanks
     )
     example_object = "{" + fields + "}"
-    answer_object = "{" + ", ".join(f'{blank["blank_id"]}:"答案"' for blank in blanks) + "}"
+    answer_object = "{" + ", ".join(f'{blank["blank_id"]}:"answer"' for blank in blanks) + "}"
     return "\n".join([
-        "本次只问最终结果，不提供分步填空。请根据定义声明自己推导，并把推导留在思维链里。",
-        f"最终答案只输出一个 JSON 对象 {answer_object}。",
+        "This call asks only for the final result and does not give a step-by-step cloze. Derive it from the declaration yourself, and leave the derivation in the chain of thought.",
+        f"The final answer is one JSON object {answer_object}.",
         " ".join(rules),
-        "示例里的 λ、ω、P、Q、R 只说明字符怎么排，不是本题的量，不要写进答案。",
+        "The λ, ω, P, Q, and R in the example only show how the characters are arranged. They are not quantities in this item, so do not write them in the answer.",
         "",
-        "【定义声明】",
+        "[Declaration]",
         declaration.strip(),
         "",
-        "【问题】",
+        "[Question]",
         question.strip(),
         "",
-        "【输出】",
+        "[Output]",
         " ".join(rules),
-        asked + "。",
-        "每个空号各写一个值，不要把多个空合成一个没有空号的式子。不要使用 LaTeX。",
-        "示例里的 λ、ω、P、Q、R 只说明字符怎么排，不是本题的量，不要写进答案。",
-        f"只输出一行 {answer_object}。",
-        f"格式示例（不是本题答案）：{example_object}",
+        asked + ".",
+        "Write one value for each blank id. Do not merge several blanks into one expression that has no blank id. Do not use LaTeX.",
+        "The λ, ω, P, Q, and R in the example only show how the characters are arranged. They are not quantities in this item, so do not write them in the answer.",
+        f"Output only one line {answer_object}.",
+        f"Format example (not the answer to this item): {example_object}",
     ])
 
 
 _CTRL_FINALS = (
     (
-        "机体系相对地面系",
+        "body relative to ground",
         (
             ("1", "77", "α"),
             ("2", "78", "β"),
         ),
-        "初始状态，体轴保持平正，已知来流在与地面系轴向重合，吹向机头。"
-        "当机构产生α_M、β_M、γ_M变化之后，机体处于一个新的姿态位置。"
-        "现在需要根据已知量α_M、β_M、γ_M，推导新姿态位置下，机体的理论气流角α、β的表达式。"
-        "这里给出公式模版：理论迎角α的计算公式模板为[角度符号][反三角函数符号]([分子]/[分母])，"
-        "β的计算公式模板为[角度符号][反三角函数符号]([分子]/[分母])。"
-        "要求分子和分母都必须为正。该正值只表示角度大小的绝对值；角度正负必须单独判断，并且只能写在反三角函数外面。"
-        "禁止把正负号放进反三角函数内部来代替外层符号。"
-        "要求分子和分母都必须为正。该正值只表示角度大小的绝对值；角度正负必须单独判断，并且只能写在反三角函数外面。"
-        "禁止把正负号放进反三角函数内部来代替外层符号。"
-        "求得理论迎角α和理论侧滑角β。",
+        "Initially the body axes are level. The incoming flow lies on the ground-frame axial direction and blows toward the nose. "
+        "After the mechanism changes α_M, β_M, and γ_M, the body is in a new attitude. "
+        "From the known α_M, β_M, and γ_M, derive the expressions for the theoretical airflow angles α and β in that new attitude. "
+        "Use this formula template: the template for the theoretical angle of attack α is [sign][inverse trig function]([numerator]/[denominator]), "
+        "and the template for β is [sign][inverse trig function]([numerator]/[denominator]). "
+        "The numerator and the denominator must both be positive. That positive value is only the absolute size of the angle. Judge the sign separately, and write it only outside the inverse trig function. "
+        "Do not put the sign inside the inverse trig function in place of the outer sign. "
+        "The numerator and the denominator must both be positive. That positive value is only the absolute size of the angle. Judge the sign separately, and write it only outside the inverse trig function. "
+        "Do not put the sign inside the inverse trig function in place of the outer sign. "
+        "Find the theoretical angle of attack α and the theoretical sideslip β.",
     ),
 )
 
@@ -753,11 +758,11 @@ def wind_final_jobs(
             answer = "" if item is None else str(item.get("answer") or "")
             if item is None or item.get("format_code") not in _WIND_FORMAT_EXAMPLE or not answer:
                 raise SystemExit(
-                    f"样本 {row['id']} 的 {process} 局部编号 {local_id} 不是端到端答案。"
+                    f"Sample {row['id']} subprocess {process} local id {local_id} is not an end-to-end answer."
                 )
             blanks.append({
                 "blank_id": str(item["id"]),
-                "label": "端到端",
+                "label": _END_TO_END_LABEL,
                 "format_code": item["format_code"],
                 "answer": item["answer"],
                 "options": [],
@@ -780,36 +785,36 @@ def wind_final_jobs(
     return jobs
 
 
-# 示例只用 λ、ω，避免和机器视觉答案里的角度、焦距、光心坐标相同。
+# The example uses only λ and ω, so it does not match the angles, focal lengths, or optical-center coordinates in the computer-vision answers.
 _CV_FORMAT_EXAMPLE = {
-    "矩阵": _MATRIX_EXAMPLE_BODY,
-    "向量": "[sin(λ), cos(ω), 1]",
-    "无": "A",
+    "matrix": _MATRIX_EXAMPLE_BODY,
+    "vector": "[sin(λ), cos(ω), 1]",
+    "choice": "A",
 }
 _CV_FORMAT_RULE = {
-    "矩阵": (
-        "矩阵固定写成一行 3×3，形如 [[a, b, c], [d, e, f], [g, h, i]]。"
-        "乘号必须写 *，除号必须写 /。sin、cos、tan 必须带圆括号。"
-        "不要使用 LaTeX，不要写等号，不要写成未乘开的矩阵乘积。"
-        "每个元素写成整数或已给出量的表达式，不要留下 P_c1x、P_c1y、P_c1z 或下标花括号。"
+    "matrix": (
+        "Write the matrix as one 3×3 line, in the form [[a, b, c], [d, e, f], [g, h, i]]. "
+        "Multiplication must be written as *, and division as /. sin, cos, and tan must have parentheses. "
+        "Do not use LaTeX, do not write an equals sign, and do not leave the matrix as an unexpanded product. "
+        "Write each entry as an integer or as an expression in the given quantities. Do not leave P_c1x, P_c1y, P_c1z, or braced subscripts."
     ),
-    "向量": (
-        "向量固定写成一行三个分量，形如 [a, b, c]。"
-        "乘号必须写 *，除号必须写 /。sin、cos、tan 必须带圆括号。"
-        "能写成整数就写整数。不要使用 LaTeX，不要写等号，不要写成未乘开的矩阵乘积。"
-        "每个空号单独写一个向量，不要把多个空合成一个没有空号的式子。"
+    "vector": (
+        "Write the vector as one line of three components, in the form [a, b, c]. "
+        "Multiplication must be written as *, and division as /. sin, cos, and tan must have parentheses. "
+        "Write an integer when the value is an integer. Do not use LaTeX, do not write an equals sign, and do not leave the vector as an unexpanded matrix product. "
+        "Write one vector for each blank id. Do not merge several blanks into one expression that has no blank id."
     ),
-    "无": "选择题只写一个选项字母，不加引号。",
+    "choice": "For a choice, write only the option letter, with no quotation marks.",
 }
-_CV_PROCESS = "计算机视觉双目姿态估计"
+_CV_PROCESS = "stereo pose"
 _CV_FINALS = (
     (
         (
             ("124", "R_t'"),
         ),
-        "从机体系向风轴系的转换矩阵为 R_t'。"
-        "现在需要根据机构角 α_M、β_M、γ_M 和当前坐标轴定义，给出 R_t' 的展开式。"
-        "给出 R_t'。",
+        "The transform matrix from the body frame to the wind frame is R_t'. "
+        "From the mechanism angles α_M, β_M, and γ_M and the current axis declaration, give the expanded form of R_t'. "
+        "Give R_t'.",
     ),
     (
         (
@@ -818,23 +823,23 @@ _CV_FINALS = (
             ("76", "R_cw2"),
             ("78", "t_cw2"),
         ),
-        "两台已标定相机从不同方位拍摄。"
-        "相机1的方位角、俯仰角、滚转角为 ψ1、θ1、φ1，相机2为 ψ2、θ2、φ2，"
-        "光心在风轴系中的坐标分别为 C1=(x1,y1,z1)、C2=(x2,y2,z2)。"
-        "现在需要根据这些角度、光心坐标和当前坐标轴定义，推导这两个相机的位姿。"
-        "R_cw1 是风轴系到相机1系的旋转矩阵，t_cw1 是相机1的位姿平移向量；"
-        "R_cw2 是风轴系到相机2系的旋转矩阵，t_cw2 是相机2的位姿平移向量。"
-        "给出 R_cw1、t_cw1、R_cw2 和 t_cw2。",
+        "Two calibrated cameras photograph the scene from different directions. "
+        "Camera 1 has azimuth, pitch, and roll ψ1, θ1, and φ1. Camera 2 has ψ2, θ2, and φ2. "
+        "The optical centers in the wind frame are C1=(x1,y1,z1) and C2=(x2,y2,z2). "
+        "From these angles, optical-center coordinates, and the current axis declaration, derive the two camera poses. "
+        "R_cw1 is the rotation from the wind frame to camera 1, and t_cw1 is the pose translation of camera 1. "
+        "R_cw2 is the rotation from the wind frame to camera 2, and t_cw2 is the pose translation of camera 2. "
+        "Give R_cw1, t_cw1, R_cw2, and t_cw2.",
     ),
     (
         (
             ("140", "R21"),
             ("141", "t21"),
         ),
-        "相机1、相机2的光心在风轴系中的坐标分别为 C1=(x1,y1,z1)、C2=(x2,y2,z2)，"
-        "姿态角为 ψ1、θ1、φ1 与 ψ2、θ2、φ2。"
-        "现在需要推导相机1系到相机2系的旋转 R21 和平移 t21。"
-        "给出 R21 和 t21。",
+        "The optical centers of camera 1 and camera 2 in the wind frame are C1=(x1,y1,z1) and C2=(x2,y2,z2). "
+        "The attitude angles are ψ1, θ1, φ1 and ψ2, θ2, φ2. "
+        "Derive the rotation R21 and the translation t21 from camera 1 to camera 2. "
+        "Give R21 and t21.",
     ),
     (
         (
@@ -843,16 +848,16 @@ _CV_FINALS = (
             ("134", "P_c2"),
             ("136", "[P_c2]_×"),
         ),
-        "机头在相机1系中的坐标为 P_c1，以向量形式表示。"
-        "P_c1 的反对称矩阵为 [P_c1]_×，以矩阵形式表示。"
-        "机头在相机2系中的坐标为 P_c2，以向量形式表示。"
-        "P_c2 的反对称矩阵为 [P_c2]_×，以矩阵形式表示。"
-        "现在需要根据机构角 α_M、β_M、γ_M，"
-        "相机1姿态角 ψ1、θ1、φ1，相机2姿态角 ψ2、θ2、φ2，"
-        "光心 C1=(x1,y1,z1)、C2=(x2,y2,z2) 和当前坐标轴定义，给出四者的展开式。"
-        "[P_c1]_× 单独展开，不要与 (K1·S1)^(-T)、R_cw1、d_w 相乘。"
-        "[P_c2]_× 单独展开，不要与 (K2·S2)^(-T)、R_cw2、d_w 相乘。"
-        "给出 P_c1、[P_c1]_×、P_c2 和 [P_c2]_×。",
+        "The nose coordinates in camera 1 are P_c1, written as a vector. "
+        "The skew-symmetric matrix of P_c1 is [P_c1]_×, written as a matrix. "
+        "The nose coordinates in camera 2 are P_c2, written as a vector. "
+        "The skew-symmetric matrix of P_c2 is [P_c2]_×, written as a matrix. "
+        "From the mechanism angles α_M, β_M, and γ_M, "
+        "camera 1 attitude ψ1, θ1, φ1, camera 2 attitude ψ2, θ2, φ2, "
+        "optical centers C1=(x1,y1,z1) and C2=(x2,y2,z2), and the current axis declaration, expand all four. "
+        "Expand [P_c1]_× by itself. Do not multiply it by (K1·S1)^(-T), R_cw1, or d_w. "
+        "Expand [P_c2]_× by itself. Do not multiply it by (K2·S2)^(-T), R_cw2, or d_w. "
+        "Give P_c1, [P_c1]_×, P_c2, and [P_c2]_×.",
     ),
     (
         (
@@ -860,67 +865,67 @@ _CV_FINALS = (
             ("138", "d_wL"),
             ("139", "d_wN"),
         ),
-        "空速在风轴系中的方向向量d_wV。"
-        "空速在相机1图像直线为 l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wV，"
-        "相机2图像直线为 l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wV。"
-        "机体纵轴在机体系的单位向量为 e。它在风轴系中的方向向量为 d_wL。"
-        "机体纵轴在相机1图像直线为 l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wL，"
-        "相机2图像直线为 l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wL。"
-        "机体法向轴在机体系的单位向量为 e。它在风轴系中的方向向量为d_wN。"
-        "机体法向轴在相机1图像直线为 l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wN，"
-        "相机2图像直线为 l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wN。"
-        "写出 d_wV、d_wL、d_wN。",
+        "The direction of the airspeed in the wind frame is the vector d_wV. "
+        "The airspeed appears in camera 1 as the image line l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wV, "
+        "and in camera 2 as l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wV. "
+        "The body longitudinal axis is the unit vector e in the body frame. Its direction in the wind frame is d_wL. "
+        "That axis appears in camera 1 as l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wL, "
+        "and in camera 2 as l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wL. "
+        "The body normal axis is the unit vector e in the body frame. Its direction in the wind frame is d_wN. "
+        "That axis appears in camera 1 as l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wN, "
+        "and in camera 2 as l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wN. "
+        "Write d_wV, d_wL, and d_wN.",
     ),
     (
         (
             ("145", "d1"),
             ("146", "d2"),
             ("147", "X_c1"),
-            ("148", "约束方程"),
-            ("149", "叉乘向量"),
+            ("148", "constraint equation"),
+            ("149", "cross-product vector"),
             ("150", "λ1"),
             ("151", "X_w"),
             ("152", "X_b"),
         ),
-        "相机1、相机2图像上激波点的齐次坐标分别为 [u1,v1,1]、[u2,v2,1]。"
-        "相机1系射线方向 d1=(K1·S1)^(-1)·[u1,v1,1]^T，"
-        "相机2系射线方向 d2=(K2·S2)^(-1)·[u2,v2,1]^T。"
-        "现在需要给出这两个射线方向各自的展开式,写成向量形式。"
-        "然后完成激波点反解。"
-        "激波点在相机1系中的坐标 X_c1 沿射线方向 d1，λ1 为深度。X_c1 从下列选项中选择："
-        "A. X_c1 = λ1·d1；B. X_c1 = d1 + λ1；C. X_c1 = λ1 + d1；D. X_c1 = d1 − λ1。"
-        "两个相机看到同一激波点，相机1系到相机2系的变换为 X_c2=R21·X_c1+t21。约束方程从下列选项中选择："
-        "A. λ2·d2 = R21·λ1·d1 + t21；B. λ2·d2 = R21·λ1·d1 − t21；"
-        "C. λ2·d2 = R21^T·λ1·d1 + t21；D. λ1·d1 = R21·λ2·d2 + t21。"
-        "在约束方程两侧叉乘一个向量可消去 λ2，得 d2×(λ1·R21·d1+t21)=0。叉乘的向量从下列选项中选择："
-        "A. d2；B. d1；C. R21·d1；D. t21。"
-        "在采用最小二乘准则、且 d2×R21·d1 ≠ 0 的条件下，"
-        "由 d2×(λ1·R21·d1+t21)=0 求使残差平方最小的 λ1。λ1 从下列选项中选择："
-        "A. λ1 = −(d2×t21)·(d2×R21·d1) / |d2×R21·d1|²；"
-        "B. λ1 = (d2×t21)·(d2×R21·d1) / |d2×R21·d1|²；"
-        "C. λ1 = −(d2×t21) / (d2×R21·d1)；"
-        "D. λ1 = (d1×t21)·(d1×R21·d2) / |d1×R21·d2|²。"
-        "激波点在相机1系中的坐标 X_c1 已知，它在风轴系中的坐标 X_w 从下列选项中选择："
-        "A. X_w = R_cw1^T·(X_c1 − t_cw1)；B. X_w = R_cw1·X_c1 + t_cw1；"
-        "C. X_w = R_cw1^T·X_c1 − t_cw1；D. X_w = R_cw1·(X_c1 − t_cw1)。"
-        "激波点在风轴系中的坐标 X_w 已知，它在机体系中的坐标 X_b 从下列选项中选择："
-        "A. X_b = R_t·RP1·(X_w − p_nose)；B. X_b = RP1^T·R_t'·(X_w − p_nose)；"
-        "C. X_b = R_t·RP1·(X_w + p_nose)；D. X_b = R_t'·RP1·(X_w − p_nose)。"
-        "给出 d1、d2，并给出 X_c1、约束方程、叉乘向量、λ1、X_w、X_b 的选项字母。",
+        "The homogeneous coordinates of the shock point in the camera 1 and camera 2 images are [u1,v1,1] and [u2,v2,1]. "
+        "The ray direction in camera 1 is d1=(K1·S1)^(-1)·[u1,v1,1]^T, "
+        "and the ray direction in camera 2 is d2=(K2·S2)^(-1)·[u2,v2,1]^T. "
+        "Give the expanded form of each ray direction, written as a vector. "
+        "Then invert the shock point. "
+        "The shock-point coordinate X_c1 in camera 1 lies along the ray d1, and λ1 is the depth. Choose X_c1 from: "
+        "A. X_c1 = λ1·d1; B. X_c1 = d1 + λ1; C. X_c1 = λ1 + d1; D. X_c1 = d1 - λ1. "
+        "Both cameras see the same shock point, and the transform from camera 1 to camera 2 is X_c2=R21·X_c1+t21. Choose the constraint equation from: "
+        "A. λ2·d2 = R21·λ1·d1 + t21; B. λ2·d2 = R21·λ1·d1 - t21; "
+        "C. λ2·d2 = R21^T·λ1·d1 + t21; D. λ1·d1 = R21·λ2·d2 + t21. "
+        "Crossing both sides of the constraint with a vector removes λ2 and gives d2×(λ1·R21·d1+t21)=0. Choose that vector from: "
+        "A. d2; B. d1; C. R21·d1; D. t21. "
+        "Under a least-squares criterion, and when d2×R21·d1 ≠ 0, "
+        "find the λ1 that minimizes the squared residual of d2×(λ1·R21·d1+t21)=0. Choose λ1 from: "
+        "A. λ1 = −(d2×t21)·(d2×R21·d1) / |d2×R21·d1|²; "
+        "B. λ1 = (d2×t21)·(d2×R21·d1) / |d2×R21·d1|²; "
+        "C. λ1 = −(d2×t21) / (d2×R21·d1); "
+        "D. λ1 = (d1×t21)·(d1×R21·d2) / |d1×R21·d2|². "
+        "The shock-point coordinate X_c1 in camera 1 is known. Choose its wind-frame coordinate X_w from: "
+        "A. X_w = R_cw1^T·(X_c1 − t_cw1); B. X_w = R_cw1·X_c1 + t_cw1; "
+        "C. X_w = R_cw1^T·X_c1 − t_cw1; D. X_w = R_cw1·(X_c1 − t_cw1). "
+        "The wind-frame coordinate X_w is known. Choose its body-frame coordinate X_b from: "
+        "A. X_b = R_t·RP1·(X_w − p_nose); B. X_b = RP1^T·R_t'·(X_w − p_nose); "
+        "C. X_b = R_t·RP1·(X_w + p_nose); D. X_b = R_t'·RP1·(X_w − p_nose). "
+        "Give d1 and d2, and give the option letters for X_c1, the constraint equation, the cross-product vector, λ1, X_w, and X_b.",
     ),
 )
-_BASIC_PROCESS = "机器视觉基础理论"
+_BASIC_PROCESS = "vision basics"
 _BASIC_FINALS = (
     (
         (
             ("37", "R21"),
             ("43", "t21"),
         ),
-        "相机1系就是世界系。相机2的方位角、俯仰角、滚转角为 ψ2、θ2、φ2，"
-        "光心在相机1系中的坐标为 C2=(x2,y2,z2)。"
-        "现在需要根据这些角度、光心坐标和当前坐标轴定义，"
-        "推导相机1系到相机2系的旋转 R21 和平移 t21。"
-        "给出 R21 和 t21。",
+        "The camera 1 frame is the world frame. Camera 2 has azimuth, pitch, and roll ψ2, θ2, and φ2, "
+        "and its optical center in the camera 1 frame is C2=(x2,y2,z2). "
+        "From these angles, the optical-center coordinates, and the current axis declaration, "
+        "derive the rotation R21 and the translation t21 from camera 1 to camera 2. "
+        "Give R21 and t21.",
     ),
     (
         (
@@ -929,74 +934,73 @@ _BASIC_FINALS = (
             ("49", "P_c2"),
             ("51", "[P_c2]_×"),
         ),
-        "直线上的点在相机1系中的坐标为 P_c1，以向量形式表示。"
-        "P_c1 的反对称矩阵为 [P_c1]_×，以矩阵形式表示。"
-        "该点在相机2系中的坐标为 P_c2，以向量形式表示。"
-        "P_c2 的反对称矩阵为 [P_c2]_×，以矩阵形式表示。"
-        "这条直线平行于相机1光轴正方向，该点沿相机1法向正方向，到光心的距离为 L。"
-        "相机1系就是世界系。相机2的方位角、俯仰角、滚转角为 ψ2、θ2、φ2，"
-        "光心在相机1系中的坐标为 C2=(x2,y2,z2)。"
-        "现在需要根据距离 L、这些角度、光心坐标和当前坐标轴定义，给出四者的展开式："
-        " P_c1、[P_c1]_×、P_c2 和 [P_c2]_×。",
+        "A point on the line has coordinates P_c1 in camera 1, written as a vector. "
+        "The skew-symmetric matrix of P_c1 is [P_c1]_×, written as a matrix. "
+        "The same point has coordinates P_c2 in camera 2, written as a vector. "
+        "The skew-symmetric matrix of P_c2 is [P_c2]_×, written as a matrix. "
+        "The line is parallel to the positive optical axis of camera 1. The point lies in the positive normal direction of camera 1, at distance L from the optical center. "
+        "The camera 1 frame is the world frame. Camera 2 has azimuth, pitch, and roll ψ2, θ2, and φ2, "
+        "and its optical center in the camera 1 frame is C2=(x2,y2,z2). "
+        "From the distance L, these angles, the optical-center coordinates, and the current axis declaration, expand all four: "
+        "P_c1, [P_c1]_×, P_c2, and [P_c2]_×.",
     ),
     (
         (
             ("52", "d_w"),
         ),
-        "相机1系就是世界系。"
-        "相机1图像直线为 l=(K1·S1)^(-T)·[P_c1]_×·d_w，"
-        "相机2图像直线为 l=(K2·S2)^(-T)·[P_c2]_×·R21·d_w。"
-        "直线平行于相机1光轴正方向，方向向量 d_w 是该正方向在相机1系中的单位向量。"
-        "现在需要给出 d_w 的展开式。"
-        "d_w 单独展开成向量，不要与 (K1·S1)^(-T)、[P_c1]_×、R21 相乘，不要给出合并后的直线 l。"
-        "给出 d_w。",
+        "The camera 1 frame is the world frame. "
+        "The image line in camera 1 is l=(K1·S1)^(-T)·[P_c1]_×·d_w, "
+        "and the image line in camera 2 is l=(K2·S2)^(-T)·[P_c2]_×·R21·d_w. "
+        "The line is parallel to the positive optical axis of camera 1. The direction d_w is the unit vector of that positive direction in the camera 1 frame. "
+        "Give the expanded form of d_w. "
+        "Expand d_w by itself as a vector. Do not multiply it by (K1·S1)^(-T), [P_c1]_×, or R21, and do not give the combined line l. "
+        "Give d_w.",
     ),
     (
         (
             ("56", "d1"),
             ("57", "d2"),
             ("58", "X_c1"),
-            ("59", "约束方程"),
-            ("60", "叉乘向量"),
+            ("59", "constraint equation"),
+            ("60", "cross-product vector"),
             ("61", "λ1"),
             ("62", "X_w"),
         ),
-        "相机1、相机2图像上目标点的齐次坐标分别为 [u1,v1,1]、[u2,v2,1]。"
-        "相机1系射线方向 d1=(K1·S1)^(-1)·[u1,v1,1]^T，"
-        "相机2系射线方向 d2=(K2·S2)^(-1)·[u2,v2,1]^T。"
-        "现在需要给出这两个射线方向各自的展开式,写成向量形式。"
-        "然后完成目标点反解。"
-        "目标点在相机1系中的坐标 X_c1 沿射线方向 d1，λ1 为深度。X_c1 从下列选项中选择："
-        "A. X_c1 = λ1·d1；B. X_c1 = d1 + λ1；C. X_c1 = λ1 + d1；D. X_c1 = d1 − λ1。"
-        "两个相机看到同一目标点，相机1系到相机2系的变换为 X_c2=R21·X_c1+t21。约束方程从下列选项中选择："
-        "A. λ2·d2 = R21·λ1·d1 + t21；B. λ2·d2 = R21·λ1·d1 − t21；"
-        "C. λ2·d2 = R21^T·λ1·d1 + t21；D. λ1·d1 = R21·λ2·d2 + t21。"
-        "在约束方程两侧叉乘一个向量可消去 λ2，得 d2×(λ1·R21·d1+t21)=0。叉乘的向量从下列选项中选择："
-        "A. d2；B. d1；C. R21·d1；D. t21。"
-        "在采用最小二乘准则、且 d2×R21·d1 ≠ 0 的条件下，"
-        "由 d2×(λ1·R21·d1+t21)=0 求使残差平方最小的 λ1。λ1 从下列选项中选择："
-        "A. λ1 = −(d2×t21)·(d2×R21·d1) / |d2×R21·d1|²；"
-        "B. λ1 = (d2×t21)·(d2×R21·d1) / |d2×R21·d1|²；"
-        "C. λ1 = −(d2×t21) / (d2×R21·d1)；"
-        "D. λ1 = (d1×t21)·(d1×R21·d2) / |d1×R21·d2|²。"
-        "目标点在相机1系中的坐标 X_c1 已知。相机1系就是世界系，所以它在世界系中的坐标 X_w 从下列选项中选择："
-        "A. X_w = X_c1；B. X_w = R21^T·(X_c1 − t21)；"
-        "C. X_w = R21·X_c1 + t21；D. X_w = X_c1 + t21。"
-        "给出 d1、d2，并给出 X_c1、约束方程、叉乘向量、λ1、X_w 的选项字母。",
+        "The homogeneous coordinates of the target point in the camera 1 and camera 2 images are [u1,v1,1] and [u2,v2,1]. "
+        "The ray direction in camera 1 is d1=(K1·S1)^(-1)·[u1,v1,1]^T, "
+        "and the ray direction in camera 2 is d2=(K2·S2)^(-1)·[u2,v2,1]^T. "
+        "Give the expanded form of each ray direction, written as a vector. "
+        "Then invert the target point. "
+        "The target-point coordinate X_c1 in camera 1 lies along the ray d1, and λ1 is the depth. Choose X_c1 from: "
+        "A. X_c1 = λ1·d1; B. X_c1 = d1 + λ1; C. X_c1 = λ1 + d1; D. X_c1 = d1 - λ1. "
+        "Both cameras see the same target point, and the transform from camera 1 to camera 2 is X_c2=R21·X_c1+t21. Choose the constraint equation from: "
+        "A. λ2·d2 = R21·λ1·d1 + t21; B. λ2·d2 = R21·λ1·d1 - t21; "
+        "C. λ2·d2 = R21^T·λ1·d1 + t21; D. λ1·d1 = R21·λ2·d2 + t21. "
+        "Crossing both sides of the constraint with a vector removes λ2 and gives d2×(λ1·R21·d1+t21)=0. Choose that vector from: "
+        "A. d2; B. d1; C. R21·d1; D. t21. "
+        "Under a least-squares criterion, and when d2×R21·d1 ≠ 0, "
+        "find the λ1 that minimizes the squared residual of d2×(λ1·R21·d1+t21)=0. Choose λ1 from: "
+        "A. λ1 = −(d2×t21)·(d2×R21·d1) / |d2×R21·d1|²; "
+        "B. λ1 = (d2×t21)·(d2×R21·d1) / |d2×R21·d1|²; "
+        "C. λ1 = −(d2×t21) / (d2×R21·d1); "
+        "D. λ1 = (d1×t21)·(d1×R21·d2) / |d1×R21·d2|². "
+        "The target-point coordinate X_c1 in camera 1 is known. Camera 1 is the world frame, so choose its world coordinate X_w from: "
+        "A. X_w = X_c1; B. X_w = R21^T·(X_c1 − t21); "
+        "C. X_w = R21·X_c1 + t21; D. X_w = X_c1 + t21. "
+        "Give d1 and d2, and give the option letters for X_c1, the constraint equation, the cross-product vector, λ1, and X_w.",
     ),
 )
 
-
 def _cv_declaration(declaration: str) -> str:
     text = declaration.strip()
-    if text.startswith("【定义声明】"):
-        text = text[len("【定义声明】"):].strip()
+    if text.startswith("[Declaration]"):
+        text = text[len("[Declaration]"):].strip()
     return text
 
 
 def _cv_example_field(blank: dict) -> str:
     example = _CV_FORMAT_EXAMPLE[blank["format_code"]]
-    if blank["format_code"] == "无":
+    if blank["format_code"] in _CHOICE_CODE:
         return example
     return f'"{example}"'
 
@@ -1005,7 +1009,7 @@ def _cv_final_prompt(declaration: str, question: str, blanks: list[dict]) -> str
     for blank in blanks:
         example = _CV_FORMAT_EXAMPLE[blank["format_code"]]
         if any(char in example for char in "αβγθφψμα"):
-            raise RuntimeError("机器视觉格式示例使用了本题符号。")
+            raise RuntimeError("The computer-vision format example used a symbol from this item.")
     rules = []
     seen = set()
     for blank in blanks:
@@ -1013,9 +1017,9 @@ def _cv_final_prompt(declaration: str, question: str, blanks: list[dict]) -> str
         if code in seen:
             continue
         seen.add(code)
-        rules.append(_CV_FORMAT_RULE[code] + f"示例（不是本题答案）：{_CV_FORMAT_EXAMPLE[code]}。")
+        rules.append(_CV_FORMAT_RULE[code] + f" Example (not the answer to this item): {_CV_FORMAT_EXAMPLE[code]}.")
     asked = ", ".join(
-        f'{blank["symbol"]} 写入键 {blank["blank_id"]}' for blank in blanks
+        f'{blank["symbol"]} goes in key {blank["blank_id"]}' for blank in blanks
     )
     fields = ", ".join(
         f'{blank["blank_id"]}:{_cv_example_field(blank)}'
@@ -1023,28 +1027,28 @@ def _cv_final_prompt(declaration: str, question: str, blanks: list[dict]) -> str
     )
     example_object = "{" + fields + "}"
     answer_object = "{" + ", ".join(
-        f'{blank["blank_id"]}:答案' if blank["format_code"] == "无" else f'{blank["blank_id"]}:"答案"'
+        f'{blank["blank_id"]}:letter' if blank["format_code"] in _CHOICE_CODE else f'{blank["blank_id"]}:"answer"'
         for blank in blanks
     ) + "}"
     return "\n".join([
-        "本次只问最终结果，不提供分步填空。请根据定义声明自己推导，并把推导留在思维链里。",
-        f"最终答案只输出一个 JSON 对象 {answer_object}。",
+        "This call asks only for the final result and does not give a step-by-step cloze. Derive it from the declaration yourself, and leave the derivation in the chain of thought.",
+        f"The final answer is one JSON object {answer_object}.",
         " ".join(rules),
-        "示例里的 λ、ω 只说明字符怎么排，不是本题的量，不要写进答案。",
+        "The λ and ω in the example only show how the characters are arranged. They are not quantities in this item, so do not write them in the answer.",
         "",
-        "【定义声明】",
+        "[Declaration]",
         _cv_declaration(declaration),
         "",
-        "【问题】",
+        "[Question]",
         question.strip(),
         "",
-        "【输出】",
+        "[Output]",
         " ".join(rules),
-        asked + "。",
-        "每个空号各写一个值，不要把多个空合成一个没有空号的式子。不要使用 LaTeX。",
-        "示例里的 λ、ω 只说明字符怎么排，不是本题的量，不要写进答案。",
-        f"只输出一行 {answer_object}。",
-        f"格式示例（不是本题答案）：{example_object}",
+        asked + ".",
+        "Write one value for each blank id. Do not merge several blanks into one expression that has no blank id. Do not use LaTeX.",
+        "The λ and ω in the example only show how the characters are arranged. They are not quantities in this item, so do not write them in the answer.",
+        f"Output only one line {answer_object}.",
+        f"Format example (not the answer to this item): {example_object}",
     ])
 
 
@@ -1070,15 +1074,15 @@ def cv_final_jobs(
             item = indexed.get((process_name, local_id))
             answer = "" if item is None else str(item.get("answer") or "")
             code = "" if item is None else item.get("format_code")
-            symbolic = code in {"矩阵", "向量"} and answer.startswith(("[", "[["))
-            choice = code == "无" and len(answer) == 1 and answer.isalpha() and bool(item.get("options"))
+            symbolic = code in {"matrix", "vector"} and answer.startswith(("[", "[["))
+            choice = code in _CHOICE_CODE and len(answer) == 1 and answer.isalpha() and bool(item.get("options"))
             if item is None or not (symbolic or choice):
                 raise SystemExit(
-                    f"样本 {row['id']} 的 {process_name} 局部编号 {local_id} 不是端到端答案。"
+                    f"Sample {row['id']} subprocess {process_name} local id {local_id} is not an end-to-end answer."
                 )
             blanks.append({
                 "blank_id": str(item["id"]),
-                "label": "端到端",
+                "label": _END_TO_END_LABEL,
                 "format_code": item["format_code"],
                 "answer": item["answer"],
                 "options": list(item.get("options") or []),
@@ -1106,15 +1110,15 @@ def _manuscript_end_to_end(chain: dict) -> str:
 
     body = "\n".join(render_sentence(sentence, fill=False) for sentence in chain["sentences"])
     return "\n".join([
-        "本次是端到端问答。填写这个子过程里的全部待填槽，只调用这一次。",
-        "只输出一个 JSON 对象，键是空的编号，值是答案。",
-        "选择题的值是字母。矩阵、向量和表达式用英文双引号包成字符串。",
-        "不要输出句子原文，不要解释。",
+        "This is an end-to-end question. Fill every open slot in this subprocess, and call the model only once.",
+        "Output one JSON object. The keys are the blank ids and the values are the answers.",
+        "A choice value is a letter. Matrices, vectors, and expressions are strings inside English double quotes.",
+        "Do not output the original sentence and do not explain.",
         "",
-        "【过程】",
+        "[Process]",
         body,
-        "【输出】",
-        "一个 JSON 对象。",
+        "[Output]",
+        "One JSON object.",
     ])
 
 
@@ -1133,10 +1137,10 @@ def _manuscript_prompt(
         memory,
     )
     return "\n".join([
-        "【过程】",
+        "[Process]",
         body,
-        "【输出】",
-        "只输出一个 JSON 对象。",
+        "[Output]",
+        "Output only one JSON object.",
     ])
 
 
@@ -1181,7 +1185,7 @@ def prompt_for(
 def transcript(messages: list[dict]) -> str:
     lines = []
     for item in messages:
-        lines.append(f"【{item['role']}】")
+        lines.append(f"[{item['role']}]")
         lines.append(item["content"])
         lines.append("")
     return "\n".join(lines).strip()
@@ -1210,11 +1214,11 @@ def _process_excerpt(chain: dict, sentence: dict) -> str:
         None,
         (sentence.get("local_ids") or [None])[0],
     )
-    start = text.find("【过程】")
-    end = text.find("\n【输出】", start)
+    start = text.find("[Process]")
+    end = text.find("\n[Output]", start)
     if start < 0 or end < 0:
-        raise RuntimeError(f"{chain['process']} 的当前句没有过程正文。")
-    return text[start + len("【过程】"):end].strip()
+        raise RuntimeError(f"{chain['process']} has no process text for the current sentence.")
+    return text[start + len("[Process]"):end].strip()
 
 
 def _close_slots(text: str, sentence: dict) -> str:
@@ -1242,14 +1246,14 @@ def _session_question(chain: dict, sentence: dict, previous: dict | None) -> str
         earlier = _close_slots(_process_excerpt(chain, previous), previous).strip()
         if current.startswith(earlier):
             current = current[len(earlier):].strip()
-    lead = "填写当前这一句。只输出这一句的 JSON，不要解释。"
+    lead = "Fill the current sentence. Write only the JSON for this sentence, with no explanation."
     return "\n".join([
         lead,
         "",
-        "【子过程】",
+        "[Subprocess]",
         chain["process"],
         "",
-        "【问题】",
+        "[Question]",
         current,
     ])
 
@@ -1266,23 +1270,23 @@ def _session_system(chain: dict) -> str:
         from domains.wind_tunnel.dataset_generate import PRIOR
         prior = PRIOR
     parts = [
-        "本会话只在这条系统消息里给出一次定义、物理常识和输出格式。",
-        "后面的每一问只追加当前句子。请从本消息检索工程定义，不要等待定义被重复。",
+        "This session states the definitions, the background, and the output format once, in this system message.",
+        "Each later question adds only the current sentence. Retrieve the engineering definitions from this message; do not wait for them to be repeated.",
         "",
-        "【定义声明】",
+        "[Declaration]",
         chain["declaration"].strip(),
     ]
     if str(prior).strip():
-        parts.extend(["", "【物理常识】", str(prior).strip()])
+        parts.extend(["", "[Background]", str(prior).strip()])
     format_note = str(chain.get("format_note") or "").strip()
     if format_note:
-        parts.extend(["", "【输出格式】", format_note])
+        parts.extend(["", "[Output format]", format_note])
     parts.extend([
         "",
-        "【输出】",
-        "当前这一问只输出一个 JSON 对象。键是空的编号，值是答案。",
-        "选择题的值只写字母。矩阵、向量、表达式和公式用英文双引号包成字符串。",
-        "不要输出句子原文，不要解释。",
+        "[Output]",
+        "This question writes one JSON object. The key is the blank id and the value is the answer.",
+        "A multiple-choice value is only a letter. A matrix, vector, expression, or formula is a string in English double quotes.",
+        "Do not write the sentence text, and do not explain.",
     ])
     return "\n".join(parts)
 
@@ -1293,7 +1297,7 @@ def _guard_session(messages: list[dict], declaration: str) -> None:
         return
     for item in messages:
         if item["role"] == "user" and marker in item["content"]:
-            raise RuntimeError("后续问题重复注入了定义声明。")
+            raise RuntimeError("A later question injected the declaration again.")
 
 
 def job_for(
@@ -1366,7 +1370,7 @@ def _read_bare(text: str, index: int) -> tuple[str, int]:
             if depth == 0:
                 break
             depth -= 1
-        elif char in ",，" and depth == 0:
+        elif char == "," and depth == 0:
             break
         index += 1
     return text[start:index].strip(), index
@@ -1379,7 +1383,7 @@ def _read_key(text: str, index: int) -> tuple[str | None, int]:
     if text[index] in "\"'":
         return _read_string(text, index)
     start = index
-    while index < len(text) and text[index] not in ":：":
+    while index < len(text) and text[index] != ":":
         index += 1
     return text[start:index].strip(), index
 
@@ -1397,7 +1401,7 @@ def _read_object(text: str, index: int) -> tuple[dict[str, str] | None, int]:
         if key is None:
             return None, index
         index = _skip_ws(text, index)
-        if index >= len(text) or text[index] not in ":：":
+        if index >= len(text) or text[index] != ":":
             return None, index
         index = _skip_ws(text, index + 1)
         if index >= len(text):
@@ -1410,7 +1414,7 @@ def _read_object(text: str, index: int) -> tuple[dict[str, str] | None, int]:
             value, index = _read_bare(text, index)
         obj[key] = value.strip()
         index = _skip_ws(text, index)
-        if index < len(text) and text[index] in ",，":
+        if index < len(text) and text[index] == ",":
             index += 1
             continue
         if index < len(text) and text[index] == "}":
@@ -1448,7 +1452,7 @@ def _parse_reply(response: str) -> dict[str, str]:
     if parsed:
         return parsed
     for line in reply_lines(response):
-        match = re.match(r"^(?:ID\s*[:：]?\s*)?(\d+)\s*[:：、.\s]\s*(.*)$", line)
+        match = re.match(r"^(?:ID\s*:?\s*)?(\d+)\s*[:.\s]\s*(.*)$", line)
         if match:
             parsed[match.group(1)] = match.group(2).strip()
     return parsed
@@ -1506,19 +1510,19 @@ def _consume_atom(text: str, index: int) -> int:
             depth += 1
         elif char in ")]}" and not _escaped(text, cursor):
             depth = max(0, depth - 1)
-        elif depth == 0 and char in "\n;；":
+        elif depth == 0 and char in "\n;":
             break
         cursor += 1
     return cursor
 
 
 _LABEL_ONLY = re.compile(
-    r"^(?:答案|结果|因此|所以)?\s*[A-Za-zα-ωθφψΔ0-9_\\]{0,16}\s*[:：=]\s*$"
+    r"^(?:answer|result|therefore|so)?\s*[A-Za-zα-ωθφψΔ0-9_\\]{0,16}\s*[:=]\s*$"
 )
 
 
 def _is_answer_chunk(chunk: str) -> bool:
-    text = chunk.strip().strip("。；;")
+    text = chunk.strip().strip(";")
     if not text:
         return False
     if re.fullmatch(r"[A-Za-z]", text):
@@ -1542,7 +1546,7 @@ def _unnumbered_chunks(text: str) -> list[str]:
     index = 0
     length = len(source)
     while index < length:
-        while index < length and source[index] in " \t\r\n,，、":
+        while index < length and source[index] in " \t\r\n,":
             index += 1
         if index >= length:
             break
@@ -1561,7 +1565,7 @@ def _unnumbered_chunks(text: str) -> list[str]:
             end = _consume_group(source, index)
         else:
             end = _consume_atom(source, index)
-        chunk = source[index:end].strip().strip("，,、")
+        chunk = source[index:end].strip().strip(",")
         index = max(end, index + 1)
         if _is_answer_chunk(chunk):
             pieces.append(chunk)
@@ -1587,8 +1591,6 @@ def _check_parse() -> None:
     parsed = _parse_reply("{1:A}\n{2:B}")
     if parsed != {"1": "A", "2": "B"}:
         raise RuntimeError(parsed)
-    if _parse_reply("{1：A}").get("1") != "A":
-        raise RuntimeError("fullwidth colon")
     merged = _parse_reply('{1:A, 2:C, 11:"[[0, 1], [1, 0]]"}')
     if merged.get("1") != "A" or merged.get("2") != "C" or merged.get("11") != "[[0, 1], [1, 0]]":
         raise RuntimeError(merged)
@@ -1609,8 +1611,8 @@ def _check_parse() -> None:
     ordered = _score_blanks(
         "[(u1-cx1)/fx1, (v1-cy1)/fy1, 1]",
         [
-            {"blank_id": "145", "label": "A2", "format_code": "向量", "options": [], "answer": "[(-cx1 + u1)/fx1, (-cy1 + v1)/fy1, 1]"},
-            {"blank_id": "146", "label": "A2", "format_code": "向量", "options": [], "answer": "[1, 0, 0]"},
+            {"blank_id": "145", "label": "A2", "format_code": "vector", "options": [], "answer": "[(-cx1 + u1)/fx1, (-cy1 + v1)/fy1, 1]"},
+            {"blank_id": "146", "label": "A2", "format_code": "vector", "options": [], "answer": "[1, 0, 0]"},
         ],
     )
     if not ordered[0]["normalized"] or ordered[1]["prediction"] or ordered[1]["normalized"]:
@@ -1618,9 +1620,9 @@ def _check_parse() -> None:
     paired = _score_blanks(
         "[1, 0, 0]\n[0, 1, 0]",
         [
-            {"blank_id": "137", "label": "A2", "format_code": "向量", "options": [], "answer": "[1, 0, 0]"},
-            {"blank_id": "138", "label": "A2", "format_code": "向量", "options": [], "answer": "[0, 1, 0]"},
-            {"blank_id": "139", "label": "A2", "format_code": "向量", "options": [], "answer": "[0, 0, 1]"},
+            {"blank_id": "137", "label": "A2", "format_code": "vector", "options": [], "answer": "[1, 0, 0]"},
+            {"blank_id": "138", "label": "A2", "format_code": "vector", "options": [], "answer": "[0, 1, 0]"},
+            {"blank_id": "139", "label": "A2", "format_code": "vector", "options": [], "answer": "[0, 0, 1]"},
         ],
     )
     if not paired[0]["exact"] or not paired[1]["exact"] or paired[2]["prediction"] or paired[2]["normalized"]:
@@ -1628,8 +1630,8 @@ def _check_parse() -> None:
     named = _score_blanks(
         '{"d1":"[1, 0, 0]","d2":"[0, 1, 0]"}',
         [
-            {"blank_id": "145", "label": "A2", "format_code": "向量", "options": [], "answer": "[1, 0, 0]"},
-            {"blank_id": "146", "label": "A2", "format_code": "向量", "options": [], "answer": "[0, 1, 0]"},
+            {"blank_id": "145", "label": "A2", "format_code": "vector", "options": [], "answer": "[1, 0, 0]"},
+            {"blank_id": "146", "label": "A2", "format_code": "vector", "options": [], "answer": "[0, 1, 0]"},
         ],
     )
     if not named[0]["exact"] or not named[1]["exact"]:
@@ -1637,24 +1639,24 @@ def _check_parse() -> None:
     numbered = _score_blanks(
         '{146:"[0, 1, 0]", 145:"[1, 0, 0]"}',
         [
-            {"blank_id": "145", "label": "A2", "format_code": "向量", "options": [], "answer": "[1, 0, 0]"},
-            {"blank_id": "146", "label": "A2", "format_code": "向量", "options": [], "answer": "[0, 1, 0]"},
+            {"blank_id": "145", "label": "A2", "format_code": "vector", "options": [], "answer": "[1, 0, 0]"},
+            {"blank_id": "146", "label": "A2", "format_code": "vector", "options": [], "answer": "[0, 1, 0]"},
         ],
     )
     if not numbered[0]["exact"] or not numbered[1]["exact"]:
         raise RuntimeError(numbered)
     if _resolve_max_tokens(0) != DEFAULT_MAX_TOKENS or _resolve_max_tokens(MIN_MAX_TOKENS) != MIN_MAX_TOKENS:
-        raise RuntimeError("max_tokens 没有保持在 2048–8192。")
+        raise RuntimeError("max_tokens did not stay in 2048-8192.")
     if _resolve_max_tokens(0, "enabled", announce=False) != THINKING_MAX_TOKENS:
-        raise RuntimeError("思考开启时未使用 65536。")
+        raise RuntimeError("Thinking on did not use 65536.")
     if _resolve_max_tokens(4096, "enabled", announce=False) != THINKING_MAX_TOKENS:
-        raise RuntimeError("思考开启时没有固定为 65536。")
+        raise RuntimeError("Thinking on was not fixed at 65536.")
     if _resolve_max_tokens(100000, "enabled", announce=False) != THINKING_MAX_TOKENS:
-        raise RuntimeError("思考开启时没有固定为 65536。")
+        raise RuntimeError("Thinking on was not fixed at 65536.")
     if _resolve_max_tokens(100000, announce=False) != MAX_TOKEN_CEILING:
-        raise RuntimeError("思考关闭时 max_tokens 没有截在 32768。")
+        raise RuntimeError("With thinking off, max_tokens was not capped at 32768.")
     if _resolve_workers(MAX_WORKERS) != MAX_WORKERS:
-        raise RuntimeError("并发上限被改写了。")
+        raise RuntimeError("The concurrency ceiling was overwritten.")
 
 
 def reply_lines(prediction: str) -> list[str]:
@@ -1753,9 +1755,9 @@ def _token_counts(usage: dict) -> tuple[int, int, int]:
 def _deepseek_cost(usage: dict, moment: datetime, model: str, base_url: str) -> dict:
     priced = _price_name(model, base_url)
     if not usage:
-        return {"usd": None, "note": "这次调用没有返回用量。"}
+        return {"usd": None, "note": "This call did not return usage."}
     if priced is None:
-        return {"usd": None, "note": "计价表只覆盖 DeepSeek 官方接口上的 flash 和 v4-pro。"}
+        return {"usd": None, "note": "The price table covers only flash and v4-pro on the official DeepSeek API."}
     hit, miss, output = _token_counts(usage)
     band, calendar = _band(moment)
     hit_rate, miss_rate, output_rate = _RATES[priced][band]
@@ -1829,7 +1831,7 @@ def _prefix_phrase(blank: dict) -> str:
     and is not replaced with the gold answer.
     """
     prediction = blank.get("prediction") or ""
-    options = [str(option) for option in (blank.get("options") or []) if option and str(option) != "无"]
+    options = [str(option) for option in (blank.get("options") or []) if option and str(option) != "none"]
     if options:
         from cloze_score import identified_option
 
@@ -1848,8 +1850,8 @@ def _resolve_max_tokens(requested: int, thinking: str = "disabled", announce: bo
     if thinking == "enabled":
         if announce and requested > 0 and requested != THINKING_MAX_TOKENS:
             print(
-                f"思考开启时 max_tokens 固定为 {THINKING_MAX_TOKENS}，请求的 {requested} 已改为该值。"
-                "思维链用完即记错，不再提高上限或改思考强度。",
+                f"With thinking on, max_tokens is fixed at {THINKING_MAX_TOKENS}. The requested {requested} was changed to that value. "
+                "If the chain of thought uses up the ceiling, the item is scored wrong. The ceiling is not raised and the thinking effort is not changed.",
                 flush=True,
             )
         return THINKING_MAX_TOKENS
@@ -1858,15 +1860,15 @@ def _resolve_max_tokens(requested: int, thinking: str = "disabled", announce: bo
     if requested < MIN_MAX_TOKENS:
         if announce:
             print(
-                f"max_tokens {requested} 低于 {MIN_MAX_TOKENS}，已提高到 {MIN_MAX_TOKENS}。"
-                "思维链计入该上限，512 会截断最终答案，重跑比多出来的 token 更贵。",
+                f"max_tokens {requested} is below {MIN_MAX_TOKENS}, so it was raised to {MIN_MAX_TOKENS}. "
+                "The chain of thought counts toward that ceiling. 512 would cut off the final answer, and a rerun costs more than the extra tokens.",
                 flush=True,
             )
         return MIN_MAX_TOKENS
     if requested > MAX_TOKEN_CEILING:
         if announce:
             print(
-                f"max_tokens {requested} 超过全局上限 {MAX_TOKEN_CEILING}，已截为 {MAX_TOKEN_CEILING}。",
+                f"max_tokens {requested} is above the global ceiling {MAX_TOKEN_CEILING}, so it was cut to {MAX_TOKEN_CEILING}.",
                 flush=True,
             )
         return MAX_TOKEN_CEILING
@@ -1876,11 +1878,11 @@ def _resolve_max_tokens(requested: int, thinking: str = "disabled", announce: bo
 def _resolve_workers(requested: int) -> int:
     """Long outputs at high concurrency turn into timeouts and 429 retries."""
     if requested < 1:
-        raise SystemExit("--workers 至少为 1。")
+        raise SystemExit("--workers must be at least 1.")
     if requested > MAX_WORKERS:
         print(
-            f"并发 {requested} 在长输出下会增加超时和 429 重试，已限制为 {MAX_WORKERS}。"
-            "重试在账单上是额外调用，不在成功记录的 token 里。",
+            f"Concurrency {requested} increases timeouts and 429 retries on long output, so it was limited to {MAX_WORKERS}. "
+            "A retry is an extra billed call and is not included in the tokens of the successful record.",
             flush=True,
         )
         return MAX_WORKERS
@@ -1888,7 +1890,7 @@ def _resolve_workers(requested: int) -> int:
 
 
 class RunStop(RuntimeError):
-    """额度或持续限流。失败的这一句不写入记录，方便从同一句继续。"""
+    """Quota or a sustained rate limit. The failed sentence is not written, so the same sentence can be resumed."""
 
     def __init__(self, kind: str, message: str, job: dict):
         super().__init__(message)
@@ -1898,10 +1900,10 @@ class RunStop(RuntimeError):
 
 def _error_kind(text: str) -> str:
     lowered = text.lower()
-    # 402 必须是独立状态码。请求号里的 402 不能当成额度错误。
+    # 402 must be a standalone status code. A 402 inside a request id is not a quota error.
     if re.search(r"(?<![0-9a-z])402(?![0-9a-z])", lowered) or any(token in lowered for token in (
         "insufficient", "quota", "arrearage", "balance", "allocationquota",
-        "freetier", "billing", "prepaid", "余额", "欠费", "额度",
+        "freetier", "billing", "prepaid",
     )):
         return "quota"
     if any(token in lowered for token in ("429", "rate limit", "ratelimit", "throttl", "too many requests")):
@@ -1941,7 +1943,7 @@ def score_one(client, model: str, temperature: float, thinking: str, job: dict) 
             truncated = True
             prediction = ""
             unanswered = True
-            last_error = f"模型没有答复：输出在 {max_tokens} token 处被截断。"
+            last_error = f"The model did not answer: the output was cut off at {max_tokens} tokens."
             break
         except RunStop:
             raise
@@ -2056,15 +2058,15 @@ def summarize(rows: list[dict], preface: list[str] | None = None) -> str:
         return [
             f"### {title}",
             "",
-            f"- 空数 {total}，严格 {exact}（{_rate(exact, total)}），归一化 {normalized}（{_rate(normalized, total)}），调用失败 {errors}",
+            f"- blanks {total}, strict {exact} ({_rate(exact, total)}), normalized {normalized} ({_rate(normalized, total)}), call failures {errors}",
             "",
         ]
 
-    lines = ["# 填空评测", ""]
+    lines = ["# Cloze evaluation", ""]
     if preface:
         lines.extend(preface)
         lines.append("")
-    lines.extend(block("全部", rows))
+    lines.extend(block("All", rows))
     grouped: dict[str, list[bool]] = {}
     grouped_norm: dict[str, list[bool]] = {}
     order = []
@@ -2079,20 +2081,20 @@ def summarize(rows: list[dict], preface: list[str] | None = None) -> str:
     strict_low, strict_high = bootstrap_ci([grouped[key] for key in order])
     norm_low, norm_high = bootstrap_ci([grouped_norm[key] for key in order])
     lines.append(
-        f"样本自助法 95% 区间：严格 {strict_low:.1%}–{strict_high:.1%}，归一化 {norm_low:.1%}–{norm_high:.1%}。"
-        "重抽样单位是一条样本的一次运行。"
+        f"Sample bootstrap 95% interval: strict {strict_low:.1%}-{strict_high:.1%}, normalized {norm_low:.1%}-{norm_high:.1%}. "
+        "The resampled unit is one run of one sample."
     )
     lines.append("")
-    lines.append("## 错误分类")
+    lines.append("## Error classes")
     lines.append("")
-    lines.append("只统计严格不一致。格式表示关键词之后的答案去掉空格、杂字符和 LaTeX 后一致，表达式与矩阵经 sympy 等价，或选择题的字母、选项原文、能唯一对应正确选项的片段命中。")
+    lines.append("Only strict mismatches are counted. format means that, after the answer keyword, dropping spaces, stray characters, and LaTeX leaves the same text, that an expression or matrix is equivalent under sympy, or that a choice hits the letter, the option text, or a fragment that maps to only the correct option.")
     lines.append("")
     misses = [item for item in rows if not item["exact"]]
-    counts = Counter(item.get("error_kind") or "其他" for item in misses)
-    for kind in ("格式", "轴", "符号", "定义未用", "其他"):
+    counts = Counter(item.get("error_kind") or "other" for item in misses)
+    for kind in ("format", "axis", "sign", "unused-definition", "other"):
         lines.append(f"- {kind} {counts.get(kind, 0)}")
     lines.append("")
-    lines.append("## 按定义变更档")
+    lines.append("## By definition tier")
     lines.append("")
     present_tiers = []
     for item in rows:
@@ -2100,14 +2102,14 @@ def summarize(rows: list[dict], preface: list[str] | None = None) -> str:
             present_tiers.append(item["tier"])
     for tier in sorted(present_tiers, key=lambda value: int(value)):
         lines.extend(block(f"{tier}%", [item for item in rows if item["tier"] == tier]))
-    lines.append("## 按标签")
+    lines.append("## By label")
     lines.append("")
     labels = ["C1", "C2", "A1", "A2"]
-    if any(item["label"] == "端到端" for item in rows):
-        labels.append("端到端")
+    if any(item["label"] == _END_TO_END_LABEL for item in rows):
+        labels.append(_END_TO_END_LABEL)
     for label in labels:
         lines.extend(block(label, [item for item in rows if item["label"] == label]))
-    lines.append("## 按数据")
+    lines.append("## By data")
     lines.append("")
     sample_ids = []
     for item in rows:
@@ -2116,18 +2118,18 @@ def summarize(rows: list[dict], preface: list[str] | None = None) -> str:
     for sample_id in sample_ids:
         subset = [item for item in rows if item["sample_id"] == sample_id]
         tier = subset[0]["tier"]
-        lines.extend(block(f"{sample_id}（{tier}%）", subset))
-    shown = [item for item in misses if item.get("error_kind") != "格式"][:30]
-    lines.extend(["## 归一化后仍不一致（最多30条）", ""])
+        lines.extend(block(f"{sample_id} ({tier}%)", subset))
+    shown = [item for item in misses if item.get("error_kind") != "format"][:30]
+    lines.extend(["## Still different after normalization (at most 30)", ""])
     if not shown:
-        lines.append("没有。")
+        lines.append("None.")
     for item in shown:
         pred = str(item["prediction"]).replace("\n", " / ")
         if len(pred) > 180:
             pred = pred[:180] + "…"
         lines.append(
-            f"- {item['sample_id']} {item['process']} ID {item['blank_id']} {item['label']} {item.get('error_kind', '')}："
-            f"答案 `{item['answer']}`；输出 `{pred}`"
+            f"- {item['sample_id']} {item['process']} ID {item['blank_id']} {item['label']} {item.get('error_kind', '')}: "
+            f"answer `{item['answer']}`; output `{pred}`"
         )
     lines.append("")
     return "\n".join(lines)
@@ -2143,8 +2145,8 @@ def standard_answers_flight() -> dict[tuple[str, str], str]:
 
     sample = {
         "id": "standard",
-        "title": "统一默认",
-        "change": "统一默认。",
+        "title": "Unified default",
+        "change": "Unified default.",
         "spec": deepcopy(STANDARD_SPEC),
     }
     found = {}
@@ -2183,9 +2185,9 @@ def standard_answers_cv(data: Path | None = None) -> dict[tuple[str, str], str]:
             found[(item["process"], local_id)] = item["answer"]
     if data is not None and "reconstruction" in Path(data).as_posix() and "vision" in Path(data).as_posix():
         found.update({
-            ("纯机器视觉双目姿态估计", blank_id): answer
+            ("pure stereo pose", blank_id): answer
             for (process, blank_id), answer in list(found.items())
-            if process == "计算机视觉双目姿态估计"
+            if process == "stereo pose"
         })
     return found
 
@@ -2243,8 +2245,8 @@ def standard_answers() -> dict[tuple[str, str], str]:
 
     record = build_record({
         "id": "standard",
-        "title": "统一默认",
-        "change": "统一默认。",
+        "title": "Unified default",
+        "change": "Unified default.",
         "spec": STANDARD_SPEC,
     })
     found = {}
@@ -2317,7 +2319,7 @@ def _preface(
     max_tokens: int,
     condition: str = "A",
 ) -> list[str]:
-    role = "主评测" if model == "deepseek-v4-pro" and thinking == "enabled" else "对照"
+    role = "main evaluation" if model == "deepseek-v4-pro" and thinking == "enabled" else "control"
     usd = 0.0
     known = 0
     hit = miss = output = 0
@@ -2335,45 +2337,45 @@ def _preface(
     documented = sorted({item.get("documented_model_version") or "" for item in rows if item.get("documented_model_version")})
     dates = sorted({(item.get("started_at") or "")[:10] for item in rows if item.get("started_at")})
     lines = [
-        f"本次是{role}：模型 {model}，思考 {thinking}，条件 {condition_label(condition)}。",
-        "条件名写明注入方式。"
-        + " ".join(f"{name}：{gloss}。" for name, gloss in CONDITION_GLOSS.items())
-        + " 旧代号 A、B、C、D、E、F 仍可输入，依次对应这六个名字。",
+        f"This run is the {role}: model {model}, thinking {thinking}, condition {condition_label(condition)}.",
+        "The condition name states how the text is injected."
+        + " ".join(f"{name}: {gloss}." for name, gloss in CONDITION_GLOSS.items())
+        + " The old letters A, B, C, D, E, and F can still be entered, in that order, for these six names.",
         (
-            "主评测口径仍是 deepseek-v4-pro 且思考开启。"
+            "The main evaluation is still deepseek-v4-pro with thinking on."
             + (
-                "本次 deepseek-flash 也开启了思考，用来看个性化定义对正确率的影响。"
+                "This deepseek-flash run also has thinking on, to see how a personalized definition affects accuracy."
                 if thinking == "enabled"
-                else "deepseek-flash 在思考关闭时只代表非思考模式，不能当作 V4 的完整能力。"
+                else "With thinking off, deepseek-flash stands only for the non-thinking mode and is not the full capability of V4."
             )
         ),
-        "思考开启时温度不生效。官方 V4 接口忽略 seed，重复运行才提供方差，下面的区间是样本自助法。",
+        "Temperature has no effect when thinking is on. The official V4 API ignores seed, so repeated runs are what provide variance. The interval below is a sample bootstrap.",
     ]
     if max_tokens:
-        stop_note = "端到端不在空行处停止。" if condition in _END_TO_END else "思考关闭时另在空行处停止。"
+        stop_note = "End-to-end does not stop at a blank line." if condition in _END_TO_END else "With thinking off, generation also stops at a blank line."
         lines.append(
-            f"温度参数 {temperature}，重复运行 {runs}，请求种子 {seed}，max_tokens {max_tokens}。"
-            f"该上限含思维链，思考关闭时也保留这段长度。{stop_note}"
+            f"Temperature {temperature}, repeated runs {runs}, request seed {seed}, max_tokens {max_tokens}. "
+            f"That ceiling includes the chain of thought and is kept when thinking is off. {stop_note}"
         )
     else:
-        lines.append(f"温度参数 {temperature}。这批调用没有设置 max_tokens、stop 或 seed。")
+        lines.append(f"Temperature {temperature}. This batch did not set max_tokens, stop, or seed.")
     retries = sum(max(0, int(item.get("attempts") or 1) - 1) for item in rows)
     if known:
         lines.append(
-            f"已记录用量的调用 {known} 次。缓存命中 {hit}，缓存未命中 {miss}，输出 {output}。"
-            f"按 DeepSeek 价目估算 {usd:.4f} 美元，不是账单。"
-            f"其中重试 {retries} 次。用量只含成功返回的那一次，超时和 429 的失败尝试不在这些 token 里，账单调用数会更高。"
+            f"Calls with recorded usage: {known}. Cache hit {hit}, cache miss {miss}, output {output}. "
+            f"Estimated from the DeepSeek price list at {usd:.4f} USD, which is not the bill. "
+            f"Retries: {retries}. Usage includes only the successful return. Timed-out and 429 attempts are not in these tokens, so the billed call count is higher."
         )
     else:
         lines.append(
-            "这批记录没有用量和费用，无法核对成本。"
-            "超时和 429 的重试同样不会出现在 token 估算里。"
+            "These records have no usage and no cost, so the cost cannot be checked. "
+            "Timeout and 429 retries are also absent from the token estimate."
         )
     if versions or documented or dates:
         lines.append(
-            "服务端模型名：" + ("、".join(versions) or "无")
-            + "。文档版本：" + ("、".join(documented) or "无")
-            + "。调用日期：" + ("、".join(dates) or "无") + "。"
+            "Server model names: " + (", ".join(versions) or "none")
+            + ". Documented versions: " + (", ".join(documented) or "none")
+            + ". Call dates: " + (", ".join(dates) or "none") + "."
         )
     return lines
 
@@ -2393,7 +2395,7 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
 
 def write_raw_samples(out_dir: Path, rows: list[dict]) -> None:
     """One file per complete sample, containing that sample's raw model replies."""
-    process_order = ["风轴系到体轴系", "天平系到体轴系", "天平系到风轴系", "力矩参考点"]
+    process_order = ["wind frame to body-axis frame", "balance frame to body-axis frame", "balance frame to wind frame", "moment reference point"]
     grouped: dict[str, list[dict]] = {}
     for item in rows:
         if "blank_ids" not in item:
@@ -2413,23 +2415,23 @@ def write_raw_samples(out_dir: Path, rows: list[dict]) -> None:
         ))
         head = items[0]
         lines = [
-            f"# {sample_id} 原始输出",
+            f"# {sample_id} raw output",
             "",
-            f"模型 {head.get('model', '')}，思考 {head.get('thinking', '')}，条件 {condition_label(head.get('condition', ''))}。",
-            "下面按子过程和句序保留模型的原始回复，没有改写。",
+            f"Model {head.get('model', '')}, thinking {head.get('thinking', '')}, condition {condition_label(head.get('condition', ''))}.",
+            "The model's raw replies are kept below in subprocess and sentence order, without rewriting.",
             "",
         ]
         for item in items:
             if len(item["blank_ids"]) > 8:
-                lines.append(f"## {item['process']} 全部 {len(item['blank_ids'])} 个空")
+                lines.append(f"## {item['process']} all {len(item['blank_ids'])} blanks")
             else:
-                lines.append(f"## {item['process']} ID {'、'.join(item['blank_ids'])}")
+                lines.append(f"## {item['process']} ID {', '.join(item['blank_ids'])}")
             lines.append("")
             if item.get("unanswered"):
-                lines.append(f"模型没有答复：输出在 {item.get('max_tokens') or THINKING_MAX_TOKENS} token 处被截断。")
+                lines.append(f"The model did not answer: the output was cut off at {item.get('max_tokens') or THINKING_MAX_TOKENS} tokens.")
                 lines.append("")
             elif item.get("error"):
-                lines.append(f"调用失败：{item['error']}")
+                lines.append(f"Call failed: {item['error']}")
                 lines.append("")
             lines.append(item.get("response") or "")
             lines.append("")
@@ -2481,7 +2483,7 @@ def _execute_chain(
             chain, sentence, condition, memory_arg, run, seed + run, max_tokens, stop, standard,
         )
         if held_reasoning and len(held_reasoning) > 40 and held_reasoning in job["prompt"]:
-            raise RuntimeError("思维链被写回了下一句的输入。多轮只保留答案文本。")
+            raise RuntimeError("The chain of thought was written into the next sentence. Multi-turn keeps only the answer text.")
         result = score_one(client, model, temperature, thinking, job)
         held_reasoning = result.get("reasoning") or ""
         for blank in result["blanks"]:
@@ -2560,12 +2562,12 @@ def _execute_session(
                 branch = make_branch(chain, messages, committed, spec)
             except (KeyError, RuntimeError) as exc:
                 reason = str(exc)
-                if "还没看见矩阵名称" not in reason and "题面没有" not in reason:
+                if "has not seen the matrix name" not in reason and "the problem text does not contain" not in reason:
                     raise
                 print(f"probe skip {spec['probe_id']}: {reason}", flush=True)
                 continue
             if _chat_snapshot(messages) != before:
-                raise RuntimeError(f"{spec['probe_id']} 写回了主会话")
+                raise RuntimeError(f"{spec['probe_id']} was written back into the main session")
             job = {
                 "sample_id": chain["sample_id"],
                 "tier": chain["tier"],
@@ -2586,9 +2588,9 @@ def _execute_session(
             }
             result = score_one(client, model, temperature, thinking, job)
             if _chat_snapshot(messages) != before:
-                raise RuntimeError(f"{spec['probe_id']} 的答案写回了主会话")
+                raise RuntimeError(f"The answer of {spec['probe_id']} was written back into the main session")
             if PROBE_LEAD in "\n".join(content for _, content in before):
-                raise RuntimeError(f"{spec['probe_id']} 的题干进入了主会话")
+                raise RuntimeError(f"The stem of {spec['probe_id']} entered the main session")
             result["branch"] = "probe"
             result["probe_id"] = spec["probe_id"]
             result["probe_kind"] = spec["kind"]
@@ -2603,7 +2605,7 @@ def _execute_session(
         key = (condition, chain["sample_id"], chain["process"], ",".join(sentence["blank_ids"]), run)
         question = _session_question(chain, sentence, previous)
         if PROBE_LEAD in question:
-            raise RuntimeError(f"{chain['process']} 的主问题带了探针题干")
+            raise RuntimeError(f"The main question of {chain['process']} carried a probe stem")
         history = [*messages, {"role": "user", "content": question}]
         _guard_session(history, chain["declaration"])
         saved = done.get(key)
@@ -2624,7 +2626,7 @@ def _execute_session(
         result = score_one(client, model, temperature, thinking, job)
         reasoning = result.get("reasoning") or ""
         if reasoning and len(reasoning) > 40 and reasoning in question:
-            raise RuntimeError("思维链被写回了下一句的输入。会话只保留答案文本。")
+            raise RuntimeError("The chain of thought was written into the next sentence. The session keeps only the answer text.")
         reply = gold_reply(sentence["blanks"]) if condition == SESSION_GOLD else (result.get("response") or "")
         commit(question, reply, sentence)
         result["session"] = chain["process"]
@@ -2712,8 +2714,8 @@ def _publish_and_stop(
         )
         report = summarize(stored, preface)
         note = (
-            "\n\n> 这一轮因额度或限流中断，上面的分数只覆盖已经成功的句子。"
-            "失败的那一句没有写入记录，用原命令再跑会从该句继续。\n"
+            "\n\n> This round stopped on quota or rate limiting. The scores above cover only the sentences that succeeded. "
+            "The failed sentence was not written, so the original command resumes from that sentence.\n"
         )
         (args.out / "report.md").write_text(report + note, encoding="utf-8")
         exact = sum(item["exact"] for item in flat)
@@ -2745,10 +2747,10 @@ def _publish_and_stop(
     }
     panel = args.out.parent / "panel_checkpoint.json" if getattr(args, "domain", "wind_tunnel") == "flight" else None
     _write_run_checkpoint(args.out, payload, panel)
-    ids_text = "、".join(str(item) for item in (job.get("blank_ids") or []))
+    ids_text = ", ".join(str(item) for item in (job.get("blank_ids") or []))
     print(
-        f"断点：{condition} 样本 {job.get('sample_id')} 过程 {job.get('process')} "
-        f"空 {ids_text} 原因 {halt.kind}。已完成 {len(stored)}/{sentence_count} 句。",
+        f"Stopped: {condition} sample {job.get('sample_id')} process {job.get('process')} "
+        f"blanks {ids_text} reason {halt.kind}. Finished {len(stored)}/{sentence_count} sentences.",
         flush=True,
     )
     print(payload["resume_command"], flush=True)
@@ -2758,7 +2760,7 @@ def _publish_and_stop(
 def _load_eval_rows(domain: str, path: Path, wanted: list[str] | None) -> list[dict]:
     if domain == "wind_tunnel":
         if path.suffix != ".jsonl":
-            raise SystemExit("风洞全量入口是 batch/samples.jsonl。")
+            raise SystemExit("The wind-tunnel full-set entry is batch/samples.jsonl.")
         rows = load_samples(path, set(wanted) if wanted is not None else None, strict_graph=False)
         if wanted is not None:
             order = {item: index for index, item in enumerate(wanted)}
@@ -2784,28 +2786,28 @@ def _check_session_prefix(chain: dict) -> None:
     for sentence in chain["sentences"]:
         current = _process_excerpt(chain, sentence).strip()
         if not current:
-            raise RuntimeError(f"{chain['sample_id']} {chain['process']} 有一句是空的。")
+            raise RuntimeError(f"{chain['sample_id']} {chain['process']} has an empty sentence.")
         if previous is not None:
             earlier = _close_slots(_process_excerpt(chain, previous), previous).strip()
             if not current.startswith(earlier):
                 raise RuntimeError(
-                    f"{chain['sample_id']} {chain['process']} 的会话前缀对不齐。"
+                    f"{chain['sample_id']} {chain['process']} has a session prefix that does not line up."
                 )
             if not current[len(earlier):].strip():
                 raise RuntimeError(
-                    f"{chain['sample_id']} {chain['process']} 的下一句没有新正文。"
+                    f"{chain['sample_id']} {chain['process']} has a next sentence with no new text."
                 )
         previous = sentence
 
 
 def _check_eval_rows(domain: str, rows: list[dict]) -> None:
     if not rows:
-        raise SystemExit("没有可评的样本。")
+        raise SystemExit("There are no samples to score.")
     if domain == "wind_tunnel":
         allowed = (0,) + TIERS
         bad = [str(row["id"]) for row in rows if int(row.get("tier") or 0) not in allowed]
         if bad:
-            raise SystemExit("风洞全量里有不在 0/25/50/75/100 的样本：" + "、".join(bad[:8]))
+            raise SystemExit("The wind-tunnel full set has samples outside 0/25/50/75/100: " + ", ".join(bad[:8]))
         return
     from domains.eval_manuscripts import manuscript_standard
 
@@ -2820,7 +2822,7 @@ def _check_eval_rows(domain: str, rows: list[dict]) -> None:
                     if key not in standard:
                         missing.append(f"{row['id']} {chain['process']} {blank_id}")
     if missing:
-        raise SystemExit("标准稿没有这些空：" + "、".join(missing[:12]))
+        raise SystemExit("The standard manuscript does not have these blanks: " + ", ".join(missing[:12]))
 
 
 def _print_inventory(domain: str, path: Path, rows: list[dict]) -> None:
@@ -2830,20 +2832,20 @@ def _print_inventory(domain: str, path: Path, rows: list[dict]) -> None:
     sentences = sum(len(chain["sentences"]) for chain in chains)
     blanks = sum(len(sentence["blank_ids"]) for chain in chains for sentence in chain["sentences"])
     tiers = Counter(int(row.get("tier") or 0) for row in rows)
-    tier_text = "、".join(f"{tier}%×{tiers[tier]}" for tier in sorted(tiers))
+    tier_text = ", ".join(f"{tier}% x {tiers[tier]}" for tier in sorted(tiers))
     print(f"{spec['zh']}  {path}", flush=True)
-    print(f"样本 {len(rows)}  子过程 {len(chains)}  句 {sentences}  空 {blanks}", flush=True)
-    print(f"档位 {tier_text}", flush=True)
+    print(f"samples {len(rows)}  subprocesses {len(chains)}  sentences {sentences}  blanks {blanks}", flush=True)
+    print(f"tiers {tier_text}", flush=True)
     mismatched = sum(int(row.get("graph_label_mismatches") or 0) for row in rows)
     if mismatched:
         print(
-            f"依赖图标签与稿面不一致的空 {mismatched} 个。评测使用稿面上的标签和答案。",
+            f"{mismatched} blanks have a dependency-graph label that does not match the manuscript. Scoring uses the label and answer on the manuscript.",
             flush=True,
         )
     for row, items in grouped:
         row_blanks = sum(len(sentence["blank_ids"]) for chain in items for sentence in chain["sentences"])
         print(
-            f"  {row['id']}  {int(row.get('tier') or 0)}%  子过程 {len(items)}  空 {row_blanks}",
+            f"  {row['id']}  {int(row.get('tier') or 0)}%  subprocesses {len(items)}  blanks {row_blanks}",
             flush=True,
         )
 
@@ -2855,15 +2857,15 @@ def main() -> None:
     _check_parse()
     parser = argparse.ArgumentParser(description="Score cloze blanks with DeepSeek.")
     parser.add_argument("--domain", choices=EVAL_DOMAINS, default="wind_tunnel")
-    parser.add_argument("--data", type=Path, default=None, help="缺省是该领域的全量数据。")
-    parser.add_argument("--ids-file", type=Path, default=None, help="缺省评全部样本。")
-    parser.add_argument("--tier", type=int, choices=TIERS, default=None, help="只评这一档。缺省评全部档。")
-    parser.add_argument("--inventory", action="store_true", help="只清点样本、子过程和空，不调用模型。")
+    parser.add_argument("--data", type=Path, default=None, help="The default is that domain's full data.")
+    parser.add_argument("--ids-file", type=Path, default=None, help="The default scores every sample.")
+    parser.add_argument("--tier", type=int, choices=TIERS, default=None, help="Score only this tier. The default scores every tier.")
+    parser.add_argument("--inventory", action="store_true", help="Only count samples, subprocesses, and blanks. Do not call the model.")
     parser.add_argument("--out", type=Path, default=ROOT / "results" / "full")
     parser.add_argument("--workers", type=int, default=MAX_WORKERS)
     parser.add_argument("--limit", type=int, default=0, help="Only score the first N sentences. 0 means all.")
     parser.add_argument("--temperature", type=float, default=0.0)
-    parser.add_argument("--model", default="", help="覆盖环境变量中的模型。主评测用 deepseek-v4-pro。")
+    parser.add_argument("--model", default="", help="Override the model in the environment. The main evaluation uses deepseek-v4-pro.")
     parser.add_argument("--thinking", choices=("enabled", "disabled"), default="enabled")
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--seed", type=int, default=20261102)
@@ -2871,32 +2873,32 @@ def main() -> None:
         "--max-tokens",
         type=int,
         default=0,
-        help="0 在思考关闭时是 8192。思考开启时固定为 65536，思维链用完即记错，不再提高上限。该上限含思维链。",
+        help="0 means 8192 when thinking is off. Thinking on is fixed at 65536. If the chain of thought uses up the ceiling, the item is scored wrong and the ceiling is not raised. The ceiling includes the chain of thought.",
     )
     parser.add_argument(
         "--condition",
         default="A",
-        help="gold-trunc、self-trunc、gold-keep、self-keep、proc-e2e、final-e2e、"
-             "session-gold、session-model。"
-             "gold/self 是空前用标准答案还是自身输出，trunc/keep 是句号截断还是保留后文。"
-             "proc-e2e 每个子过程一次，final-e2e 只问最终问题。"
-             "session-gold、session-model 在一个会话里逐题提问，定义只写在系统消息。"
-             "旧代号 A、B、C、D、E、F 仍可用。",
+        help="gold-trunc, self-trunc, gold-keep, self-keep, proc-e2e, final-e2e, "
+             "session-gold, session-model."
+             "gold/self chooses the gold answer or the model's own output before the blank. trunc/keep truncates at the period or keeps the later text. "
+             "proc-e2e is one call per subprocess. final-e2e asks only the final question. "
+             "session-gold and session-model ask one item at a time in one chat, and the definition is written only in the system message. "
+             "The old letters A, B, C, D, E, and F still work.",
     )
-    parser.add_argument("--rescore", type=Path, default=None, help="只按已保存的回复重算分数，不调用模型。")
+    parser.add_argument("--rescore", type=Path, default=None, help="Rescore the saved replies. Do not call the model.")
     parser.add_argument(
         "--gold-nodes",
         default="",
-        help="自身前缀条件下，这些题号答完后向后文注入标准答案。模型该题得分仍按原回答计算。逗号分隔，如 24,47,48。",
+        help="Under an own-prefix condition, inject the gold answer after these item ids. The model is still scored on its original answer. Comma-separated, for example 24,47,48.",
     )
     args = parser.parse_args()
     if args.runs < 1:
-        raise SystemExit("--runs 至少为 1。")
+        raise SystemExit("--runs must be at least 1.")
     spec = EVAL[args.domain]
     if args.data is None:
         args.data = spec["data"]
     if not Path(args.data).exists():
-        raise SystemExit(f"找不到全量数据：{args.data}")
+        raise SystemExit(f"Full data not found: {args.data}")
     wanted = None
     if args.ids_file is not None:
         picked = json.loads(args.ids_file.read_text(encoding="utf-8"))
@@ -2911,7 +2913,7 @@ def main() -> None:
         if args.tier is not None:
             rows = [row for row in rows if int(row.get("tier") or -1) == args.tier]
             if not rows:
-                raise SystemExit(f"{spec['zh']} 的全量数据里没有 {args.tier}% 这一档。")
+                raise SystemExit(f"{spec['zh']} full data has no {args.tier}% tier.")
         try:
             _check_eval_rows(args.domain, rows)
         except RuntimeError as exc:
@@ -2926,7 +2928,7 @@ def main() -> None:
     thinking = args.thinking
     repair_ids = {
         part.strip().removeprefix("ID").removeprefix("id")
-        for part in args.gold_nodes.replace("，", ",").split(",")
+        for part in args.gold_nodes.split(",")
         if part.strip()
     }
     max_tokens = _resolve_max_tokens(args.max_tokens, thinking)
@@ -2934,18 +2936,18 @@ def main() -> None:
     stop = None if thinking == "enabled" else ["\n\n"]
     if args.rescore is None:
         print(
-            f"条件：{condition_label(args.condition)} model={model} thinking={thinking} temperature={args.temperature} "
+            f"Condition: {condition_label(args.condition)} model={model} thinking={thinking} temperature={args.temperature} "
             f"temperature_applied={thinking != 'enabled'} runs={args.runs} seed={args.seed} max_tokens={max_tokens}"
             + (f" gold_nodes={','.join(sorted(repair_ids, key=int))}" if repair_ids else ""),
             flush=True,
         )
     if args.rescore is None and (model != "deepseek-v4-pro" or thinking != "enabled"):
-        print("这不是主评测。主评测是 deepseek-v4-pro 且 --thinking enabled。", flush=True)
+        print("This is not the main evaluation. The main evaluation is deepseek-v4-pro with --thinking enabled.", flush=True)
 
     if args.rescore is not None:
         target = args.rescore
         stored = _load_jsonl(target / "records.jsonl")
-        print(f"重算 {len(stored)} 条记录", flush=True)
+        print(f"Rescoring {len(stored)} records", flush=True)
         standard = standard_for(args.domain, args.data)
         options = option_index(args.data)
         stored = apply_scores(stored, standard, options)
@@ -2973,42 +2975,42 @@ def main() -> None:
                 "exact": sum(item["exact"] for item in flat),
                 "normalized": sum(item["normalized"] for item in flat),
                 "blanks": len(flat),
-                "rescore": "按保存的回复重算严格分和归一化分，没有重新调用模型。",
+                "rescore": "Strict and normalized scores were recomputed from the saved replies. The model was not called again.",
             })
             meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-            print(report.split("## 按定义变更档")[0])
+            print(report.split("## By definition tier")[0])
         return
 
     print(
-        f"数据：{spec['zh']} {args.data} 样本 {len(rows)}",
+        f"Data: {spec['zh']} {args.data} samples {len(rows)}",
         flush=True,
     )
-    print("生成统一默认答案，用于判断定义未用。", flush=True)
+    print("Building the unified-default answers, used to detect an unused definition.", flush=True)
     standard = standard_for(args.domain, args.data)
 
     condition = canonical_condition(args.condition)
     if repair_ids and condition not in _SEQUENTIAL:
-        raise SystemExit("--gold-nodes 只用于自身前缀（self-trunc / self-keep）。标准答案前缀本来就注入正确答案。")
+        raise SystemExit("--gold-nodes is only for an own prefix (self-trunc / self-keep). A gold prefix already injects the correct answer.")
     if not condition:
         raise SystemExit(
-            "条件只能是 gold-trunc、self-trunc、gold-keep、self-keep、proc-e2e、final-e2e、"
-            "session-gold、session-model。"
-            "gold/self 表示空前用标准答案还是模型自己的输出，trunc/keep 表示句号截断还是保留后文。"
-            "proc-e2e 是每个子过程一次，final-e2e 只问最终问题。"
-            "session-gold 和 session-model 在一个会话里逐题提问，定义只写在系统消息。"
-            "旧代号 A、B、C、D、E、F 仍可用。旧拼写 C'、C'' 分别等价于 gold-keep、self-keep。"
+            "The condition must be gold-trunc, self-trunc, gold-keep, self-keep, proc-e2e, final-e2e, "
+            "session-gold, session-model. "
+            "gold/self chooses the gold answer or the model's own output before the blank, and trunc/keep truncates at the period or keeps the later text. "
+            "proc-e2e is one call per subprocess, and final-e2e asks only the final question. "
+            "session-gold and session-model ask one item at a time in one chat, and the definition is written only in the system message. "
+            "The old letters A, B, C, D, E, and F still work. The old spellings C' and C'' mean gold-keep and self-keep."
         )
     if condition == FINAL_E2E and any(row.get("manuscript") for row in rows):
-        raise SystemExit("全量审阅稿按子过程逐句评测，请用 session-model、逐句条件或 proc-e2e。")
+        raise SystemExit("The full review manuscript is scored sentence by sentence inside each subprocess. Use session-model, a sentence condition, or proc-e2e.")
     if condition == FINAL_E2E and args.domain not in {"flight", "wind_tunnel", "cv"}:
-        raise SystemExit("条件 final-e2e 用于飞行力学、风洞和机器视觉的旧题单。")
+        raise SystemExit("Condition final-e2e is for the older flight-mechanics, wind-tunnel, and computer-vision question lists.")
     if condition in _END_TO_END:
         stop = None
     if condition == PROC_E2E:
-        print(f"{condition_label(condition)}：max_tokens={max_tokens}，不在空行处停止。", flush=True)
+        print(f"{condition_label(condition)}: max_tokens={max_tokens}, and generation does not stop at a blank line.", flush=True)
     if condition == FINAL_E2E:
         print(
-            f"{condition_label(condition)}：max_tokens={max_tokens}。",
+            f"{condition_label(condition)}: max_tokens={max_tokens}.",
             flush=True,
         )
         final_questions = load_final_questions() if args.domain == "flight" else None
@@ -3019,7 +3021,7 @@ def main() -> None:
         for run in range(args.runs):
             for row in rows:
                 if args.domain == "flight" and any(
-                    item.get("process") == "机体系相对地面系" for item in row["questions"]
+                    item.get("process") == "body relative to ground" for item in row["questions"]
                 ):
                     jobs.extend(wind_final_jobs(
                         row, run, args.seed + run, max_tokens, stop, standard, _CTRL_FINALS,
@@ -3033,15 +3035,15 @@ def main() -> None:
                         row, run, args.seed + run, max_tokens, stop, standard,
                         finals=_BASIC_FINALS, process=_BASIC_PROCESS,
                     ))
-                elif args.domain == "cv" and row["questions"][0].get("process") == "纯机器视觉双目姿态估计":
+                elif args.domain == "cv" and row["questions"][0].get("process") == "pure stereo pose":
                     from domains.computer_vision.cv_vision_context import rewrite
                     finals = tuple(
-                        (slots, rewrite(question).replace("来流方向", "参考方向"))
+                        (slots, rewrite(question))
                         for slots, question in _CV_FINALS
                     )
                     jobs.extend(cv_final_jobs(
                         row, run, args.seed + run, max_tokens, stop, standard,
-                        finals=finals, process="纯机器视觉双目姿态估计",
+                        finals=finals, process="pure stereo pose",
                     ))
                 elif args.domain == "cv":
                     jobs.extend(cv_final_jobs(
@@ -3091,18 +3093,18 @@ def main() -> None:
         old = json.loads(meta_path.read_text(encoding="utf-8"))
         if old.get("model") not in (None, model) or old.get("thinking") not in (None, thinking):
             raise SystemExit(
-                f"目录 {args.out} 已有 model={old.get('model')} thinking={old.get('thinking')} 的记录。"
-                "换一个 --out，避免和这组条件混在一起。"
+                f"Directory {args.out} already has records for model={old.get('model')} thinking={old.get('thinking')}. "
+                "Choose another --out so this condition is not mixed with that one."
             )
         if old.get("condition", "A") != condition:
             raise SystemExit(
-                f"目录 {args.out} 已有条件 {old.get('condition', 'A')} 的记录。"
-                "换一个 --out，避免和这组条件混在一起。"
+                f"Directory {args.out} already has records for condition {old.get('condition', 'A')}. "
+                "Choose another --out so this condition is not mixed with that one."
             )
         if set(old.get("gold_repaired") or []) != repair_ids:
             raise SystemExit(
-                f"目录 {args.out} 已有 gold_repaired={old.get('gold_repaired') or []} 的记录。"
-                "换一个 --out，避免和另一组节点修复混在一起。"
+                f"Directory {args.out} already has records for gold_repaired={old.get('gold_repaired') or []}. "
+                "Choose another --out so this node repair is not mixed with the other one."
             )
     done = {}
     legacy = False
@@ -3116,7 +3118,7 @@ def main() -> None:
                 legacy = True
             done[_record_key(item)] = item
     if legacy:
-        raise SystemExit("这个结果目录是按单个空记录的。整句评测请换一个 --out 目录，避免覆盖原来的报告。")
+        raise SystemExit("This result directory records one blank at a time. For whole-sentence scoring, choose another --out directory so the old report is not overwritten.")
     if condition == FINAL_E2E:
         sentence_count = len(jobs)
         blank_count = sum(len(job["blank_ids"]) for job in jobs)
@@ -3236,8 +3238,8 @@ def main() -> None:
     )
     if probes and condition in _SESSION:
         preface.append(
-            f"矩阵探针 {len(probes)} 条写在 probes.jsonl。只保留浅层和重推导深层。"
-            "分矩阵和总矩阵在主会话里记分后换成占位符，不进入后续提问。"
+            f"{len(probes)} matrix probes were written to probes.jsonl. Only the shallow probes and the deep re-derivation probes are kept. "
+            "Factor matrices and the total matrix are scored in the main session and then replaced by placeholders, so they do not enter later questions."
         )
     report = summarize(stored, preface)
     (args.out / "report.md").write_text(report, encoding="utf-8")
@@ -3251,7 +3253,7 @@ def main() -> None:
         "temperature_applied": thinking != "enabled",
         "runs": args.runs,
         "seed": args.seed,
-        "seed_note": "DeepSeek 官方 V4 接口忽略 seed。",
+        "seed_note": "The official DeepSeek V4 API ignores seed.",
         "max_tokens": max_tokens,
         "samples": ids,
         "sentences": len(stored),
@@ -3293,7 +3295,7 @@ def main() -> None:
         diagnosis_path = write_run_diagnosis(stored, args.out)
         if diagnosis_path is not None:
             print(f"Wrote {diagnosis_path}", flush=True)
-    print(report.split("## 按定义变更档")[0])
+    print(report.split("## By definition tier")[0])
 
 
 if __name__ == "__main__":

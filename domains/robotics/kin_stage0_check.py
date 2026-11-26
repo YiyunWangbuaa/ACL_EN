@@ -10,17 +10,17 @@ def check_stage0() -> None:
     rows = questions()
     scored = gold_scored()
     if set(rows) != set(NODE_IDS):
-        raise RuntimeError("节点集合与范围不一致")
+        raise RuntimeError("node set does not match the scope")
     for node in NODE_IDS:
         if not scored[node]:
-            raise RuntimeError(f"{node} 金标为空")
+            raise RuntimeError(f"{node} gold is empty")
         if rows[node]["options"] and scored[node] not in {
             chr(ord("A") + i) for i in range(len(rows[node]["options"]))
         }:
-            raise RuntimeError(f"{node} 选择题金标不是字母：{scored[node]!r}")
+            raise RuntimeError(f"{node} choice gold is not a letter：{scored[node]!r}")
     if not manuscript_path().is_file():
-        raise RuntimeError("审阅稿不存在")
-    print(f"阶段0 稿面：机器人学运动学金标齐全，共 {len(NODE_IDS)} 空（F140+I16）。", flush=True)
+        raise RuntimeError("review manuscript does not exist")
+    print(f"stage 0 manuscript: robotics kinematics gold is complete, {len(NODE_IDS)} blanks (F140+I16).", flush=True)
 
 
 if __name__ == "__main__":

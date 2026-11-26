@@ -23,19 +23,23 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 WIND_SAMPLE = "body-rule"
-_OPEN = {"≥3", "单修失败", "全上游仍失败"}
-_NAMED_GRADES = {"单因素", "无上游", "单修失败", "全上游仍失败", "≥3"}
+_OPEN = {"≥3", "single-repair-failed", "all-upstream-still-fail"}
+_NAMED_GRADES = {
+    "single-factor", "no-upstream", "single-repair-failed", "all-upstream-still-fail", "≥3",
+}
 
 
 def _known_grade(grade: str) -> bool:
     if grade in _NAMED_GRADES:
         return True
-    head = grade[:-1]
-    return grade.endswith("元") and head.isdigit() and int(head) >= 2
+    if not grade.endswith("-factor"):
+        return False
+    head = grade[: -len("-factor")]
+    return head.isdigit() and int(head) >= 2
 _SWAPS = {
-    "正": "负", "负": "正",
+    "positive": "negative", "negative": "positive",
     "arcsin": "arctan", "arctan": "arcsin",
-    "相同": "相反", "相反": "相同",
+    "same": "opposite", "opposite": "same",
 }
 
 
@@ -52,7 +56,7 @@ def _exposure(module) -> tuple[int, int, int]:
         rows = module.audit()
         latent = sum(int(row["latent"] or 0) for row in rows)
         alias = sum(int(row["alias"] or 0) for row in rows)
-        pending = sum(1 for row in rows if row["status"] == "未填")
+        pending = sum(1 for row in rows if row["status"] == "unfilled")
         if hasattr(module, "check"):
             module.check()
         return latent, alias, pending
@@ -69,11 +73,11 @@ def _exposure_cell(latent: int, alias: int, pending: int) -> str:
     text = f"{latent}/{alias}"
     marks = []
     if latent:
-        marks.append("待修")
+        marks.append("to-repair")
     if alias:
-        marks.append("碰撞")
+        marks.append("collision")
     if pending:
-        marks.append(f"未填{pending}")
+        marks.append(f"unfilled{pending}")
     if marks:
         text += " " + " ".join(marks)
     return text
@@ -87,8 +91,8 @@ def _link_counts(report: dict) -> tuple[int, int, set[str], float]:
     readings = report.get("readings") or []
     scored = correct + len(report.get("states") or {})
     coverage = scored / len(readings) if readings else float(scored > 0)
-    causal = sum(1 for row in report.get("chain_attributions") or [] if row.get("strength") == "因果")
-    associative = sum(1 for row in report.get("chain_attributions") or [] if row.get("strength") == "关联")
+    causal = sum(1 for row in report.get("chain_attributions") or [] if row.get("strength") == "causal")
+    associative = sum(1 for row in report.get("chain_attributions") or [] if row.get("strength") == "associative")
     return causal, associative, states, coverage
 
 
@@ -135,7 +139,7 @@ def _faithful_sheet(view) -> dict[str, str]:
         root, alt, reached = node, choice, cone(node)
         break
     if not root:
-        raise RuntimeError(f"{view.name} 没有能带动后文的声明根")
+        raise RuntimeError(f"{view.name} has no declaration root that moves a later answer")
 
     answers = dict(gold)
     answers[root] = alt
@@ -163,19 +167,19 @@ def _faithful_sheet(view) -> dict[str, str]:
 
 def _boards(orderings: dict[str, list[str]]) -> tuple[bool, str]:
     if any(not rows for rows in orderings.values()):
-        return False, "空"
+        return False, "empty"
     heads = [rows[0] for rows in orderings.values()]
-    return True, "分歧" if len(set(heads)) > 1 else "一致"
+    return True, "split" if len(set(heads)) > 1 else "agree"
 
 
 def _rank(faults: list[str], targets_of, depth_of, harm_of) -> tuple[bool, str]:
     if not faults:
-        return False, "空"
+        return False, "empty"
     unique = sorted(set(faults), key=str)
     orderings = {
-        "频率": sorted(unique, key=lambda node: (-targets_of(node), str(node))),
-        "深度": sorted(unique, key=lambda node: (-depth_of(node), str(node))),
-        "危害": sorted(unique, key=lambda node: (-harm_of(node), str(node))),
+        "frequency": sorted(unique, key=lambda node: (-targets_of(node), str(node))),
+        "depth": sorted(unique, key=lambda node: (-depth_of(node), str(node))),
+        "harm": sorted(unique, key=lambda node: (-harm_of(node), str(node))),
     }
     return _boards(orderings)
 
@@ -184,20 +188,20 @@ class DomainRow:
     def __init__(self, name: str) -> None:
         self.name = name
         self.cells = {
-            "金标": "—",
+            "gold": "—",
             "det": "—",
             "latent/alias": "—",
-            "五态": "—",
-            "覆盖率": "—",
-            "因果/关联": "—",
-            "核": "—",
-            "三榜": "—",
+            "five-class": "—",
+            "coverage": "—",
+            "causal/associative": "—",
+            "kernel": "—",
+            "rankings": "—",
         }
         self.ok = {key: False for key in ("0", "1", "2", "3")}
         self.notes: list[str] = []
 
     def fail(self, layer: str, exc: BaseException) -> None:
-        self.notes.append(f"第{layer}层：{exc}")
+        self.notes.append(f"layer {layer}: {exc}")
 
 
 def _wind_record(sample: str) -> dict:
@@ -208,7 +212,7 @@ def _wind_record(sample: str) -> dict:
         row = json.loads(line)
         if row["id"] == sample:
             return row
-    raise RuntimeError(f"样本 {sample} 不在 pair/samples.jsonl")
+    raise RuntimeError(f"sample {sample} is not in pair/samples.jsonl")
 
 
 def _wind_layer0(sample: str):
@@ -281,7 +285,7 @@ def _wind_sheet(model, gold: dict[str, str]) -> dict[str, str]:
         root, alt, reached = node, choice, cone(node)
         break
     if not root:
-        raise RuntimeError("风洞没有能带动后文的声明根")
+        raise RuntimeError("wind tunnel has no declaration root that moves a later answer")
 
     answers = dict(gold)
     answers[root] = alt
@@ -350,7 +354,7 @@ def _wind_kernels(sample: str) -> tuple[str, list[str], dict[str, list[str]], st
         open_count = 0
         for item in fixes:
             if not _known_grade(item.grade):
-                raise RuntimeError(f"ID{item.target} 的级别无法归类：{item.grade}")
+                raise RuntimeError(f"ID{item.target} grade cannot be classified: {item.grade}")
             if item.minimal and item.grade not in _OPEN:
                 for group in item.minimal:
                     for fault in group:
@@ -361,20 +365,20 @@ def _wind_kernels(sample: str) -> tuple[str, list[str], dict[str, list[str]], st
             if item.direct:
                 faults.append(item.target)
                 targets[item.target].append(item.target)
-        cell = f"{len(fixes) - open_count}核/{open_count}未解开"
-        return cell, faults, targets, "现场"
+        cell = f"{len(fixes) - open_count} kernel/{open_count} unresolved"
+        return cell, faults, targets, "live"
     from analysis.rank_harm import _load_fixes
 
-    rows = _load_fixes(ROOT / "analysis" / "CR最小修复集.md").get(sample) or {}
+    rows = _load_fixes(ROOT / "doc" / "CR_minimal_repair_sets.md").get(sample) or {}
     if not rows:
-        raise RuntimeError(f"{sample} 没有 self-trunc 观测，存档修复表里也没有这一份")
+        raise RuntimeError(f"{sample} has no self-trunc observation, and the archived repair table has no copy")
     faults = []
     targets = defaultdict(list)
     open_count = 0
     for target, row in rows.items():
         grade = row.get("grade", "")
         if not _known_grade(grade):
-            raise RuntimeError(f"ID{target} 的存档级别无法归类：{grade}")
+            raise RuntimeError(f"ID{target} archived grade cannot be classified: {grade}")
         groups = row.get("minimal") or ()
         if grade in _OPEN or not groups:
             open_count += 1
@@ -385,8 +389,8 @@ def _wind_kernels(sample: str) -> tuple[str, list[str], dict[str, list[str]], st
         if row.get("direct"):
             faults.append(target)
             targets[target].append(target)
-    cell = f"{len(rows) - open_count}核/{open_count}未解开"
-    return cell, faults, targets, "存档"
+    cell = f"{len(rows) - open_count} kernel/{open_count} unresolved"
+    return cell, faults, targets, "archive"
 
 
 def _wind_depth(node: str) -> int:
@@ -400,17 +404,17 @@ def _wind_depth(node: str) -> int:
 
 def run_wind(sample: str = WIND_SAMPLE) -> DomainRow:
     row = DomainRow("wind_tunnel")
-    print(f"风洞 {sample} 第0层", flush=True)
+    print(f"wind tunnel {sample} layer 0", flush=True)
     try:
         model, gold = _wind_layer0(sample)
-        row.cells["金标"] = "✓"
+        row.cells["gold"] = "✓"
         row.ok["0"] = True
     except Exception as exc:
-        row.cells["金标"] = "失败"
+        row.cells["gold"] = "fail"
         row.fail("0", exc)
         return row
 
-    print("风洞 第1层", flush=True)
+    print("wind tunnel layer 1", flush=True)
     try:
         from analysis import audit_composers
         from domains.wind_tunnel.signature import evaluate, summarize
@@ -424,45 +428,45 @@ def run_wind(sample: str = WIND_SAMPLE) -> DomainRow:
         row.cells["latent/alias"] = _exposure_cell(latent, alias, pending)
         row.ok["1"] = summary["det1"] > 0 and blocks > 0
         if not row.ok["1"]:
-            row.notes.append(f"det={summary['det1']}，模糊组={blocks}")
+            row.notes.append(f"det={summary['det1']}, ambiguity groups={blocks}")
     except Exception as exc:
-        row.cells["det"] = "失败"
+        row.cells["det"] = "fail"
         row.fail("1", exc)
         return row
 
-    print("风洞 第2层", flush=True)
+    print("wind tunnel layer 2", flush=True)
     try:
         from domains.wind_tunnel.conflict_diagnosis import explain_observations
 
         answers = _wind_sheet(model, gold)
         report = explain_observations(model, _wind_observations(sample, gold, answers), gold)
         causal, associative, states, coverage = _link_counts(report)
-        row.cells["五态"] = f"{len(states)}态"
-        row.cells["覆盖率"] = f"{coverage:.2f}"
-        row.cells["因果/关联"] = f"{causal}/{associative}"
+        row.cells["five-class"] = f"{len(states)} states"
+        row.cells["coverage"] = f"{coverage:.2f}"
+        row.cells["causal/associative"] = f"{causal}/{associative}"
         row.ok["2"] = bool(states) and coverage > 0 and causal > 0
     except Exception as exc:
-        row.cells["五态"] = "失败"
+        row.cells["five-class"] = "fail"
         row.fail("2", exc)
 
-    print("风洞 第3层", flush=True)
+    print("wind tunnel layer 3", flush=True)
     try:
         from analysis.rank_harm import WEIGHT
 
         cell, faults, targets, source = _wind_kernels(sample)
-        row.cells["核"] = cell
+        row.cells["kernel"] = cell
         ok, text = _rank(
             faults,
             lambda node: len(targets[node]),
             _wind_depth,
             lambda node: sum(WEIGHT.get(target, 1) for target in targets[node]),
         )
-        row.cells["三榜"] = text
+        row.cells["rankings"] = text
         row.ok["3"] = ok
-        if source == "存档":
-            row.notes.append("核读取已有修复表，未重跑搜索")
+        if source == "archive":
+            row.notes.append("kernel read the existing repair table and did not rerun the search")
     except Exception as exc:
-        row.cells["核"] = "失败"
+        row.cells["kernel"] = "fail"
         row.fail("3", exc)
     return row
 
@@ -477,17 +481,17 @@ def _view_depth(view, node: str, memo: dict[str, int]) -> int:
 
 def run_view(name: str, stage0, view_of, composers, fixes_of, targets) -> DomainRow:
     row = DomainRow(name)
-    print(f"{name} 第0层", flush=True)
+    print(f"{name} layer 0", flush=True)
     try:
         stage0()
-        row.cells["金标"] = "✓"
+        row.cells["gold"] = "✓"
         row.ok["0"] = True
     except Exception as exc:
-        row.cells["金标"] = "失败"
+        row.cells["gold"] = "fail"
         row.fail("0", exc)
         return row
 
-    print(f"{name} 第1层", flush=True)
+    print(f"{name} layer 1", flush=True)
     try:
         from domains.mbd_kernel import audit_stage4
 
@@ -499,27 +503,27 @@ def run_view(name: str, stage0, view_of, composers, fixes_of, targets) -> Domain
         row.cells["latent/alias"] = _exposure_cell(latent, alias, pending)
         row.ok["1"] = summary["det1"] > 0 and blocks > 0
         if not row.ok["1"]:
-            row.notes.append(f"det={summary['det1']}，模糊组={blocks}")
+            row.notes.append(f"det={summary['det1']}, ambiguity groups={blocks}")
     except Exception as exc:
-        row.cells["det"] = "失败"
+        row.cells["det"] = "fail"
         row.fail("1", exc)
         return row
 
-    print(f"{name} 第2层", flush=True)
+    print(f"{name} layer 2", flush=True)
     try:
         from domains.conflict_diagnosis import explain
 
         report = explain(view, _faithful_sheet(view), targets, prefix="model")
         causal, associative, states, coverage = _link_counts(report)
-        row.cells["五态"] = f"{len(states)}态"
-        row.cells["覆盖率"] = f"{coverage:.2f}"
-        row.cells["因果/关联"] = f"{causal}/{associative}"
+        row.cells["five-class"] = f"{len(states)} states"
+        row.cells["coverage"] = f"{coverage:.2f}"
+        row.cells["causal/associative"] = f"{causal}/{associative}"
         row.ok["2"] = bool(states) and coverage > 0 and causal > 0
     except Exception as exc:
-        row.cells["五态"] = "失败"
+        row.cells["five-class"] = "fail"
         row.fail("2", exc)
 
-    print(f"{name} 第3层", flush=True)
+    print(f"{name} layer 3", flush=True)
     try:
         faults: list[str] = []
         targets_of: dict[str, list[str]] = defaultdict(list)
@@ -533,7 +537,7 @@ def run_view(name: str, stage0, view_of, composers, fixes_of, targets) -> Domain
                 for fault in group:
                     faults.append(fault)
                     targets_of[fault].append(target)
-        row.cells["核"] = f"{len(targets) - open_count}核/{open_count}未解开"
+        row.cells["kernel"] = f"{len(targets) - open_count} kernel/{open_count} unresolved"
         memo: dict[str, int] = {}
         ok, text = _rank(
             faults,
@@ -541,10 +545,10 @@ def run_view(name: str, stage0, view_of, composers, fixes_of, targets) -> Domain
             lambda node: _view_depth(view, node, memo),
             lambda node: float(len(targets_of[node])),
         )
-        row.cells["三榜"] = text
+        row.cells["rankings"] = text
         row.ok["3"] = ok and (faults or open_count == len(targets))
     except Exception as exc:
-        row.cells["核"] = "失败"
+        row.cells["kernel"] = "fail"
         row.fail("3", exc)
     return row
 
@@ -574,9 +578,9 @@ def _merge_domain(name: str, parts: list[DomainRow]) -> DomainRow:
     row = DomainRow(name)
     for layer in ("0", "1", "2", "3"):
         row.ok[layer] = all(part.ok[layer] for part in parts)
-    row.cells["金标"] = "✓" if row.ok["0"] else "失败"
+    row.cells["gold"] = "✓" if row.ok["0"] else "fail"
     dets = [int(part.cells["det"]) for part in parts if part.cells["det"].isdigit()]
-    row.cells["det"] = str(sum(dets)) if len(dets) == len(parts) else "失败"
+    row.cells["det"] = str(sum(dets)) if len(dets) == len(parts) else "fail"
     exposures = [_pair(part.cells["latent/alias"]) for part in parts]
     if all(item is not None for item in exposures):
         latent = sum(item[0] for item in exposures)
@@ -584,40 +588,40 @@ def _merge_domain(name: str, parts: list[DomainRow]) -> DomainRow:
         pending = 0
         for part in parts:
             for token in part.cells["latent/alias"].split():
-                if token.startswith("未填") and token.removeprefix("未填").isdigit():
-                    pending += int(token.removeprefix("未填"))
+                if token.startswith("unfilled") and token.removeprefix("unfilled").isdigit():
+                    pending += int(token.removeprefix("unfilled"))
         row.cells["latent/alias"] = _exposure_cell(latent, alias, pending)
-    links = [_pair(part.cells["因果/关联"]) for part in parts]
+    links = [_pair(part.cells["causal/associative"]) for part in parts]
     if all(item is not None for item in links):
-        row.cells["因果/关联"] = f"{sum(item[0] for item in links)}/{sum(item[1] for item in links)}"
+        row.cells["causal/associative"] = f"{sum(item[0] for item in links)}/{sum(item[1] for item in links)}"
     kernels = []
     for part in parts:
-        cell = part.cells["核"]
-        if "核/" not in cell or "未解开" not in cell:
+        cell = part.cells["kernel"]
+        if " kernel/" not in cell or "unresolved" not in cell:
             kernels = []
             break
-        left, right = cell.split("核/", 1)
-        right = right.removesuffix("未解开")
+        left, right = cell.split(" kernel/", 1)
+        right = right.removesuffix("unresolved").strip()
         if left.isdigit() and right.isdigit():
             kernels.append((int(left), int(right)))
         else:
             kernels = []
             break
     if kernels:
-        row.cells["核"] = f"{sum(item[0] for item in kernels)}核/{sum(item[1] for item in kernels)}未解开"
-    boards = [part.cells["三榜"] for part in parts]
+        row.cells["kernel"] = f"{sum(item[0] for item in kernels)} kernel/{sum(item[1] for item in kernels)} unresolved"
+    boards = [part.cells["rankings"] for part in parts]
     if all(part.ok["3"] for part in parts):
-        row.cells["三榜"] = "一致" if set(boards) == {"一致"} else "分歧"
-    row.cells["五态"] = "通过" if row.ok["2"] else "失败"
+        row.cells["rankings"] = "agree" if set(boards) == {"agree"} else "split"
+    row.cells["five-class"] = "pass" if row.ok["2"] else "fail"
     coverages = []
     for part in parts:
         try:
-            coverages.append(float(part.cells["覆盖率"]))
+            coverages.append(float(part.cells["coverage"]))
         except ValueError:
             coverages = []
             break
     if coverages:
-        row.cells["覆盖率"] = f"{min(coverages):.2f}"
+        row.cells["coverage"] = f"{min(coverages):.2f}"
     for part in parts:
         row.notes.extend(part.notes)
     return row
@@ -635,10 +639,10 @@ def run_vision() -> DomainRow:
     from domains.computer_vision.t_final import minimal_fixes
 
     theory = run_view(
-        "机器视觉", check_stage0, theory_view, audit_composers_vision, minimal_fixes, T_FINAL,
+        "computer vision", check_stage0, theory_view, audit_composers_vision, minimal_fixes, T_FINAL,
     )
     scene = run_view(
-        "机器视觉", check_scene, scene_view, audit_composers_scene, scene_fixes, SCENE_FINAL,
+        "computer vision", check_scene, scene_view, audit_composers_scene, scene_fixes, SCENE_FINAL,
     )
     return _merge_domain("computer_vision", [theory, scene])
 
@@ -662,7 +666,7 @@ _RUNNERS = {
 
 
 def _print_table(rows: list[DomainRow]) -> None:
-    headers = ("域", "金标", "det", "latent/alias", "五态", "覆盖率", "因果/关联", "核", "三榜")
+    headers = ("domain", "gold", "det", "latent/alias", "five-class", "coverage", "causal/associative", "kernel", "rankings")
     keys = headers[1:]
     print()
     print("| " + " | ".join(headers) + " |")
@@ -676,22 +680,22 @@ def _print_table(rows: list[DomainRow]) -> None:
     attributable = all(row.ok["2"] for row in rows)
     explained = all(row.ok["3"] for row in rows)
     feasible = diagnosable and attributable and explained
-    print(f"跑通：{'是' if passed else '否'}")
+    print(f"passed: {'yes' if passed else 'no'}")
     print(
-        "方案可行："
-        + ("是" if feasible else "否")
-        + f"（可诊断性 {'是' if diagnosable else '否'}，"
-        + f"可归因 {'是' if attributable else '否'}，"
-        + f"可解释影响 {'是' if explained else '否'}）"
+        "plan feasible: "
+        + ("yes" if feasible else "no")
+        + f" (diagnosable {'yes' if diagnosable else 'no'}, "
+        + f"attributable {'yes' if attributable else 'no'}, "
+        + f"explained effect {'yes' if explained else 'no'})"
     )
     for row in rows:
         for note in row.notes:
-            print(f"{row.name}：{note}")
+            print(f"{row.name}: {note}")
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="四域轻量验收。只读，不调用模型。")
-    parser.add_argument("domains", nargs="*", choices=tuple(_RUNNERS), help="缺省时跑四个域")
+    parser = argparse.ArgumentParser(description="Four-domain lightweight acceptance. Read-only. Does not call a model.")
+    parser.add_argument("domains", nargs="*", choices=tuple(_RUNNERS), help="runs all four domains when omitted")
     args = parser.parse_args(argv)
     names = args.domains or list(_RUNNERS)
     rows = [_RUNNERS[name]() for name in names]

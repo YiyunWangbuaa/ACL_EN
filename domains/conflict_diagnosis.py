@@ -32,11 +32,11 @@ _STATUSES = frozenset({
     "gold_prefix",
 })
 _NOTES = {
-    "attributed": "错测点已在依赖图上收成候选集，并按 φ 是否有值切开。",
-    "unmodeled": "错测点没有可归入的库内故障。",
-    "consistent": "没有错误测点。",
-    "unscored": "只有无法评分的测点，没有把它当成故障。",
-    "gold_prefix": "金标前缀不生成故障诊断。",
+    "attributed": "Wrong measurements are collected into candidate sets on the dependency graph and split by whether φ has a value.",
+    "unmodeled": "A wrong measurement has no in-library fault it can join.",
+    "consistent": "There is no wrong measurement.",
+    "unscored": "The only measurements cannot be scored, and they are not treated as faults.",
+    "gold_prefix": "A gold prefix does not produce a fault diagnosis.",
 }
 _LIBRARIES: dict[str, tuple[dict, dict, dict]] = {}
 
@@ -136,29 +136,29 @@ def _candidate_mode(phi_kind: str, reading: str, matches_gold: bool) -> str:
 
 
 _ANSWER_ZH = {
-    "faithful_reliable": "一致性正确",
-    "faithful_wrong": "可归因错误",
-    "local_deviation": "可归因错误",
-    "unfaithful_correct": "可追溯答案遮蔽",
-    "contradiction_wrong": "不可归因错误",
-    "contradiction_correct": "随机性正确",
-    "unscored": "无法评分",
-    "no_rule": "没有局部规则",
-    "unconstrained_input": "不可归因错误",
-    "unreliable_correct": "可追溯答案遮蔽",
-    "一致性正确": "一致性正确",
-    "可追溯答案遮蔽": "可追溯答案遮蔽",
-    "随机性正确": "随机性正确",
-    "可归因错误": "可归因错误",
-    "不可归因错误": "不可归因错误",
+    "faithful_reliable": "consistent",
+    "faithful_wrong": "attributable",
+    "local_deviation": "attributable",
+    "unfaithful_correct": "traceable_masking",
+    "contradiction_wrong": "unattributable",
+    "contradiction_correct": "chance_correct",
+    "unscored": "unscored",
+    "no_rule": "no_local_rule",
+    "unconstrained_input": "unattributable",
+    "unreliable_correct": "traceable_masking",
+    "consistent": "consistent",
+    "traceable_masking": "traceable_masking",
+    "chance_correct": "chance_correct",
+    "attributable": "attributable",
+    "unattributable": "unattributable",
 }
 
 
 def target_note(rows: list[dict]) -> str:
-    """Chinese sentence for targets whose reliability or reading is not the default."""
+    """Sentence for targets whose reliability or reading is not the default."""
     flagged = [
         item for item in rows
-        if item.get("reliability") != "deterministic" or item.get("answer_class") not in {"faithful_reliable", "一致性正确"}
+        if item.get("reliability") != "deterministic" or item.get("answer_class") not in {"faithful_reliable", "consistent"}
     ]
     if not flagged:
         return ""
@@ -166,7 +166,7 @@ def target_note(rows: list[dict]) -> str:
         f"{item['node']} {_ANSWER_ZH.get(item['answer_class'], item['answer_class'])}"
         for item in flagged
     ]
-    return "终点 " + "，".join(parts) + "。"
+    return "Terminals: " + ", ".join(parts) + "."
 
 
 def build_readings(outcomes: dict[str, dict], parents_of, targets: tuple[str, ...] = ()) -> tuple[list[dict], list[dict]]:
@@ -518,20 +518,25 @@ def _five_class(item: dict) -> str:
     """
     reading = item.get("reading")
     if reading == "unscored":
-        return "无法评分"
+        return "unscored"
     if reading == "no_rule":
-        return "没有局部规则"
+        decided = item.get("chain_class") or ""
+        if decided in {"attributable", "consistent", "traceable_masking"}:
+            return decided
+        return "no_local_rule"
     strength = item.get("chain_strength") or ""
     gold = bool(item.get("matches_gold"))
-    if strength == "未解开":
-        return "未解开"
-    if strength == "关联" or reading in {"contradiction_correct", "contradiction_wrong"}:
-        return "随机性正确" if gold else "不可归因错误"
+    if strength == "causal" and item.get("chain_class") == "consistent":
+        return "consistent"
+    if strength == "unresolved":
+        return "unresolved"
+    if strength == "associative" or reading in {"contradiction_correct", "contradiction_wrong"}:
+        return "chance_correct" if gold else "unattributable"
     if gold and not item.get("process_faults"):
-        return "一致性正确"
+        return "consistent"
     if gold:
-        return "可追溯答案遮蔽"
-    return "可归因错误"
+        return "traceable_masking"
+    return "attributable"
 
 
 def _chain_class(strength: str, outcome: dict | None) -> str:
@@ -541,13 +546,13 @@ def _chain_class(strength: str, outcome: dict | None) -> str:
     A fully correct chain is assigned where no fault remains.
     """
     matches_gold = bool((outcome or {}).get("matches_gold"))
-    if strength == "未解开":
-        return "未解开"
-    if strength == "关联":
-        return "随机性正确" if matches_gold else "不可归因错误"
+    if strength == "unresolved":
+        return "unresolved"
+    if strength == "associative":
+        return "chance_correct" if matches_gold else "unattributable"
     if matches_gold:
-        return "可追溯答案遮蔽"
-    return "可归因错误"
+        return "traceable_masking"
+    return "attributable"
 
 
 def _child_map(nodes: set[str], parents_of) -> dict[str, list[str]]:
@@ -619,7 +624,7 @@ def _path_band(source: str, target: str, outcomes: dict[str, dict], children: di
 
 def _chain_strength(source: str, target: str, outcomes: dict[str, dict], children: dict[str, list[str]], ancestors: set[str]) -> str:
     band = _path_band(source, target, outcomes, children, ancestors)
-    return {"causal": "因果", "associative": "关联", "unresolved": "未解开"}[band]
+    return {"causal": "causal", "associative": "associative", "unresolved": "unresolved"}[band]
 
 
 def partition_candidates(by_node: dict[str, list[str]], outcomes: dict[str, dict], injected: dict[str, frozenset[str]], parents_of) -> list[dict]:
@@ -684,12 +689,29 @@ def chain_attributions(states: dict[str, str], outcomes: dict[str, dict], source
     return rows
 
 
-def _apply_chains(readings: list[dict], rows: list[dict]) -> None:
-    """The explaining path sets the class. A side path does not replace it.
+_OWN_CLOSED = {
+    "faithful_reliable",
+    "faithful_wrong",
+    "local_deviation",
+    "unfaithful_correct",
+    "no_rule",
+}
 
-    A target whose own φ is ⊥ stays unattributable. A target whose own φ has a
-    value takes a causal path when one exists. Associative and unresolved
-    paths are kept on ``side_paths``.
+
+def _closed_class(item: dict) -> str:
+    """Class from the node's own φ. An unresolved ancestor is not part of it."""
+    if item.get("matches_gold"):
+        return "consistent"
+    return "attributable"
+
+
+def _apply_chains(readings: list[dict], rows: list[dict]) -> None:
+    """The node's own φ sets the class. An ancestor chain does not replace it.
+
+    φ=⊥ at the node stays unattributable. A ⊥ anywhere on the recorded paths
+    still blocks attribution when no causal path exists. An unresolved ancestor
+    is a side note once the node's own φ has a value, including a choice with
+    no calculator.
     """
     by_target: dict[str, list[dict]] = {}
     for row in rows:
@@ -701,36 +723,49 @@ def _apply_chains(readings: list[dict], rows: list[dict]) -> None:
     for item in readings:
         chains = by_target.get(item["node"], [])
         item["chains"] = chains
-        own_break = item.get("reading") in {"contradiction_wrong", "contradiction_correct"}
+        reading = item.get("reading")
+        own_break = reading in {"contradiction_wrong", "contradiction_correct"}
+        own_closed = reading in _OWN_CLOSED
+        synthesized = False
         if not chains:
             item["chain_strength"] = ""
-            item["chain_class"] = "一致性正确" if item.get("matches_gold") and not item.get("process_faults") else ""
+            item["chain_class"] = "consistent" if item.get("matches_gold") and not item.get("process_faults") else ""
             item["side_paths"] = []
             continue
         if own_break:
-            chosen = next((chain for chain in chains if chain["strength"] == "关联"), chains[0])
-            item["chain_strength"] = "关联"
-            item["chain_class"] = "随机性正确" if item.get("matches_gold") else "不可归因错误"
+            item["chain_strength"] = "associative"
+            item["chain_class"] = "chance_correct" if item.get("matches_gold") else "unattributable"
         else:
-            chosen = next((chain for chain in chains if chain["strength"] == "因果"), None)
-            if chosen is None:
-                chosen = next((chain for chain in chains if chain["strength"] == "未解开"), chains[0])
-            item["chain_strength"] = chosen["strength"]
-            item["chain_class"] = chosen["chain_class"]
+            causal = next((chain for chain in chains if chain["strength"] == "causal"), None)
+            broken = next((chain for chain in chains if chain["strength"] == "associative"), None)
+            if causal is not None:
+                item["chain_strength"] = causal["strength"]
+                item["chain_class"] = causal["chain_class"]
+            elif broken is not None:
+                item["chain_strength"] = "associative"
+                item["chain_class"] = "chance_correct" if item.get("matches_gold") else "unattributable"
+            elif own_closed:
+                synthesized = True
+                item["chain_strength"] = "causal"
+                item["chain_class"] = _closed_class(item)
+            else:
+                opened = next((chain for chain in chains if chain["strength"] == "unresolved"), chains[0])
+                item["chain_strength"] = opened["strength"]
+                item["chain_class"] = opened["chain_class"]
         item["side_paths"] = [
             {"source": chain["source"], "strength": chain["strength"]}
             for chain in chains
-            if chain["strength"] != item["chain_strength"]
+            if chain["strength"] != item["chain_strength"] and not (synthesized and chain["source"] == item["node"])
         ]
 
 
 def _process_text(state: str | None, outcome: dict | None) -> str:
     kind = (outcome or {}).get("phi_kind")
     if kind == "contradiction" or state == "contract_contradiction":
-        return "答案正确，局部规则矛盾，上游故障仍保留。"
+        return "The answer is correct, the local rule is contradictory, and the upstream fault remains."
     if state == "unfaithful_correct":
-        return "答案正确，但不符合局部规则，上游故障仍保留。"
-    return "答案正确，不能证明因果关系已恢复，上游故障仍保留。"
+        return "The answer is correct but does not follow the local rule, and the upstream fault remains."
+    return "The answer is correct, and that does not prove the causal relation is restored; the upstream fault remains."
 
 
 def attach_process(readings: list[dict], states: dict[str, str], outcomes: dict[str, dict], injected: dict[str, frozenset[str]], parents_of):
@@ -884,7 +919,7 @@ def _repair_rows(states, outcomes, parents_of, targets, answers, gold, same) -> 
         rows.append({
             "target": _label(target),
             "cardinality": card,
-            "grade": "局部偏差" if nodes else "无法从局部重算读出",
+            "grade": "local deviation" if nodes else "not readable from local recomputation",
             "sets": [nodes] if nodes else [],
             "direct": target in nodes,
         })
@@ -926,7 +961,7 @@ def finish_report(
             status = "unmodeled"
     text = note or _NOTES[status]
     if truncated:
-        text = text + "全卷碰集在基数 4 内没有覆盖。空的极小碰集是附录，不表示没有故障。终点诊断见 terminal_diagnoses。"
+        text = text + " The full-paper hitting set is not covered within cardinality 4. An empty minimal hitting set is an appendix and does not mean there is no fault. Terminal diagnoses are in terminal_diagnoses."
     terminal_diagnoses = [
         {
             "node": item.get("node"),
@@ -1094,37 +1129,37 @@ def assert_consistent_upstream(view: DomainView, report: dict) -> None:
         node = record["node"]
         for fault in record["faults"]:
             if node in (injected.get(fault) or ()):
-                raise RuntimeError(f"{view.name} { _label(node) } 与重算一致，冲突集仍含本节点注入 {fault}")
+                raise RuntimeError(f"{view.name} {_label(node)} agrees with the recomputation, but the conflict set still contains the fault injected at this node: {fault}")
 
 
 def assert_report(report: dict) -> None:
     status = report["status"]
     if status not in _STATUSES:
-        raise RuntimeError(f"诊断状态无法识别：{status}")
+        raise RuntimeError(f"Unrecognized diagnosis status: {status}")
     conflicts = [set(item) for item in report["conflicts"]]
     if any(not item for item in conflicts):
-        raise RuntimeError("冲突集是空的")
+        raise RuntimeError("A conflict set is empty")
     minimal = [list(item) for item in report["minimal_diagnoses"]]
     for diagnosis in minimal:
         block = set(diagnosis)
         if conflicts and not all(block & item for item in conflicts):
-            raise RuntimeError("极小碰集没有击中全部冲突集")
+            raise RuntimeError("A minimal hitting set misses a conflict set")
     if report["validation"] or report["validated_diagnoses"]:
-        raise RuntimeError("建模系统不再重放见证文")
+        raise RuntimeError("The model no longer replays witness text")
     if report["diagnosis_cardinality"] is not None:
-        raise RuntimeError("诊断基数来自已删除的见证文重放")
+        raise RuntimeError("Diagnosis cardinality comes from the removed witness replay")
     if status == "attributed" and not report["conflict_records"]:
-        raise RuntimeError("已归因状态没有候选记录")
+        raise RuntimeError("An attributed status has no candidate record")
     if status == "unmodeled" and report["conflict_records"]:
-        raise RuntimeError("未建模状态仍有候选记录")
+        raise RuntimeError("An unmodeled status still has candidate records")
     if status in {"consistent", "unscored", "gold_prefix"} and report["symptoms"]:
-        raise RuntimeError(f"{status} 仍带有症状")
+        raise RuntimeError(f"{status} still carries symptoms")
     for row in report.get("candidate_partitions") or []:
         parts = [set(row["causal"]), set(row["associative"]), set(row["unresolved"])]
         if set(row["candidates"]) != set().union(*parts):
-            raise RuntimeError(f"{row['target']} 的候选集没有被切完")
+            raise RuntimeError(f"The candidate set of {row['target']} was not fully partitioned")
         if parts[0] & parts[1] or parts[0] & parts[2] or parts[1] & parts[2]:
-            raise RuntimeError(f"{row['target']} 的候选子集重叠")
+            raise RuntimeError(f"The candidate subsets of {row['target']} overlap")
 
 
 def assert_root_explained(view: DomainView, answers: dict[str, str], report: dict, root: str) -> None:
@@ -1148,11 +1183,11 @@ def assert_root_explained(view: DomainView, answers: dict[str, str], report: dic
     if not matching:
         return
     if report["status"] != "attributed":
-        raise RuntimeError(f"{view.name} 注入了库内故障，候选集却是空的：{report['status']}")
+        raise RuntimeError(f"{view.name} injected an in-library fault, but the candidate set is empty: {report['status']}")
     causal = [
         fault
         for row in report.get("candidate_partitions") or []
         for fault in row.get("causal") or []
     ]
     if not set(causal) & set(matching):
-        raise RuntimeError(f"{view.name} 的可归因候选没有包含写入 {_label(root)} 的故障实例")
+        raise RuntimeError(f"{view.name} attributable candidates do not include the fault instance that writes {_label(root)}")

@@ -24,15 +24,15 @@ Q = questions()
 
 
 def _bind(node: str, values: tuple[str, ...]) -> dict:
-    return {"节点": node, "绑定": (node, values), "状态": "已填"}
+    return {"node": node, "bound": (node, values), "status": "filled"}
 
 
 def latent(table: dict) -> int:
-    return sum(1 for slot in table.values() if slot.get("状态") == "独立")
+    return sum(1 for slot in table.values() if slot.get("status") == "independent")
 
 
 def alias(table: dict, render) -> int:
-    domains = [slot["绑定"][1] for slot in table.values()]
+    domains = [slot["bound"][1] for slot in table.values()]
     answers = [render(*combo) for combo in product(*domains)]
     counts = Counter(answers)
     return sum(n * (n - 1) // 2 for n in counts.values())
@@ -69,10 +69,10 @@ RENDER = {
 }
 
 TARGETS = {
-    "R_cw1/ID41": ("41", "矩阵"),
-    "t_cw1/ID43": ("43", "向量"),
-    "R_cw2/ID84": ("84", "矩阵"),
-    "t_cw2/ID86": ("86", "向量"),
+    "R_cw1/ID41": ("41", "matrix"),
+    "t_cw1/ID43": ("43", "vector"),
+    "R_cw2/ID84": ("84", "matrix"),
+    "t_cw2/ID86": ("86", "vector"),
 }
 
 
@@ -80,19 +80,19 @@ def check() -> None:
     parts = []
     for name, table in FACTORS.items():
         if latent(table) != 0:
-            raise RuntimeError(f"{name} latent 应为 0")
+            raise RuntimeError(f"{name} latent should be 0")
         render = RENDER[name]
         score = alias(table, render)
         if score < 0:
             raise RuntimeError(name)
-        values = tuple(slot["绑定"][1][0] for slot in table.values())
+        values = tuple(slot["bound"][1][0] for slot in table.values())
         got = render(*values)
         target, fmt = TARGETS[name]
         if not answers_equal(got, GOLD[target], fmt):
-            raise RuntimeError(f"{name} 金标合成不一致：{got!r} vs {GOLD[target]!r}")
+            raise RuntimeError(f"{name} gold composition disagrees: {got!r} vs {GOLD[target]!r}")
         parts.append(f"{name} latent={latent(table)} alias={score}")
     print(
-        f"阶段7 测点：已填 {len(FACTORS)}，" + "，".join(parts) + f"；未填 {len(PENDING)}。",
+        f"stage 7 probes: filled {len(FACTORS)}, " + ", ".join(parts) + f"; unfilled {len(PENDING)}.",
         flush=True,
     )
 

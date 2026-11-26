@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Session fork for the ID196 kernel: sign, force, coordinate, denominator.
 
-The control is one session-model chat of 力矩参考点, stopped at ID196.
+The control is one session-model chat of moment reference point, stopped at ID196.
 The fork copies that chat, deletes the ID196 assistant reply, and replaces
 each wrong kernel reply (ID190, ID202, ID208, ID213) with its gold JSON.
 Slots the model already matched stay as written. --gold-nodes is not used.
@@ -36,7 +36,7 @@ from domains.wind_tunnel.session_probe import answers_to_clear, clear_turn, fork
 from semi_auto_eval import load_env_file, make_client  # noqa: E402
 
 DATA = ROOT / "data" / "wind_tunnel" / "pair" / "samples.jsonl"
-PROCESS = "力矩参考点"
+PROCESS = "moment reference point"
 TARGET_ID = "196"
 KERNEL = ("190", "202", "208", "213")
 FORK_CONDITION = "session-fork"
@@ -65,7 +65,7 @@ def _sentences_through(chain: dict, stop_id: str) -> list[dict]:
         kept.append(sentence)
         if stop_id in {str(item) for item in sentence["blank_ids"]}:
             return kept
-    raise RuntimeError(f"{chain['process']} 没有 ID{stop_id}")
+    raise RuntimeError(f"{chain['process']} has no ID{stop_id}")
 
 
 def _slim(blank: dict) -> dict:
@@ -173,15 +173,15 @@ def kernel_replacements(
 def build_fork(messages: list[dict], replacements: list[tuple[int, str]], question: str) -> list[dict]:
     """Copy the chat through the turn before ID196, then swap the wrong kernel replies."""
     if not replacements:
-        raise RuntimeError("没有需要换回金标的核槽")
+        raise RuntimeError("no kernel slot needs to be restored to gold")
     if messages[-1]["role"] != "assistant":
-        raise RuntimeError("分叉时会话末尾应是 ID196 之前的助手回复")
+        raise RuntimeError("a fork should end on the assistant reply before ID196")
     fork = [{"role": item["role"], "content": item["content"]} for item in messages]
     for index, gold_text in replacements:
         if fork[index]["role"] != "assistant":
-            raise RuntimeError("核槽的位置不是助手回复")
+            raise RuntimeError("the kernel slot is not an assistant reply")
         if fork[index]["content"] == gold_text:
-            raise RuntimeError("这个核槽的原文已经是金标")
+            raise RuntimeError("this kernel slot is already gold")
         fork[index]["content"] = gold_text
     fork.append({"role": "user", "content": question})
     return fork
@@ -193,32 +193,32 @@ def prepare(sample: str) -> tuple[dict, list[dict], dict[str, str]]:
     sentences = _sentences_through(chain, TARGET_ID)
     target = sentences[-1]
     if target["blank_ids"] != [TARGET_ID]:
-        raise RuntimeError(f"ID{TARGET_ID} 不是单独一句")
+        raise RuntimeError(f"ID{TARGET_ID} is not its own sentence")
     gold = {}
     for sentence in sentences:
         ids = [str(item) for item in sentence["blank_ids"]]
         if len(ids) == 1 and ids[0] in KERNEL:
             if ids[0] in gold:
-                raise RuntimeError(f"ID{ids[0]} 出现了两次")
+                raise RuntimeError(f"ID{ids[0]} appears twice")
             gold[ids[0]] = gold_reply(sentence["blanks"])
     if set(gold) != set(KERNEL):
-        raise RuntimeError(f"核槽不齐：{sorted(set(KERNEL) - set(gold))}")
+        raise RuntimeError(f"kernel slots are incomplete: {sorted(set(KERNEL) - set(gold))}")
     for sentence in sentences:
         if forks_after(chain, sentence["blank_ids"]):
-            raise RuntimeError(f"{PROCESS} 会插入探针，主会话不再只是原稿回合")
+            raise RuntimeError(f"{PROCESS} would insert a probe, so the main session would no longer be only manuscript turns")
         if answers_to_clear(chain, sentence["blank_ids"]):
-            raise RuntimeError(f"ID{sentence['blank_ids']} 的助手回复会被 clear_turn 清掉")
+            raise RuntimeError(f"ID{sentence['blank_ids']} assistant reply would be cleared by clear_turn")
     return chain, sentences, gold
 
 
 def check_shape(sample: str) -> None:
     chain, sentences, gold = prepare(sample)
     if sample == "body-rule" and gold != BODY_GOLD:
-        raise RuntimeError(f"body-rule 的核金标应为 {BODY_GOLD}，实际是 {gold}")
+        raise RuntimeError(f"body-rule kernel gold should be {BODY_GOLD}, got {gold}")
     order = [str(item) for sentence in sentences for item in sentence["blank_ids"]]
     for earlier, later in (("194", "201"), ("213", "195"), ("195", "196")):
         if order.index(earlier) > order.index(later):
-            raise RuntimeError(f"ID{earlier} 没有排在 ID{later} 前面")
+            raise RuntimeError(f"ID{earlier} is not before ID{later}")
     messages: list[dict] = [{"role": "system", "content": _session_system(chain)}]
     previous = None
     indexes: dict[str, int] = {}
@@ -236,18 +236,18 @@ def check_shape(sample: str) -> None:
         )
         committed = _commit(messages, question, reply, sentence, chain)
         if committed != reply:
-            raise RuntimeError(f"ID{ids} 的助手回复被主会话改写")
+            raise RuntimeError(f"ID{ids} assistant reply was rewritten by the main session")
         if len(ids) == 1 and ids[0] in KERNEL:
             indexes[ids[0]] = len(messages) - 1
         previous = sentence
     if set(indexes) != set(KERNEL):
-        raise RuntimeError("四个核槽没有各自进入会话")
+        raise RuntimeError("the four kernel slots did not each enter the session")
     question = _session_question(chain, sentences[-1], previous)
     for blank_id in KERNEL:
         if f"{{{blank_id}:" in question:
-            raise RuntimeError(f"ID196 的用户消息带进了 ID{blank_id}")
-    if "正" in question or "负" in question:
-        raise RuntimeError("ID196 的用户消息带进了符号")
+            raise RuntimeError(f"the ID196 user message includes ID{blank_id}")
+    if "positive" in question or "negative" in question:
+        raise RuntimeError("the ID196 user message includes a sign word")
     blanks = {
         "190": {"normalized": False},
         "202": {"normalized": True},
@@ -256,32 +256,32 @@ def check_shape(sample: str) -> None:
     }
     replacements = kernel_replacements(indexes, blanks, gold)
     if [gold_text for _index, gold_text in replacements] != [gold["190"], gold["213"]]:
-        raise RuntimeError(f"应只替换 ID190 和 ID213，实际是 {replacements}")
+        raise RuntimeError(f"only ID190 and ID213 should be replaced, got {replacements}")
     fork = build_fork(messages, replacements, question)
     if fork[indexes["190"]]["content"] != gold["190"] or fork[indexes["213"]]["content"] != gold["213"]:
-        raise RuntimeError("分叉没有把答错的核槽换成金标")
+        raise RuntimeError("the fork did not replace a wrong kernel slot with gold")
     if fork[indexes["202"]]["content"] != "{202:CZ}" or fork[indexes["208"]]["content"] != gold["208"]:
-        raise RuntimeError("分叉改写了已经答对的核槽")
+        raise RuntimeError("the fork rewrote a kernel slot that was already correct")
     if messages[indexes["190"]]["content"] != "{190:B}":
-        raise RuntimeError("分叉写回了对照会话")
+        raise RuntimeError("the fork wrote back into the control session")
     if fork[-1] != {"role": "user", "content": question}:
-        raise RuntimeError("分叉没有停在 ID196 的用户消息")
+        raise RuntimeError("the fork did not stop on the ID196 user message")
     if any(item["role"] == "assistant" and item["content"].startswith("{196:") for item in fork):
-        raise RuntimeError("分叉里不该有 ID196 的旧回答")
+        raise RuntimeError("the fork should not contain the old ID196 answer")
     for marker in ("{191:Z}", "{201:Z}"):
         index = next(i for i, item in enumerate(messages) if item["role"] == "assistant" and item["content"] == marker)
         if fork[index]["content"] != marker:
-            raise RuntimeError(f"分叉改动了核以外的助手回复 {marker}")
+            raise RuntimeError(f"the fork changed an assistant reply outside the kernel {marker}")
     if kernel_replacements(indexes, {blank_id: {"normalized": True} for blank_id in KERNEL}, gold):
-        raise RuntimeError("四个核槽都答对时仍要求替换")
+        raise RuntimeError("a replacement was required even though all four kernel slots were correct")
     try:
         build_fork(messages, [], question)
     except RuntimeError:
         pass
     else:
-        raise RuntimeError("空替换仍生成了分叉")
+        raise RuntimeError("an empty replacement still built a fork")
     print(
-        f"形状检查通过：{sample} {PROCESS}，核金标 {gold}，ID196 用户消息 {len(question)} 字。",
+        f"shape check passed: {sample} {PROCESS}, kernel gold {gold}, ID196 user message {len(question)} characters.",
         flush=True,
     )
 
@@ -339,7 +339,7 @@ def run_trial(chain, sentences, gold, client, model, temperature, thinking, run,
         if path.is_file():
             record = _load(path)
             if record.get("question") != question:
-                raise RuntimeError(f"第 {run + 1} 趟 ID{ids} 的题面与已保存的不一致")
+                raise RuntimeError(f"run {run + 1} ID{ids} question text disagrees with the saved copy")
             if not _failed(record):
                 _replay(messages, question, record["committed"])
                 if len(ids) == 1 and ids[0] in KERNEL:
@@ -347,7 +347,7 @@ def run_trial(chain, sentences, gold, client, model, temperature, thinking, run,
                 previous = sentence
                 continue
         _invalidate_after(run_dir, index)
-        print(f"第 {run + 1} 趟 提问 ID{','.join(ids)}", flush=True)
+        print(f"run {run + 1} asking ID{','.join(ids)}", flush=True)
         result = _ask(
             client, model, temperature, thinking, chain, sentence, messages, question,
             run, seed, max_tokens, standard, SESSION_MODEL,
@@ -357,15 +357,15 @@ def run_trial(chain, sentences, gold, client, model, temperature, thinking, run,
         record = _turn_record(result, question, committed)
         _save(path, record)
         if _failed(record):
-            print(f"第 {run + 1} 趟 ID{ids[0]} 调用失败：{record['error']}", flush=True)
+            print(f"run {run + 1} ID{ids[0]} call failed: {record['error']}", flush=True)
             return {"run": run, "status": "failed", "where": ids}
         if committed != reply:
-            raise RuntimeError(f"ID{ids} 的助手回复被主会话改写")
+            raise RuntimeError(f"ID{ids} assistant reply was rewritten by the main session")
         if len(ids) == 1 and ids[0] in KERNEL:
             indexes[ids[0]] = len(messages) - 1
         previous = sentence
     if set(indexes) != set(KERNEL):
-        raise RuntimeError("四个核槽没有各自进入会话")
+        raise RuntimeError("the four kernel slots did not each enter the session")
     question = _session_question(chain, target, previous)
     kernel = _kernel_snapshot(run_dir)
     wrong_ids = [blank_id for blank_id in KERNEL if not kernel[blank_id].get("normalized")]
@@ -373,7 +373,7 @@ def run_trial(chain, sentences, gold, client, model, temperature, thinking, run,
     if control_path.is_file() and not _failed(_load(control_path)):
         control = _load(control_path)
     else:
-        print(f"第 {run + 1} 趟 对照提问 ID196（错槽 {','.join(wrong_ids) or '无'}）", flush=True)
+        print(f"run {run + 1} control question ID196 (wrong slots {','.join(wrong_ids) or 'none'})", flush=True)
         result = _ask(
             client, model, temperature, thinking, chain, target, messages, question,
             run, seed, max_tokens, standard, SESSION_MODEL,
@@ -383,15 +383,15 @@ def run_trial(chain, sentences, gold, client, model, temperature, thinking, run,
         control["wrong_ids"] = wrong_ids
         _save(control_path, control)
     if _failed(control):
-        print(f"第 {run + 1} 趟 ID196 对照调用失败：{control.get('error')}", flush=True)
+        print(f"run {run + 1} ID196 control call failed: {control.get('error')}", flush=True)
         return {"run": run, "status": "failed", "where": [TARGET_ID], "kernel": kernel, "wrong_ids": wrong_ids}
     control_blank = control.get("blank") or _picked_saved(control)
     if not wrong_ids:
         status = "residue" if _wrong(control_blank) else "clean"
-        print(f"第 {run + 1} 趟 四个核槽都是金标，状态 {status}", flush=True)
+        print(f"run {run + 1} all four kernel slots are gold, status {status}", flush=True)
         return {"run": run, "status": status, "kernel": kernel, "wrong_ids": [], "control": control_blank}
     if control_only:
-        print(f"第 {run + 1} 趟 对照已记下，错槽 {','.join(wrong_ids)}，暂不分叉", flush=True)
+        print(f"run {run + 1} control recorded, wrong slots {','.join(wrong_ids)}, not forking yet", flush=True)
         return {"run": run, "status": "control", "kernel": kernel, "wrong_ids": wrong_ids, "control": control_blank}
     replacements = kernel_replacements(indexes, kernel, gold)
     injected = {blank_id: gold[blank_id] for blank_id in wrong_ids}
@@ -399,11 +399,11 @@ def run_trial(chain, sentences, gold, client, model, temperature, thinking, run,
     if fork_path.is_file() and not _failed(_load(fork_path)):
         fork = _load(fork_path)
     else:
-        print(f"第 {run + 1} 趟 分叉：{injected}，重问 ID196", flush=True)
+        print(f"run {run + 1} fork: {injected}, re-ask ID196", flush=True)
         forked = build_fork(messages, replacements, question)
         for index, gold_text in replacements:
             if forked[index]["content"] != gold_text or messages[index]["content"] == gold_text:
-                raise RuntimeError("分叉替换不符合对照/干预的分工")
+                raise RuntimeError("the fork replacement does not match the control/intervention split")
         _guard_session(forked, chain["declaration"])
         result = _call(
             client, model, temperature, thinking,
@@ -414,11 +414,11 @@ def run_trial(chain, sentences, gold, client, model, temperature, thinking, run,
         fork["blank"] = _picked(result, TARGET_ID) if result.get("blanks") else {}
         _save(fork_path, fork)
     if _failed(fork):
-        print(f"第 {run + 1} 趟 ID196 分叉调用失败：{fork.get('error')}", flush=True)
+        print(f"run {run + 1} ID196 fork call failed: {fork.get('error')}", flush=True)
         return {"run": run, "status": "failed", "where": [TARGET_ID], "kernel": kernel, "wrong_ids": wrong_ids, "control": control_blank}
     fork_blank = fork.get("blank") or _picked_saved(fork)
     print(
-        f"第 {run + 1} 趟 保留：对照 {control_blank.get('prediction')!r}，分叉 {fork_blank.get('prediction')!r}",
+        f"run {run + 1} kept: control {control_blank.get('prediction')!r}, fork {fork_blank.get('prediction')!r}",
         flush=True,
     )
     return {
@@ -553,18 +553,18 @@ def render(sample: str, model: str, thinking: str, effort: str, runs: int, rows:
         return f"{wrong}/{n} = {wrong / n:.0%}"
 
     lines = [
-        "# 会话分叉：ID196 的四层核",
+        "# Session fork: the four-layer kernel of ID196",
         "",
-        f"样本 {sample}，子过程{PROCESS}。模型 {model}，思考 {thinking}，强度 {effort}，温度 0。",
-        "对照是 session-model：定义只在系统消息，ID181 到 ID196 逐句作答，助手回复保持模型原文。",
-        "分叉复制这条会话，删掉 ID196 的助手回复，把 ID190、ID202、ID208、ID213 里答错的槽换成金标 JSON，再重问 ID196。",
-        "已经与金标归一化相等的核槽保持模型原文。其余槽不改、不重问。",
-        "四个核槽都是金标的趟不分叉：ID196 仍错记为公式层残留，ID196 也对记为干净。",
-        "思维链不写回下一轮。这一步测的是可见会话，不是同一次生成内部的隐藏状态。",
+        f"Sample {sample}, subprocess {PROCESS}. Model {model}, thinking {thinking}, effort {effort}, temperature 0.",
+        "The control is session-model: the definition is only in the system message, ID181 through ID196 are answered sentence by sentence, and assistant replies keep the model text.",
+        "The fork copies that session, deletes the ID196 assistant reply, replaces the wrong slots among ID190, ID202, ID208, and ID213 with gold JSON, and asks ID196 again.",
+        "A kernel slot already equal to gold after normalization keeps the model text. Other slots are not changed and not re-asked.",
+        "A run whose four kernel slots are all gold is not forked: ID196 still wrong is a formula-layer residue, and ID196 also correct is clean.",
+        "The chain of thought is not written into the next turn. This step tests the visible session, not hidden state inside one generation.",
         "",
-        f"计划 {runs} 趟，完成记录 {len(rows)} 趟：分叉 {n}，待分叉 {len(waiting)}，公式层残留 {len(residue)}，干净 {len(clean)}，调用失败 {len(failed)}。",
+        f"Planned {runs} runs, records completed {len(rows)}: forked {n}, waiting to fork {len(waiting)}, formula-layer residue {len(residue)}, clean {len(clean)}, call failed {len(failed)}.",
         "",
-        "| 槽 | 对照答错 |",
+        "| slot | control wrong |",
         "| --- | ---: |",
     ]
     for blank_id in (*KERNEL, TARGET_ID):
@@ -583,60 +583,60 @@ def render(sample: str, model: str, thinking: str, effort: str, runs: int, rows:
         residual = f"{len(residue)}/{gold_kernel} = {len(residue) / gold_kernel:.0%}"
     lines.extend([
         "",
-        f"四槽全对时 ID196 仍错：{residual}。分母是四个核槽都与金标归一化相等的趟。",
+        f"ID196 still wrong when all four slots are correct: {residual}. The denominator is the runs whose four kernel slots all match gold after normalization.",
         "",
-        "上表用全部走完四个核槽的对照。下面两个误差率只用至少有一个核槽答错、并且已经重问过 ID196 的趟。",
+        "The table above uses every control that finished the four kernel slots. The two error rates below use only runs with at least one wrong kernel slot that have already re-asked ID196.",
         "",
-        "| 量 | 值 |",
+        "| quantity | value |",
         "| --- | --- |",
-        f"| 进入分叉 | {n}/{len(rows) or runs} |",
-        f"| p_对照 | {rate(control_wrong)} |",
-        f"| p_修复 | {rate(fork_wrong)} |",
-        f"| 效应 p_对照 − p_修复 | {'—' if p_prop is None else f'{(p_prop - p_fix):.0%}'} |",
-        f"| Fisher 精确检验 | {'—' if fisher is None else f'{fisher:.4f}'} |",
-        f"| 两比例 z | {'—' if z_test is None else f'z={z_test[0]:.2f}，p={z_test[1]:.4f}'} |",
-        f"| 配对精确检验 | {'—' if paired is None else f'{paired:.4f}'} |",
+        f"| entered fork | {n}/{len(rows) or runs} |",
+        f"| p_control | {rate(control_wrong)} |",
+        f"| p_repair | {rate(fork_wrong)} |",
+        f"| effect p_control - p_repair | {'—' if p_prop is None else f'{(p_prop - p_fix):.0%}'} |",
+        f"| Fisher exact test | {'—' if fisher is None else f'{fisher:.4f}'} |",
+        f"| two-proportion z | {'—' if z_test is None else f'z={z_test[0]:.2f}, p={z_test[1]:.4f}'} |",
+        f"| paired exact test | {'—' if paired is None else f'{paired:.4f}'} |",
         "",
-        "Fisher 和 z 把同一趟的对照、分叉当成两个独立样本。配对精确检验只数两边不一致的趟。",
+        "Fisher and z treat the control and the fork of the same run as two independent samples. The paired exact test counts only runs that disagree.",
         "",
-        "| 对照错、分叉对 | 对照对、分叉错 | 两边都错 | 两边都对 |",
+        "| control wrong, fork right | control right, fork wrong | both wrong | both right |",
         "| ---: | ---: | ---: | ---: |",
         f"| {rescued} | {harmed} | {both_wrong} | {both_right} |",
         "",
-        f"两边都错的 {both_wrong} 趟里，分叉文本与对照相同的有 {same_text} 趟，其余 {both_wrong - same_text} 趟换了式子，归一化后仍不等于金标。",
-        f"公式层残留 {len(residue)} 趟：四个核槽都是金标，ID196 仍错，不进入上面两个误差率。",
+        f"Of the {both_wrong} runs that are wrong on both sides, {same_text} have the same fork text as the control. The other {both_wrong - same_text} changed the expression and still do not equal gold after normalization.",
+        f"Formula-layer residue {len(residue)} runs: all four kernel slots are gold, ID196 is still wrong, and those runs are not in the two error rates above.",
         "",
-        "| 趟 | 状态 | 错的核槽 | 对照 ID196 | 分叉 ID196 |",
+        "| run | status | wrong kernel slots | control ID196 | fork ID196 |",
         "| ---: | --- | --- | --- | --- |",
     ])
     labels = {
-        "kept": "已分叉",
-        "control": "待分叉",
-        "residue": "公式层残留",
-        "clean": "干净",
-        "failed": "调用失败",
+        "kept": "forked",
+        "control": "waiting to fork",
+        "residue": "formula-layer residue",
+        "clean": "clean",
+        "failed": "call failed",
     }
     for row in rows:
         control = (row.get("control") or {}).get("prediction") or ""
         fork = (row.get("fork") or {}).get("prediction") or ""
         if row["status"] == "failed":
-            control = control or "调用失败"
-            fork = fork or "未做"
+            control = control or "call failed"
+            fork = fork or "not done"
         elif row["status"] != "kept":
             fork = "—"
-        wrong = "、".join(f"ID{blank_id}" for blank_id in row.get("wrong_ids") or []) or "—"
+        wrong = ", ".join(f"ID{blank_id}" for blank_id in row.get("wrong_ids") or []) or "—"
         lines.append(f"| {row['run'] + 1} | {labels.get(row['status'], row['status'])} | {wrong} | {control} | {fork} |")
     lines.append("")
     if waiting and n == 0:
-        lines.append("对照已记下，分叉还没跑。")
+        lines.append("The control is recorded. The fork has not been run.")
     elif n == 0:
-        lines.append("没有核槽答错的趟，修复率没有分母。")
+        lines.append("No run has a wrong kernel slot, so the repair rate has no denominator.")
     elif p_fix is not None and p_prop is not None and p_fix + 0.5 <= p_prop and fisher is not None and fisher < 0.05:
-        lines.append("完整核换回金标后，ID196 的误差率下降，Fisher p<0.05。")
+        lines.append("After the full kernel is restored to gold, the ID196 error rate drops, Fisher p<0.05.")
     elif p_fix is not None and p_prop is not None and abs(p_prop - p_fix) <= 0.1:
-        lines.append("完整核换回金标后，ID196 的误差率基本没变。")
+        lines.append("After the full kernel is restored to gold, the ID196 error rate is essentially unchanged.")
     else:
-        lines.append("两个误差率有差别，这一批的检验还没有把它钉成下降或没变。")
+        lines.append("The two error rates differ, and this batch does not yet pin the difference as a drop or as no change.")
     lines.append("")
     return "\n".join(lines)
 
@@ -651,22 +651,22 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--seed", type=int, default=20261102)
     parser.add_argument("--out", type=Path, default=None)
-    parser.add_argument("--report", type=Path, default=ROOT / "analysis" / "会话分叉_ID196核.md")
+    parser.add_argument("--report", type=Path, default=ROOT / "doc" / "session_fork_ID196_kernel.md")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--report-only", action="store_true")
     parser.add_argument("--control-only", action="store_true")
     args = parser.parse_args()
     if args.runs < 1:
-        raise SystemExit("--runs 至少为 1。")
+        raise SystemExit("--runs must be at least 1.")
     out = args.out or (ROOT / "results" / "fork_id196_kernel" / args.sample)
     check_shape(args.sample)
     if args.check:
         if fisher_exact(10, 0, 0, 10) >= 0.001:
-            raise RuntimeError("Fisher 没有把全部分叉改对判成小概率")
+            raise RuntimeError("Fisher did not treat a fork that fixes every case as a small probability")
         if fisher_exact(10, 0, 10, 0) != 1:
-            raise RuntimeError("Fisher 没有把两边同样全错判成 1")
+            raise RuntimeError("Fisher did not return 1 when both sides are entirely wrong")
         if mcnemar_exact(10, 0) >= 0.01:
-            raise RuntimeError("配对检验没有把 10 次只在分叉改对判成小概率")
+            raise RuntimeError("the paired test did not treat 10 fork-only fixes as a small probability")
         from domains.wind_tunnel.injector_catalog import e3_rows
         variants = {
             row.question[0]: row.variant
@@ -675,8 +675,8 @@ def main() -> None:
         }
         found = {key: variants.get(key) for key in ("190", "202", "213")}
         if found != {"190": "sign", "202": "choice", "213": "choice"}:
-            raise RuntimeError(f"力矩测点的行标记不对：{found}")
-        print("检验函数通过。", flush=True)
+            raise RuntimeError(f"moment-probe row marks are wrong: {found}")
+        print("Test functions passed.", flush=True)
         return
     if not args.report_only:
         load_env_file(ROOT / ".env")
@@ -704,11 +704,11 @@ def main() -> None:
             comparable = {key: saved.get(key) for key in ("sample", "model", "thinking", "effort", "injected", "kernel")}
             current = {key: meta[key] for key in comparable}
             if comparable != current:
-                raise SystemExit(f"已有结果的条件与这次不一致：{comparable}")
+                raise SystemExit(f"saved results were run under different conditions: {comparable}")
         _save(meta_path, meta)
         print(
-            f"样本 {args.sample} 模型 {args.model} 思考 {args.thinking} 强度 {args.effort} "
-            f"核 {gold} 趟数 {args.runs} {'只跑对照' if args.control_only else '对照后分叉'}",
+            f"sample {args.sample} model {args.model} thinking {args.thinking} effort {args.effort} "
+            f"kernel {gold} runs {args.runs} {'control only' if args.control_only else 'fork after control'}",
             flush=True,
         )
         try:
@@ -718,7 +718,7 @@ def main() -> None:
                     run, args.seed + run, max_tokens, standard, out, args.control_only,
                 )
         except RunStop as exc:
-            print(f"调用中断：{exc}", flush=True)
+            print(f"call interrupted: {exc}", flush=True)
     rows = collect(out, args.runs)
     text = render(args.sample, args.model, args.thinking, args.effort, args.runs, rows)
     args.report.parent.mkdir(parents=True, exist_ok=True)

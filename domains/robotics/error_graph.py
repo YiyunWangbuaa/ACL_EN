@@ -46,11 +46,11 @@ def future_edges() -> tuple[tuple[str, str], ...]:
 def check_graph() -> None:
     graph = nodes()
     if set(graph) != set(NODE_IDS) or len(graph) != len(NODE_IDS):
-        raise RuntimeError(f"节点数应为 {len(NODE_IDS)}，得到 {len(graph)}")
+        raise RuntimeError(f"node count should be {len(NODE_IDS)}, got {len(graph)}")
     bad = future_edges()
     if bad:
-        raise RuntimeError(f"存在后句指向前句的边：{bad}")
-    print(f"阶段1 依赖图：节点 {len(graph)}，边 {len(edges())}，未来边 0。", flush=True)
+        raise RuntimeError(f"there is an edge from a later sentence to an earlier one: {bad}")
+    print(f"stage 1 dependency graph: nodes {len(graph)}, edges {len(edges())}, future edges 0.", flush=True)
 
 
 if __name__ == "__main__":

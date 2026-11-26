@@ -59,7 +59,7 @@ def evaluate(sample_id: str) -> tuple[InstanceResult, ...]:
         if support:
             found.append(InstanceResult(item, 1, "", support))
         else:
-            found.append(InstanceResult(item, 0, "不可注入", ()))
+            found.append(InstanceResult(item, 0, "not injectable", ()))
     found.sort(key=lambda item: item.instance.id)
     return tuple(found)
 
@@ -127,7 +127,7 @@ def audit(sample_ids: tuple[str, ...] = ("body-rule", "roll-rule")) -> tuple[Rep
         second = report(sample_id)
         _check(first)
         if first.digest != second.digest:
-            raise RuntimeError(f"{sample_id} 重跑哈希不一致。")
+            raise RuntimeError(f"{sample_id} hash changed on the second build.")
         reports.append(first)
     return tuple(reports)
 
@@ -138,32 +138,32 @@ def _check(item: Report) -> None:
     seen = {result.instance.id for result in item.results}
     library = {row.id for row in instances(sample)}
     if seen != library:
-        raise RuntimeError(f"{sample} 的支持层没有盖住实例库。")
+        raise RuntimeError(f"{sample} support rows do not cover the instance library.")
     for result in item.results:
         if result.det not in (0, 1):
-            raise RuntimeError(f"{result.instance.id} 的 det 不是 0 或 1。")
-        if result.det == 0 and result.reason != "不可注入":
-            raise RuntimeError(f"{result.instance.id} det=0 但原因是 {result.reason!r}。")
+            raise RuntimeError(f"{result.instance.id} det is not 0 or 1.")
+        if result.det == 0 and result.reason != "not injectable":
+            raise RuntimeError(f"{result.instance.id} det=0 but the reason is {result.reason!r}.")
         if result.det == 1 and result.reason:
-            raise RuntimeError(f"{result.instance.id} det=1 仍带了原因。")
+            raise RuntimeError(f"{result.instance.id} det=1 still carries a reason.")
         if result.det == 1 and result.entries != tuple(sorted(result.instance.potential)):
-            raise RuntimeError(f"{result.instance.id} 的支持集不是图可达。")
+            raise RuntimeError(f"{result.instance.id} support is not the graph reach.")
         for mid in result.entries:
             if not mid:
-                raise RuntimeError(f"{result.instance.id} 的支持集里有空测点。")
+                raise RuntimeError(f"{result.instance.id} support contains an empty measurement.")
     e1_rows = summary["census"]["rows"]
     if summary["e1_max_block"] > _BLOCK_LIMIT or summary["e1_max_block"] >= e1_rows:
         raise RuntimeError(
-            f"{sample} 的 DIR 最大模糊组是 {summary['e1_max_block']}，没有显著小于单列基线 62。"
+            f"{sample} largest DIR ambiguity group is {summary['e1_max_block']}, not clearly below the single-column baseline of 62."
         )
     if RES in summary["counts"]:
-        raise RuntimeError(f"{sample} 把 RES 当成了行。")
+        raise RuntimeError(f"{sample} treats RES as a row.")
     math_rows = sum(
         1 for node_id, node in NODE_BY_ID.items()
         if node.answer_type in {"matrix", "vector", "expression"} and node_id not in SIGN_COMPONENTS
     )
     if summary["counts"].get(ALG, 0) != math_rows:
-        raise RuntimeError(f"{sample} 的 ALG 应是 {math_rows} 行，现在是 {summary['counts'].get(ALG, 0)}。")
+        raise RuntimeError(f"{sample} ALG should be {math_rows} rows, got {summary['counts'].get(ALG, 0)}.")
 
 
 def _blocks(rows: list[InstanceResult]) -> tuple[tuple[str, ...], ...]:
@@ -178,7 +178,7 @@ def _blocks(rows: list[InstanceResult]) -> tuple[tuple[str, ...], ...]:
 def _why(block: tuple[str, ...]) -> str:
     if len(block) <= 1:
         return ""
-    return "共用可达集"
+    return "shared reach"
 
 
 def _isolation(results: tuple[InstanceResult, ...]) -> dict[str, dict]:

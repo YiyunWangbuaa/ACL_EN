@@ -22,7 +22,7 @@ def _alt(node: str) -> str:
 
 def _equals(node: str, left: str, right: str) -> bool:
     row = questions()[node]
-    fmt = row["format"] if not row["options"] else "表达式"
+    fmt = row["format"] if not row["options"] else "expression"
     return answers_equal(left, right, fmt)
 
 
@@ -48,21 +48,21 @@ def check_t_final() -> None:
     report = []
     for target in T_FINAL:
         if target not in NODE_IDS:
-            raise RuntimeError(f"终点 {target} 不在 1–131")
+            raise RuntimeError(f"Endpoint {target} not in 1-131")
         fixes = minimal_fixes(target)
         if not fixes:
             parents = input_ids(target)
             if parents:
                 # Try whether gold-only assignment works (no fault) — then refusal is about faults.
-                report.append(f"ID{target} 无核（计算器在故障赋值下拒绝）")
+                report.append(f"ID{target} has no core (the calculator refuses the fault assignment)")
             else:
-                report.append(f"ID{target} 自修 {{ID{target}}}")
+                report.append(f"ID{target} repairs itself {{ID{target}}}")
                 fixes = ((target,),)
         else:
-            report.append(f"ID{target} 核 {list(fixes)}")
+            report.append(f"ID{target} core {list(fixes)}")
         if not fixes and target not in {"59", "90", "120", "131"}:
-            raise RuntimeError(f"终点 ID{target} 没有最小修复集")
-    print("阶段6 系统修复：" + "；".join(report), flush=True)
+            raise RuntimeError(f"Endpoint ID{target} has no minimal repair set")
+    print("Stage 6 system repair: " + "; ".join(report), flush=True)
 
 
 if __name__ == "__main__":

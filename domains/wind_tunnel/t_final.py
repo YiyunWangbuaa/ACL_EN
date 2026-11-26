@@ -31,10 +31,10 @@ _LOCAL = (DIR, RSN, EXE, ALG)
 # Process, then the expression sinks of that process. The audit checks this
 # against the graph rather than trusting the tuple alone.
 T_FINAL: dict[str, tuple[str, ...]] = {
-    "风轴系到体轴系": ("80", "81"),
-    "天平系到风轴系": ("176", "177", "178"),
-    "天平系到体轴系": ("111", "112", "113", "114", "115", "116"),
-    "力矩参考点": ("195", "196", "197", "198", "199", "200"),
+    "wind frame to body-axis frame": ("80", "81"),
+    "balance frame to wind frame": ("176", "177", "178"),
+    "balance frame to body-axis frame": ("111", "112", "113", "114", "115", "116"),
+    "moment reference point": ("195", "196", "197", "198", "199", "200"),
 }
 
 
@@ -64,18 +64,18 @@ def audit_finals() -> None:
     }
     listed = final_nodes()
     if set(listed) != sinks or len(listed) != len(sinks):
-        raise RuntimeError(f"T_FINAL {listed} 不是表达式终点 {tuple(sorted(sinks, key=int))}。")
+        raise RuntimeError(f"T_FINAL {listed} is not the expression sinks {tuple(sorted(sinks, key=int))}.")
     seen = set()
     for process, nodes in T_FINAL.items():
         for node in nodes:
             if node in seen:
-                raise RuntimeError(f"ID{node} 重复。")
+                raise RuntimeError(f"ID{node} is duplicated.")
             seen.add(node)
             item = NODE_BY_ID[node]
             if item.process != process:
-                raise RuntimeError(f"ID{node} 属于 {item.process}，常量写成了 {process}。")
+                raise RuntimeError(f"ID{node} belongs to {item.process}, but the constant lists {process}.")
             if not _has_calculator(node):
-                raise RuntimeError(f"ID{node} 没有计算器，不能作为重算终点。")
+                raise RuntimeError(f"ID{node} no calculator, so it cannot be a recompute sink.")
 
 
 def _observations(sample: str, condition: str) -> dict[str, dict]:
@@ -193,10 +193,10 @@ def repaired_matches(query: RepairQuery) -> bool | None:
 
 def _status(result: bool | None) -> str:
     if result is True:
-        return "对"
+        return "fixed"
     if result is None:
-        return "拒绝"
-    return "仍错"
+        return "refused"
+    return "still-wrong"
 
 
 @dataclass(frozen=True)
@@ -255,14 +255,14 @@ def minimal_fixes(sample: str, condition: str = "self-trunc", log=None) -> tuple
             if fault != target and target in NODE_BY_ID[fault].descendants
         )
         if log is not None:
-            log(f"{sample} ID{target} 上游 {len(upstream)} 处")
+            log(f"{sample} ID{target} upstream {len(upstream)}")
         single_rows: list[tuple[str, str]] = []
         collected: list[tuple[tuple[str, str], str]] = []
 
         def restores(combo: tuple[str, ...]) -> bool:
             if log is not None:
                 shown = "+".join(f"ID{node}" for node in combo)
-                log(f"{sample} ID{target} {len(combo)} 元 {shown}")
+                log(f"{sample} ID{target} {len(combo)}-factor {shown}")
             hold = set(faults) - set(combo) - {target}
             result = _outcome(sample, observed, combo, target, hold)
             if len(combo) == 1:
@@ -276,11 +276,11 @@ def minimal_fixes(sample: str, condition: str = "self-trunc", log=None) -> tuple
         if minimal:
             grade = order_grade(len(minimal[0]))
         elif not upstream:
-            grade = "无上游"
+            grade = "no-upstream"
         elif len(upstream) == 1:
-            grade = "单修失败"
+            grade = "single-repair-failed"
         else:
-            grade = "全上游仍失败"
+            grade = "all-upstream-still-fail"
         found.append(TargetFix(
             sample, target, target in faults, upstream,
             tuple(single_rows), pair_rows, grade, minimal,
@@ -331,7 +331,7 @@ def scan_orders(
             if fault != target and target in NODE_BY_ID[fault].descendants
         )
         if log is not None:
-            log(f"{sample} ID{target} 扫描上游 {'、'.join(f'ID{node}' for node in upstream)}")
+            log(f"{sample} ID{target} scanning upstream {', '.join(f'ID{node}' for node in upstream)}")
         layers = []
         open_at = None
         fixed_at = None
@@ -341,11 +341,11 @@ def scan_orders(
             solved: list[tuple[str, ...]] = []
             combos = list(itertools.combinations(upstream, order))
             if log is not None:
-                log(f"{sample} ID{target} {order} 元，共 {len(combos)} 组")
+                log(f"{sample} ID{target} order {order}, {len(combos)} combinations")
             for index, combo in enumerate(combos, start=1):
                 if log is not None:
                     shown = "+".join(f"ID{node}" for node in combo)
-                    log(f"{sample} ID{target} {order} 元 {index}/{len(combos)} {shown}")
+                    log(f"{sample} ID{target} order {order} {index}/{len(combos)} {shown}")
                 hold = set(faults) - set(combo) - {target}
                 result = _outcome(sample, observed, combo, target, hold)
                 if result is None:
@@ -374,24 +374,24 @@ def audit_repair_shape() -> None:
     observed = _observations(sample, "self-trunc")
     faults = set(_local_faults(sample, "self-trunc"))
     if "47" not in faults or "48" not in faults:
-        raise RuntimeError(f"机体自答应把 ID47、ID48 记为本地故障，实际 {sorted(faults, key=int)}。")
+        raise RuntimeError(f"The body self-answer should record ID47 and ID48 as local faults, got {sorted(faults, key=int)}.")
     hold = faults - {"47", "80"}
     assignment = repair_assignment(sample, observed, "47", "80", hold)
     slots = {node: text for node, text in assignment.slots}
     gold = _manuscript(sample)
     if slots.get("47") != gold["47"]:
-        raise RuntimeError("修复 ID47 时应写回金标。")
+        raise RuntimeError("Repairing ID47 should write the gold answer back.")
     for node in ("55", "59", "60", "80"):
         if node in slots:
-            raise RuntimeError(f"ID{node} 在修复路径上，不应冻住模型原文。")
+            raise RuntimeError(f"ID{node} is on the repair path and should not keep the frozen model text.")
     if "48" not in slots or _same(slots["48"], gold["48"]):
-        raise RuntimeError("ID48 是另一处本地错，应保持模型原文。")
+        raise RuntimeError("ID48 is another local fault and should keep the model text.")
     joint = repair_assignment(sample, observed, ("47", "48"), "80", faults - {"47", "48", "80"})
     joint_slots = {node: text for node, text in joint.slots}
     if joint_slots.get("47") != gold["47"] or joint_slots.get("48") != gold["48"]:
-        raise RuntimeError("联合修复 ID47 与 ID48 时应同时写回金标。")
+        raise RuntimeError("Repairing ID47 and ID48 together should write both gold answers back.")
     for node in ("55", "59", "60", "80"):
         if node in joint_slots:
-            raise RuntimeError(f"联合修复时 ID{node} 仍应留给计算器。")
+            raise RuntimeError(f"During the joint repair, ID{node} should still be left to the calculator.")
     if "2" not in joint_slots or _same(joint_slots["2"], gold["2"]):
-        raise RuntimeError("联合修复 ID47 与 ID48 时，ID2 应保持模型原文。")
+        raise RuntimeError("When ID47 and ID48 are repaired together, ID2 should keep the model text.")

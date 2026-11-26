@@ -35,21 +35,21 @@ SCALAR_FLIP = {
     ALPHA: {"sign": "negative"},
     BETA: {"sign": "negative"},
 }
-SCALAR_ZH = {
-    ALPHA: "迎角改为空速投影处于机体轴向下方时为负",
-    BETA: "侧滑角改为空速处于飞行器右方时为负",
+SCALAR_EN = {
+    ALPHA: "Angle of attack is negative when the airspeed projection lies below the airframe axis",
+    BETA: "Sideslip is negative when the airspeed lies to the right of the aircraft",
 }
 
 
 def _frame_phrase(title: str, spec: dict) -> str:
     shown = {"Xb": "xb", "Yb": "yb", "Zb": "zb"}
     declared = [
-        f"{shown.get(name, name)}沿{axis['along'].split('_', 1)[1]}指向{axis['points'].split('_', 1)[1]}"
+        f"{shown.get(name, name)} lies along {axis['along'].split('_', 1)[1]} and points {axis['points'].split('_', 1)[1]}"
         for name, axis in spec.items()
         if name != "chirality"
     ]
-    hand = "右手系" if spec["chirality"] == "right" else "左手系"
-    return f"{title}改为{hand}，" + "，".join(declared)
+    hand = "right-handed" if spec["chirality"] == "right" else "left-handed"
+    return f"{title} is {hand}, " + ", ".join(declared)
 
 
 def _samples() -> list[dict]:
@@ -90,21 +90,21 @@ def _samples() -> list[dict]:
             made += 1
             phrases = []
             for key in chosen:
-                if key in SCALAR_ZH:
-                    phrases.append(SCALAR_ZH[key])
+                if key in SCALAR_EN:
+                    phrases.append(SCALAR_EN[key])
                 elif key == "body_frame":
-                    phrases.append(_frame_phrase("机体系", spec[key]))
+                    phrases.append(_frame_phrase("the airframe", spec[key]))
                 elif key == "stability_frame":
-                    phrases.append(_frame_phrase("稳定性坐标系", spec[key]))
+                    phrases.append(_frame_phrase("the stability frame", spec[key]))
                 else:
-                    phrases.append(_frame_phrase("气流系", spec[key]))
+                    phrases.append(_frame_phrase("the airflow frame", spec[key]))
             samples.append({
                 "id": f"{tier}-{made:02d}",
                 "tier": tier,
                 "changed_count": tier,
                 "changed": chosen,
-                "title": f"变更{tier}项",
-                "change": f"这一子过程的 5 项定义中变更 {tier} 项：" + "；".join(phrases) + "。",
+                "title": f"change {tier} items",
+                "change": f"Of the 5 definitions that enter this subprocess, {tier} differ from the standard definition: " + "; ".join(phrases) + ".",
                 "spec": spec,
             })
     return samples
@@ -146,23 +146,23 @@ def main() -> None:
             if index == 1 or index % 16 == 0 or index == len(samples):
                 print(f"wrote {index}/{len(samples)}", flush=True)
     lines = [
-        "# 空气动力学定义变更数据",
+        "# Flight-mechanics definition samples",
         "",
-        f"子过程：体轴系到气流系，每条 {BLANK_COUNT} 个空，公共编号 {public_span(PROCESS)[0]} 到 {public_span(PROCESS)[1]}。进入这些空的定义有 5 项：迎角符号、侧滑符号、机体系、稳定性坐标系、气流系。地面系、航迹系以及姿态角、航迹角保持当前默认，因为这一子过程不读取它们。",
+        f"Subprocess: body to airflow, {BLANK_COUNT} blanks each, public numbers {public_span(PROCESS)[0]} through {public_span(PROCESS)[1]}. Five definitions enter these blanks: the angle-of-attack sign, the sideslip sign, the airframe, the stability frame, and the airflow frame. The ground frame, the track frame, and the attitude angles and track angles stay on the current standard definition, because this subprocess does not read them.",
         "",
-        "机体系、稳定性坐标系和气流系各抽取两轴声明的 48 套，它们都和默认的轴向、法向声明不同。",
+        "The airframe, the stability frame, and the airflow frame are each drawn from 48 two-axis declarations, all different from the standard axial and normal declaration.",
         "",
-        "| 档 | 变更项 | 条数 | 编号 |",
+        "| tier | items changed | count | ids |",
         "| --- | --- | --- | --- |",
     ]
     for tier in TIERS:
-        lines.append(f"| {tier}/5 | {tier} | {PER_TIER} | {tier}-01 至 {tier}-0{PER_TIER} |")
+        lines.append(f"| {tier}/5 | {tier} | {PER_TIER} | {tier}-01 to {tier}-0{PER_TIER} |")
     lines.extend([
         "",
-        f"抽样种子 {SEED}。数据在 data/flight/basic/body_to_airflow/batch/samples.jsonl，每行一条，含定义声明和 35 个空的标准答案。",
+        f"Sample seed {SEED}. The data are in data/flight/basic/body_to_airflow/batch/samples.jsonl, one sample per line, with the declaration and the answers of 35 blanks.",
         "",
     ])
-    (OUT_DIR / "00_索引.md").write_text("\n".join(lines), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {len(samples)} samples to {OUT_DIR}")
 
 

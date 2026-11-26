@@ -19,6 +19,7 @@ from domain_layout import DOMAINS
 from domains.wind_tunnel.batch_generate import (
     BLANK_COUNT,
     SCALAR_FLIP,
+    SCALAR_LABEL,
     SCALAR_ZH,
     _slim,
     _standard_sample,
@@ -47,7 +48,7 @@ def _answers(row: dict) -> dict[str, str]:
 def _row(sample: dict) -> dict:
     record = build_record(sample)
     if len(record["questions"]) != BLANK_COUNT:
-        raise RuntimeError(f"{sample['id']} 有 {len(record['questions'])} 个空，应为 {BLANK_COUNT}。")
+        raise RuntimeError(f"{sample['id']} has {len(record['questions'])} blanks; expected {BLANK_COUNT}.")
     row = _slim(sample, record)
     row["factor"] = sample["factor"]
     return row
@@ -55,10 +56,10 @@ def _row(sample: dict) -> dict:
 
 def main() -> None:
     if len(KEYS) != 9 or len(set(KEYS)) != 9:
-        raise RuntimeError("风洞主实验要 9 个互不相同的单定义。")
+        raise RuntimeError("The wind-tunnel main experiment needs 9 distinct single definitions.")
     standard = _standard_sample()
-    standard["factor"] = "无"
-    standard["change"] = "单定义扰动：无。统一默认。16 项可变定义都不改。"
+    standard["factor"] = "none"
+    standard["change"] = "Single-definition perturbation: none. Common default. None of the 16 variable definitions is changed."
     rows = [_row(standard)]
     base = _answers(rows[0])
     for index, key in enumerate(KEYS, start=1):
@@ -70,15 +71,18 @@ def main() -> None:
             "changed_count": 1,
             "changed": [key],
             "factor": key,
-            "title": SCALAR_ZH[key].split("改为", 1)[0],
-            "change": f"单定义扰动：{SCALAR_ZH[key].split('改为', 1)[0]}。{SCALAR_ZH[key]}。其余 15 项保持统一默认。",
+            "title": SCALAR_LABEL[key],
+            "change": (
+                f"Single-definition perturbation: {SCALAR_LABEL[key]}. "
+                f"{SCALAR_ZH[key]}. The other 15 definitions stay at the common default."
+            ),
             "spec": spec,
         }
         row = _row(sample)
         if row["changed"] != [key]:
-            raise RuntimeError(f"{key} 的变更列表是 {row['changed']}。")
+            raise RuntimeError(f"The changed list of {key} is {row['changed']}.")
         if _answers(row) == base:
-            raise RuntimeError(f"{key} 没有改变任何标准答案。")
+            raise RuntimeError(f"{key} does not change any standard answer.")
         rows.append(row)
         print(f"{row['id']} {row['factor']} blanks {len(row['questions'])}", flush=True)
     OUT.mkdir(parents=True, exist_ok=True)
@@ -88,17 +92,17 @@ def main() -> None:
     partial.write_text(payload, encoding="utf-8")
     partial.replace(target)
     lines = [
-        "# 风洞主实验",
+        "# Wind-tunnel main experiment",
         "",
-        "1 条统一默认加 9 条单定义扰动。每条只改 16 项可变定义中的一项，factor 记录这一项。",
-        "100 条分档数据仍在 data/wind_tunnel/batch，不作为这次主实验的入口。",
+        "One common-default row and nine single-definition perturbations. Each perturbed row changes exactly one of the 16 variable definitions, and factor records that definition.",
+        "The 100-row tiered set remains in data/wind_tunnel/batch and is not the entry for this main experiment.",
         "",
-        f"- 000-001：单定义扰动：无。{BLANK_COUNT} 个空。",
+        f"- 000-001: single-definition perturbation: none. {BLANK_COUNT} blanks.",
     ]
     for row in rows[1:]:
-        lines.append(f"- {row['id']}：单定义扰动：{row['title']}。factor `{row['factor']}`。")
+        lines.append(f"- {row['id']}: single-definition perturbation: {row['title']}. factor `{row['factor']}`.")
     lines.append("")
-    (OUT / "00_索引.md").write_text("\n".join(lines), encoding="utf-8")
+    (OUT / "00_index.md").write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {target}", flush=True)
 
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""风洞二值可达集里，写入的空不同、可达集却相同的模糊组。"""
+"""Ambiguity groups in the wind-tunnel binary reachable sets: different written blanks, the same reachable set."""
 import sys
 from collections import defaultdict
 
@@ -18,10 +18,10 @@ def classify(group):
     nodes = {node_set(i) for i in injectors}
     values = {i for i in injectors}
     if len(values) == 1:
-        return "同一注入"
+        return "same injection"
     if len(nodes) == 1:
-        return "同空不同值"
-    return "节点集不同"
+        return "same blank, different value"
+    return "different node set"
 
 
 for sample in ("body-rule", "roll-rule"):
@@ -29,18 +29,18 @@ for sample in ("body-rule", "roll-rule"):
     by_support = defaultdict(list)
     for r in results:
         by_support[frozenset(r.entries)].append(r)
-    print(f"\n=== {sample}：det=1 共 {len(results)} 行，支撑集 {len(by_support)} 个 ===")
+    print(f"\n=== {sample}: det=1 has {len(results)} rows, {len(by_support)} support sets ===")
     harmful = []
     for support, group in sorted(by_support.items(), key=lambda kv: -len(kv[1])):
         if len(group) < 2:
             continue
         kind = classify(group)
-        if kind == "节点集不同":
+        if kind == "different node set":
             harmful.append((support, group))
-    print(f"节点集不同（有害）组：{len(harmful)} 个\n")
+    print(f"different node set (harmful) groups: {len(harmful)}\n")
     for support, group in harmful:
-        print(f"  支撑集 {len(support)} 个测点，{len(group)} 行：")
+        print(f"  support set of {len(support)} probes, {len(group)} rows:")
         for m in sorted(group, key=lambda x: x.instance.id):
             inj = ", ".join(f"{b}={v}" for b, v in m.instance.injector)
-            print(f"    {m.instance.id:<40} [{m.instance.klass}] 注入 {inj}")
+            print(f"    {m.instance.id:<40} [{m.instance.klass}] injected {inj}")
         print()

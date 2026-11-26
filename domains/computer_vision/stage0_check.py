@@ -11,9 +11,9 @@ from cloze_score import answer_letter
 def check_stage0() -> None:
     rows = questions()
     if set(rows) != set(NODE_IDS):
-        raise RuntimeError("节点集合与范围不一致")
+        raise RuntimeError("node set does not match the range")
     if not manuscript_path().is_file():
-        raise RuntimeError("审阅稿不存在")
+        raise RuntimeError("review manuscript is missing")
     built = build(STANDARD_SPEC)
     generated = {}
     for item in built["questions"]:
@@ -39,13 +39,13 @@ def check_stage0() -> None:
 
         hard = {}
         for node, pair in diff.items():
-            fmt = rows[node]["format"] if not rows[node]["options"] else "表达式"
+            fmt = rows[node]["format"] if not rows[node]["options"] else "expression"
             if pair[1] is None or not answers_equal(pair[0], pair[1], fmt):
                 hard[node] = pair
         if hard:
             sample = dict(list(hard.items())[:3])
-            raise RuntimeError(f"生成器与审阅稿差分非空：{sample}")
-    print(f"阶段0 稿面：视觉基础 1–66 金标差分空，共 {len(NODE_IDS)} 空。", flush=True)
+            raise RuntimeError(f"generator and review manuscript differ: {sample}")
+    print(f"stage 0 manuscript: vision basics 1-66 gold diff is empty, {len(NODE_IDS)} blanks.", flush=True)
 
 
 if __name__ == "__main__":

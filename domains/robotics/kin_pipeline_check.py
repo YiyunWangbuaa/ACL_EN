@@ -21,7 +21,7 @@ def main() -> None:
     check_attribution()
     check_t_final()
     check_stage7()
-    print("机器人学运动学全量阶段 0–7 全部通过。", flush=True)
+    print("Robotics kinematics stages 0-7 all passed.", flush=True)
 
 
 if __name__ == "__main__":

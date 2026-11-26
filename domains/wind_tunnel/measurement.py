@@ -167,20 +167,20 @@ def check_catalog() -> dict[str, int]:
     for node in NODE_BY_ID.values():
         types[node.answer_type] = types.get(node.answer_type, 0) + 1
     if counts["node"] != 207 or types.get("matrix") != 12 or types.get("vector") != 5 or types.get("expression") != 27:
-        raise RuntimeError(f"测点节点数不对：{counts} / {types}")
+        raise RuntimeError(f"Measurement node counts are wrong: {counts} / {types}")
     if counts["matrix_cells"] != 12 * 9 or counts["vector_components"] != 5 * 3:
-        raise RuntimeError(f"格子或分量测点数不对：{counts}")
+        raise RuntimeError(f"Cell or component counts are wrong: {counts}")
     if counts["expression_fields"] != 27 * 6 or counts["structure"] != 27 * 3 or counts["format"] != 3:
-        raise RuntimeError(f"表达式或格式测点数不对：{counts}")
+        raise RuntimeError(f"Expression or format counts are wrong: {counts}")
     seen = [item.id for item in rows]
     if len(seen) != len(set(seen)):
-        raise RuntimeError("测点 id 重复。")
+        raise RuntimeError("Measurement ids are duplicated.")
     outer = differences("198", "-CN·(Xr - Xg)/L_RT", "CN·(Xg - Xr)/L_RT")
     if "ID198.outer_sign" not in outer:
-        raise RuntimeError(f"外层符号移动应留下 outer_sign，现在是 {outer}")
+        raise RuntimeError(f"Moving the outer sign should leave outer_sign, got {outer}")
     same = differences("198", "CN·Zg/L_RT", "CN·Zg/L_RT")
     if same:
-        raise RuntimeError(f"相同力臂式不应有差异：{same}")
+        raise RuntimeError(f"Identical moment-arm expressions should not differ: {same}")
     return counts
 
 
@@ -225,7 +225,7 @@ def _expression_fields(node_id: str, text: str) -> dict[str, str]:
     return {
         f"ID{node_id}.coefficient": _coefficient(cleaned),
         f"ID{node_id}.lever_arm": arm,
-        f"ID{node_id}.outer_sign": "负" if cleaned.startswith("-") else "正",
+        f"ID{node_id}.outer_sign": "negative" if cleaned.startswith("-") else "positive",
         f"ID{node_id}.inner_signs": ",".join(ch for ch in body if ch in "+-"),
         f"ID{node_id}.term_set": " | ".join(term for _sign, term in terms),
         f"ID{node_id}.symbol_set": ",".join(sorted(set(names))),

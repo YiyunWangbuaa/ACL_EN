@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Main-experiment vision set: one standard long manuscript and nine single factors.
 
-Theory is not included. Each file is one 物体与双目 injection of 165 blanks.
+Theory is not included. Each file is one Object and stereo injection of 165 blanks.
 The two-stage review in data/vision/review/scene is left unchanged.
 
 Run::
@@ -15,7 +15,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from domain_layout import DATA
-from domains.computer_vision.batch_generate import _change_text, _frame_phrase
+from domains.computer_vision.batch_generate import _frame_phrase
 from domains.computer_vision.cv_generate import (
     ANGLE_FLIP,
     ANGLE_ZH,
@@ -24,21 +24,24 @@ from domains.computer_vision.cv_generate import (
     build,
 )
 from domains.computer_vision.cv_vision_context import apply_record, leftover
+from domains.computer_vision.en_surface import english_text
 from domains.computer_vision.review_export import _declaration, _process
 
 OUT = DATA / "vision" / "single"
-# Nine definitions. 机构滚转 stays at the standard value in every row.
+# Nine definitions. Mechanism roll stays at the standard value in every row.
 FACTORS = (
-    ("wind", "世界坐标系"),
-    ("body", "物体系"),
-    ("camera1", "相机1系"),
-    ("camera2", "相机2系"),
-    ("pan", "相机方位角"),
-    ("tilt", "相机俯仰角"),
-    ("roll", "相机滚转角"),
-    ("attack", "机构俯仰角"),
-    ("sideslip", "机构方位角"),
+    ("wind", "world frame"),
+    ("body", "object frame"),
+    ("camera1", "camera-1 frame"),
+    ("camera2", "camera-2 frame"),
+    ("pan", "camera azimuth"),
+    ("tilt", "camera pitch"),
+    ("roll", "camera roll"),
+    ("attack", "mechanism pitch"),
+    ("sideslip", "mechanism azimuth"),
 )
+FACTOR_EN = {name: name for _key, name in FACTORS}
+FACTOR_EN["none"] = "none"
 
 
 def _spec(key: str) -> dict:
@@ -49,7 +52,7 @@ def _spec(key: str) -> dict:
     for layout in alternate_frames(key):
         spec[key] = deepcopy(layout)
         return spec
-    raise RuntimeError(f"{key} 没有可用的非默认声明。")
+    raise RuntimeError(f"{key} has no non-default declaration.")
 
 
 def _phrase(key: str, spec: dict) -> str:
@@ -64,33 +67,31 @@ def _answers(record: dict) -> list[str]:
 
 def _markdown(index: int, factor: str, row: dict) -> str:
     titles = {
-        "frame": "绝对方向对应坐标轴",
-        "camera_attitude": "相机姿态",
-        "body_attitude": "物体姿态",
-        "projection": "成像与物体前端投影",
-        "axis_wind": "图像直线的方向向量",
-        "extrinsic": "双目外参",
-        "epipolar": "极线与三角化",
+        "frame": "Absolute directions and coordinate axes",
+        "camera_attitude": "Camera attitude",
+        "body_attitude": "Object attitude",
+        "projection": "Projection of the object nose",
+        "axis_wind": "Direction of an image line",
+        "extrinsic": "Stereo extrinsics",
+        "epipolar": "Epipolar geometry and triangulation",
     }
     lines = [
-        f"# 数据 {index:02d}",
+        f"# Data {index:02d}",
+        f"Single-definition perturbation: {factor}",
         "",
-        f"单定义扰动：{factor}",
-        "",
-        "本文件是机器视觉主实验的长篇幅稿，只含物体与双目，一次注入。不含基础理论。",
+        "This is the long manuscript of the vision main experiment. It contains only the object-and-stereo task and is injected once. It does not include the basic-theory stage.",
         "",
         row["change"],
         "",
-        "# 物体与双目",
+        "# Object and stereo",
         "",
-        "## 定义声明",
+        "## Declaration",
         "",
         _declaration(row["declaration"]),
         "",
-        "## 完整过程",
+        "## Full process",
         "",
         _process(row["questions"], titles),
-        "",
     ]
     return "\n".join(lines)
 
@@ -103,39 +104,41 @@ def _check_words(row: dict) -> None:
         chunks.extend(str(option) for option in item.get("options") or [])
     found = leftover("\n".join(chunks))
     if found:
-        raise RuntimeError("改写后仍有风洞用语：" + "、".join(found))
+        raise RuntimeError("wind-tunnel wording remains after rewrite: " + ", ".join(found))
 
 
 def main() -> None:
     if len(FACTORS) != 9 or len({key for key, _name in FACTORS}) != 9:
-        raise RuntimeError("机器视觉主实验要 9 个互不相同的单定义。")
+        raise RuntimeError("The vision main experiment needs 9 distinct single definitions.")
     print("build standard", flush=True)
     built = build(STANDARD_SPEC)
     standard = apply_record({
         "id": "01",
-        "title": "统一默认",
-        "change": "单定义扰动：无。10 项可变定义都不改。",
+        "title": "shared default",
+        "change": "Single-definition perturbation: none. None of the 10 variable definitions is changed.",
         "declaration": built["declaration"],
         "questions": built["questions"],
     })
     if len(standard["questions"]) != 165:
-        raise RuntimeError(f"标准稿有 {len(standard['questions'])} 个空，应为 165。")
+        raise RuntimeError(f"the standard manuscript has {len(standard['questions'])} blanks, expected 165.")
     _check_words(standard)
     base = _answers(standard)
-    rows = [("01", "无", standard)]
+    rows = [("01", "none", standard)]
     for index, (key, name) in enumerate(FACTORS, start=2):
         print(f"build {key}", flush=True)
         spec = _spec(key)
         record = build(spec)
         if len(record["questions"]) != 165:
-            raise RuntimeError(f"{key} 有 {len(record['questions'])} 个空。")
+            raise RuntimeError(f"{key} has {len(record['questions'])} blanks.")
         if _answers(record) == base:
-            raise RuntimeError(f"{key} 没有改变任何标准答案。")
-        change = _change_text(0, [key], spec).replace("定义变更档0%：10项可变定义中变更1项：", "")
+            raise RuntimeError(f"{key} did not change any gold answer.")
+        phrase = _phrase(key, spec)
+        if not phrase.endswith("."):
+            phrase += "."
         row = apply_record({
             "id": f"{index:02d}",
             "title": name,
-            "change": f"单定义扰动：{name}。{change}",
+            "change": f"Single-definition perturbation: {name}. {phrase}",
             "declaration": record["declaration"],
             "questions": record["questions"],
         })
@@ -146,22 +149,26 @@ def main() -> None:
     for sample_id, factor, row in rows:
         text = _markdown(int(sample_id), factor, row)
         if text.count("{ID:") != 165:
-            raise RuntimeError(f"{sample_id} 槽数不是 165。")
-        (OUT / f"sample_{sample_id}.md").write_text(text, encoding="utf-8")
-        manifest.append({"id": sample_id, "factor": factor, "change": row["change"]})
+            raise RuntimeError(f"{sample_id} does not have 165 slots.")
+        (OUT / f"sample_{sample_id}.md").write_text(english_text(text), encoding="utf-8")
+        manifest.append({
+            "id": sample_id,
+            "factor": FACTOR_EN[factor],
+            "change": english_text(row["change"]),
+        })
         print(f"wrote sample_{sample_id}.md {factor}", flush=True)
     lines = [
-        "# 机器视觉主实验",
+        "# Vision main experiment",
         "",
-        "1 条标准定义和 9 条单定义扰动。每条都是物体与双目长篇幅稿，165 个空，一次注入。",
-        "不含基础理论。data/vision/review/scene 里的两段旧稿保留，不作为这次主实验的入口。",
-        "单定义扰动写在每条稿的开头，也写在 factors.json。",
+        "One standard definition and nine single-definition perturbations. Each item is one object-and-stereo manuscript, 165 blanks, injected once.",
+        "The basic-theory stage is not included. The older two-stage manuscripts in data/vision/review/scene stay on disk and are not the entry for this experiment.",
+        "The single-definition perturbation is written at the start of each manuscript and in factors.json.",
         "",
     ]
     for item in manifest:
-        lines.append(f"- 数据 {item['id']}：单定义扰动：{item['factor']}。")
+        lines.append(f"- Data {item['id']}: single-definition perturbation: {item['factor']}.")
     lines.append("")
-    (OUT / "00_索引.md").write_text("\n".join(lines), encoding="utf-8")
+    (OUT / "00_index.md").write_text("\n".join(lines), encoding="utf-8")
     (OUT / "factors.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"wrote {OUT}", flush=True)
 

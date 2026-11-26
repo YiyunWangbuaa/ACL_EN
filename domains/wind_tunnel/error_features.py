@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""从答案里提取错误特征。特征只描述形态。
+"""Extract error features from an answer. A feature only describes the shape.
 
-故障类由题目层级决定，不由形态决定：直接识别 DIR，推理识别 RSN，执行 EXE，数理 ALG。
-执行和数理先看模型前置下的计算器：
-有条件输出且与答案相同，记为传播；
-有条件输出且与答案不同，按层级记 EXE 或 ALG；
-计算器拒绝、没有条件输出，并且拒绝来自上游空，也记为传播，不和标准答案比较。
+The fault class comes from the question layer, not from the shape: direct recognition DIR, reasoning recognition RSN, execution EXE, algebra ALG.
+Execution and algebra first consult the calculator under the model prefix:
+a conditional output that matches the answer is propagated;
+a conditional output that differs from the answer is EXE or ALG by layer;
+a calculator rejection with no conditional output, when the rejection comes from an upstream blank, is also propagated and is not compared with the gold answer.
 """
 from __future__ import annotations
 
@@ -45,11 +45,11 @@ _TRIG = (
     (sp.atan, sp.tan, "atan", "tan"),
 )
 _FAULT = {
-    DIR: "DIR 直接识别",
-    RSN: "RSN 推理识别",
-    EXE: "EXE 执行",
-    ALG: "ALG 数理",
-    "传播": "传播",
+    DIR: "DIR direct recognition",
+    RSN: "RSN reasoning recognition",
+    EXE: "EXE execution",
+    ALG: "ALG algebra",
+    "propagated": "propagated",
 }
 
 
@@ -113,7 +113,7 @@ def _bare(value) -> str:
 
 
 def _options(options) -> tuple[str, ...]:
-    return tuple(str(item) for item in (options or []) if str(item) not in {"", "无"})
+    return tuple(str(item) for item in (options or []) if str(item) not in {"", "none"})
 
 
 def _same(left, right) -> bool:
@@ -264,7 +264,7 @@ def _split_term(term) -> tuple[int, object]:
 
 
 def _term_sign(gold, model) -> str:
-    """和式里仅符号不同。一项为 drop 或 flip，多项为 partial。对不上则空。"""
+    """Only the signs differ inside a sum. One term is drop or flip, several terms are partial. Otherwise empty."""
     if getattr(gold, "func", None) is not sp.Add or getattr(model, "func", None) is not sp.Add:
         return ""
     gold_terms = list(gold.args)
@@ -316,7 +316,7 @@ def _trig_swap(gold, model) -> str:
 
 
 def extract_features(model: str, gold: str, kind: str, options=None) -> AnswerFeatures:
-    """抽出相对金标的符号、三角、角度、力系数和矩阵形状。"""
+    """Pull out the sign, trigonometry, angles, force coefficient, and matrix shape relative to the gold."""
     if kind not in {"matrix", "vector", "expression"}:
         return AnswerFeatures(parsed=False, kind=kind)
     pred = parse_answer(model, kind, options)
@@ -373,7 +373,7 @@ def _phi_same(slot: Slot) -> bool:
 
 
 def _along(groups: tuple[tuple[str, ...], ...]) -> str:
-    return " 或 ".join("、".join(f"ID{node}" for node in group) for group in groups)
+    return " or ".join(", ".join(f"ID{node}" for node in group) for group in groups)
 
 
 def _verdict(
@@ -387,15 +387,15 @@ def _verdict(
     del fault
     layer = scope_of(slot.node)
     if _phi_same(slot):
-        fault_code = "传播"
-        sources = "、".join(f"ID{item}" for item in slot.propagated) or "上游"
-        detail = f"{detail}；与 Φ 相同，沿 {sources}"
+        fault_code = "propagated"
+        sources = ", ".join(f"ID{item}" for item in slot.propagated) or "upstream"
+        detail = f"{detail}; same as Phi, along {sources}"
     elif slot.refused and layer in {EXE, ALG} and slot.reject_sets:
-        fault_code = "传播"
-        detail = f"{detail}；计算器拒绝，没有条件输出，沿 {_along(slot.reject_sets)}"
+        fault_code = "propagated"
+        detail = f"{detail}; the calculator rejected and there is no conditional output, along {_along(slot.reject_sets)}"
     elif slot.refused and layer in {EXE, ALG}:
-        fault_code = "未认定"
-        detail = f"{detail}；计算器拒绝，没有可沿的上游，不按标准答案记 {layer}"
+        fault_code = "unresolved"
+        detail = f"{detail}; the calculator rejected and there is no upstream to follow, so {layer} is not scored against the gold"
     else:
         fault_code = layer
     return PatternVerdict(slot.node, surface, fault_code, 1.0, features, detail)
@@ -406,53 +406,53 @@ def _structural(slot: Slot) -> PatternVerdict | None:
     if not feat.parsed:
         return None
     if feat.transposed:
-        return _verdict(slot, "转置", EXE, ("转置",), "矩阵是金标的转置")
+        return _verdict(slot, "transpose", EXE, ("transpose",), "the matrix is the transpose of the gold")
     if feat.outer_minus_dropped:
-        return _verdict(slot, "外侧符号缺失", EXE, ("外侧负号未写", "符号相反"), "金标的外侧负号没有写上")
+        return _verdict(slot, "missing outer sign", EXE, ("outer minus not written", "opposite sign"), "the outer minus of the gold was not written")
     if feat.negated:
-        return _verdict(slot, "整体反号", EXE, ("符号相反",), "整体与金标相差一个负号")
+        return _verdict(slot, "whole sign flip", EXE, ("opposite sign",), "the whole expression differs from the gold by a minus sign")
     if feat.cells_other == 0 and feat.cells_flipped == 1:
-        return _verdict(slot, "局部符号写反", ALG, ("符号写反",), "1 处符号与金标相反")
+        return _verdict(slot, "local sign flip", ALG, ("sign flipped",), "1 sign is opposite the gold")
     if feat.cells_other == 0 and feat.cells_flipped > 1:
         return _verdict(
-            slot, "局部符号写反", EXE, ("符号写反",),
-            f"{feat.cells_flipped} 处符号与金标相反",
+            slot, "local sign flip", EXE, ("sign flipped",),
+            f"{feat.cells_flipped} signs are opposite the gold",
         )
     if feat.force_gold:
-        features = [f"力系数{feat.force_gold}→{feat.force_model}"]
-        detail = f"{feat.force_gold} 写成了 {feat.force_model}"
+        features = [f"force coefficient {feat.force_gold}->{feat.force_model}"]
+        detail = f"{feat.force_gold} was written as {feat.force_model}"
         if feat.force_sign_dropped:
-            features.append("外侧负号未写")
-            detail += "，外侧负号没有写上"
-        return _verdict(slot, "力系数替换", EXE, tuple(features), detail)
+            features.append("outer minus not written")
+            detail += "; the outer minus was not written"
+        return _verdict(slot, "force coefficient replaced", EXE, tuple(features), detail)
     if feat.double_angle:
-        return _verdict(slot, "倍角展开", EXE, ("倍角展开",), "写成了倍角展开，金标是一次式")
+        return _verdict(slot, "double-angle expansion", EXE, ("double-angle expansion",), "written as a double-angle expansion; the gold is first order")
     if feat.gold_identity and feat.model_has_angle and feat.planar:
-        return _verdict(slot, "写成含角", EXE, ("写成含角",), "单位阵写成了含角的旋转")
+        return _verdict(slot, "written with an angle", EXE, ("written with an angle",), "the identity was written as a rotation that still contains an angle")
     if feat.zero:
-        return _verdict(slot, "写成零", ALG, ("写成零",), "整式写成 0")
+        return _verdict(slot, "written as zero", ALG, ("written as zero",), "the whole expression was written as 0")
     if feat.term_sign == "drop":
-        return _verdict(slot, "一项负号未写", ALG, ("一项负号未写",), "有一项的负号没有写上")
+        return _verdict(slot, "one term missing its minus", ALG, ("one term missing its minus",), "one term is missing its minus sign")
     if feat.term_sign == "flip":
-        return _verdict(slot, "一项符号写反", ALG, ("符号写反",), "有一项的符号写反了")
+        return _verdict(slot, "one term sign flipped", ALG, ("sign flipped",), "one term has its sign flipped")
     if feat.term_sign == "partial":
-        return _verdict(slot, "局部符号写反", EXE, ("符号写反",), "不止一项的符号与金标相反")
+        return _verdict(slot, "local sign flip", EXE, ("sign flipped",), "more than one term has a sign opposite the gold")
     if feat.zero_angle:
-        names = "、".join(feat.angles_dropped)
+        names = ", ".join(feat.angles_dropped)
         return _verdict(
-            slot, "角度丢弃", EXE, (f"角度丢弃:{names}",),
-            f"去掉 {names} 后，与这些角为 0 时的金标相同",
+            slot, "angle dropped", EXE, (f"angle dropped:{names}",),
+            f"after dropping {names}, it matches the gold with those angles set to 0",
         )
     if feat.planar and feat.angles_dropped:
-        names = "、".join(feat.angles_dropped)
+        names = ", ".join(feat.angles_dropped)
         return _verdict(
-            slot, "单角旋转块", EXE, ("单角旋转块",),
-            f"只留下一个转角；把 {names} 代成 0 对不上",
+            slot, "single-angle rotation block", EXE, ("single-angle rotation block",),
+            f"only one rotation angle remains; substituting 0 for {names} does not match",
         )
     if feat.trig_swap:
         return _verdict(
-            slot, "三角函数替换", EXE, (f"三角函数{feat.trig_swap}",),
-            f"三角函数 {feat.trig_swap}",
+            slot, "trigonometric function replaced", EXE, (f"trigonometric function {feat.trig_swap}",),
+            f"trigonometric function {feat.trig_swap}",
         )
     return None
 
@@ -484,25 +484,25 @@ def _choice_hits(slots: list[Slot]) -> dict[str, PatternVerdict]:
             if model[one] == gold[other] and model[other] == gold[one] and model[one] != gold[one]:
                 paired.update((one, other))
                 found[one] = _verdict(
-                    left, "成对对调", _local_choice_fault(one), ("成对对调",),
-                    f"与 ID{other} 互换，写成了{model[one]}",
+                    left, "pairwise swap", _local_choice_fault(one), ("pairwise swap",),
+                    f"swapped with ID{other} and written as {model[one]}",
                 )
                 found[other] = _verdict(
-                    right, "成对对调", _local_choice_fault(other), ("成对对调",),
-                    f"与 ID{one} 互换，写成了{model[other]}",
+                    right, "pairwise swap", _local_choice_fault(other), ("pairwise swap",),
+                    f"swapped with ID{one} and written as {model[other]}",
                 )
         counts = Counter(model.values())
         duplicated = [name for name, count in counts.items() if count > 1]
         if duplicated and set(gold.values()) == set(options):
             missing = [name for name in dict.fromkeys(gold.values()) if counts[name] == 0]
-            detail = "、".join(duplicated) + " 写了多次"
+            detail = ", ".join(duplicated) + " written more than once"
             if missing:
-                detail += "，缺 " + "、".join(missing)
+                detail += "; missing " + ", ".join(missing)
             for slot in wrongs:
                 if slot.node in found:
                     continue
                 found[slot.node] = _verdict(
-                    slot, "代号重复", _local_choice_fault(slot.node), ("代号重复",), detail,
+                    slot, "code repeated", _local_choice_fault(slot.node), ("code repeated",), detail,
                 )
         option_set = set(options)
         for slot in wrongs:
@@ -511,8 +511,8 @@ def _choice_hits(slots: list[Slot]) -> dict[str, PatternVerdict]:
             picked = model[slot.node]
             if picked in option_set and picked != gold[slot.node]:
                 found[slot.node] = _verdict(
-                    slot, "选项替换", _local_choice_fault(slot.node), ("选项替换",),
-                    f"写成了{picked}",
+                    slot, "option replaced", _local_choice_fault(slot.node), ("option replaced",),
+                    f"written as {picked}",
                 )
     return found
 
@@ -521,8 +521,8 @@ def _sign_hit(slot: Slot) -> PatternVerdict | None:
     if slot.kind != "sign" or slot.correct:
         return None
     pair = {slot.model.strip(), slot.gold.strip()}
-    if pair == {"正", "负"}:
-        return _verdict(slot, "符号写反", EXE, ("符号写反",), "正负写反")
+    if pair == {"positive", "negative"}:
+        return _verdict(slot, "sign flipped", EXE, ("sign flipped",), "positive and negative were swapped")
     return None
 
 
@@ -561,7 +561,7 @@ def _refusal_context(sample_id: str, condition: str):
             spec = row["spec"]
             break
     if spec is None:
-        raise RuntimeError(f"没有 {sample_id} 的题面，无法在拒绝分支上重算条件输出。")
+        raise RuntimeError(f"No manuscript for {sample_id}, so the conditional output cannot be recomputed on the rejection branch.")
     prefix = "gold" if condition == "gold-trunc" else "model"
     ctx = _Context(_model(spec), generated_answers(spec), _load(sample_id, condition), prefix)
     _CONTEXTS[key] = ctx
@@ -579,7 +579,7 @@ def _attach_refusals(sample_id: str, condition: str, slots: list[Slot]) -> list[
     found = {}
     for node in pending:
         item = explain(ctx, node)
-        if item.phi_status == "拒绝" and item.direct:
+        if item.phi_status == "rejected" and item.direct:
             found[node] = item.direct
     if not found:
         return slots
@@ -629,7 +629,7 @@ def _slots(sample_id: str, condition: str) -> list[Slot]:
 
 
 def classify_wrongs(sample_id: str, condition: str) -> dict[str, PatternVerdict]:
-    """对一份观测里的错题做模式约束。键是不带 ID 前缀的题号。"""
+    """Constrain the wrong answers in one observation. Keys are question ids without the ID prefix."""
     return verdicts_for(_slots(sample_id, condition))
 
 
@@ -639,14 +639,14 @@ def render_report(sample_id: str, condition: str) -> str:
     wrongs = [node for node, slot in slots.items() if not slot.correct]
     wrongs.sort(key=lambda node: int(node))
     lines = [
-        f"# 模式约束 — {sample_id} · {condition}",
+        f"# Pattern constraint — {sample_id} · {condition}",
         "",
-        "只保留和约束完全对齐的答案，匹配度都是 1。对不上的不认定。",
-        "执行和数理先看模型前置下的计算器。",
-        "条件输出与答案相同，记为传播。条件输出与答案不同，按层级记 EXE 或 ALG。",
-        "计算器拒绝且拒绝来自上游空，也记为传播，不和标准答案比较。",
+        "Only answers that match a constraint exactly are kept, and every match score is 1. A mismatch stays unresolved.",
+        "Execution and algebra first consult the calculator under the model prefix.",
+        "A conditional output that matches the answer is propagated. A conditional output that differs is EXE or ALG by layer.",
+        "A calculator rejection that comes from an upstream blank is also propagated and is not compared with the gold answer.",
         "",
-        "| 题号 | 题目 | 约束 | 故障 | 特征 | 说明 |",
+        "| Id | Question | Constraint | Fault | Features | Note |",
         "| --- | --- | --- | --- | --- | --- |",
     ]
     counts: Counter[str] = Counter()
@@ -654,17 +654,17 @@ def render_report(sample_id: str, condition: str) -> str:
         hit = verdicts.get(node)
         title = NODE_BY_ID[node].role
         if hit is None:
-            counts["未认定"] += 1
+            counts["unresolved"] += 1
             lines.append(f"| ID{node} | {title} | — | — | — | — |")
             continue
         counts[hit.fault_name] += 1
-        features = "、".join(hit.features)
+        features = ", ".join(hit.features)
         lines.append(
             f"| ID{node} | {title} | {hit.surface} | {hit.fault_name} | {features} | {hit.detail} |"
         )
-    lines.extend(["", "分布："])
-    for name in ("DIR 直接识别", "RSN 推理识别", "EXE 执行", "ALG 数理", "传播", "未认定"):
-        lines.append(f"- {name}：{counts.get(name, 0)}")
+    lines.extend(["", "Distribution:"])
+    for name in ("DIR direct recognition", "RSN reasoning recognition", "EXE execution", "ALG algebra", "propagated", "unresolved"):
+        lines.append(f"- {name}: {counts.get(name, 0)}")
     return "\n".join(lines)
 
 
@@ -681,7 +681,7 @@ def _slot(
     *,
     options: tuple[str, ...] = (),
     correct: bool = False,
-    format_code: str = "表达式",
+    format_code: str = "expression",
     phi: str = "",
     phi_ok: bool = False,
     propagated: tuple[str, ...] = (),
@@ -697,75 +697,75 @@ def _slot(
 
 def _self_check() -> None:
     sign = _structural(_slot("85", "expression", "-sin(alpha_M)", "sin(alpha_M)"))
-    _must(sign is not None and sign.surface == "外侧符号缺失" and sign.fault == EXE, f"外侧负号：{sign}")
+    _must(sign is not None and sign.surface == "missing outer sign" and sign.fault == EXE, f"outer minus: {sign}")
     flipped = _structural(_slot(
         "1", "matrix",
         "[[0, -1, 0], [1, 0, 0], [0, 0, 1]]",
         "[[0, 1, 0], [-1, 0, 0], [0, 0, -1]]",
-        format_code="矩阵",
+        format_code="matrix",
     ))
-    _must(flipped is not None and flipped.surface == "整体反号", f"整体反号：{flipped}")
+    _must(flipped is not None and flipped.surface == "whole sign flip", f"whole sign flip: {flipped}")
     trig = _structural(_slot("1", "expression", "sin(alpha_M)", "cos(alpha_M)"))
-    _must(trig is not None and trig.surface == "三角函数替换" and "sin→cos" in trig.detail, f"三角函数：{trig}")
-    force = _structural(_slot("197", "expression", "-CA*Yg/L_RT", "CZ*Yg/L_RT", format_code="力臂"))
+    _must(trig is not None and trig.surface == "trigonometric function replaced" and "sin→cos" in trig.detail, f"trigonometric function: {trig}")
+    force = _structural(_slot("197", "expression", "-CA*Yg/L_RT", "CZ*Yg/L_RT", format_code="moment-arm"))
     _must(
-        force is not None and force.surface == "力系数替换" and "外侧负号未写" in force.features,
-        f"力系数：{force}",
+        force is not None and force.surface == "force coefficient replaced" and "outer minus not written" in force.features,
+        f"force coefficient: {force}",
     )
     dropped = _structural(_slot("59", "expression", "cos(alpha_M)*cos(beta_M)", "cos(alpha_M)"))
-    _must(dropped is not None and dropped.surface == "角度丢弃", f"角度丢弃：{dropped}")
+    _must(dropped is not None and dropped.surface == "angle dropped", f"angle dropped: {dropped}")
     one_term = _structural(_slot(
         "111", "expression",
         "CN_TP*cos(gamma_M - gamma_tp) + CZ_TP*sin(gamma_M - gamma_tp)",
         "cos(gamma_M-gamma_tp)*CN_TP - sin(gamma_M-gamma_tp)*CZ_TP",
     ))
-    _must(one_term is not None and one_term.surface == "一项符号写反" and one_term.fault == ALG, f"一项符号：{one_term}")
+    _must(one_term is not None and one_term.surface == "one term sign flipped" and one_term.fault == ALG, f"one term sign: {one_term}")
     missing_term = _structural(_slot(
         "113", "expression",
         "CN_TP*sin(gamma_M - gamma_tp) - CZ_TP*cos(gamma_M - gamma_tp)",
         "sin(gamma_M-gamma_tp)*CN_TP + cos(gamma_M-gamma_tp)*CZ_TP",
     ))
     _must(
-        missing_term is not None and missing_term.surface == "一项负号未写" and missing_term.fault == ALG,
-        f"一项负号：{missing_term}",
+        missing_term is not None and missing_term.surface == "one term missing its minus" and missing_term.fault == ALG,
+        f"one missing minus: {missing_term}",
     )
     zero = _structural(_slot("61", "expression", "-sin(alpha_M)", "0"))
-    _must(zero is not None and zero.surface == "写成零" and zero.fault == ALG, f"写成零：{zero}")
+    _must(zero is not None and zero.surface == "written as zero" and zero.fault == ALG, f"written as zero: {zero}")
     carried = _structural(_slot(
         "59", "expression", "cos(alpha_M)*cos(beta_M)", "cos(alpha_M)",
         phi="cos(alpha_M)", phi_ok=True, propagated=("55",),
     ))
-    _must(carried is not None and carried.fault == "传播" and carried.surface == "角度丢弃", f"传播：{carried}")
+    _must(carried is not None and carried.fault == "propagated" and carried.surface == "angle dropped", f"propagated: {carried}")
     identity = _structural(_slot(
         "126", "matrix",
         "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
         "[[1, 0, 0], [0, cos(gamma_tp), -sin(gamma_tp)], [0, sin(gamma_tp), cos(gamma_tp)]]",
-        format_code="矩阵",
+        format_code="matrix",
     ))
-    _must(identity is not None and identity.surface == "写成含角", f"写成含角：{identity}")
+    _must(identity is not None and identity.surface == "written with an angle", f"written with an angle: {identity}")
     transposed = _structural(_slot(
         "132", "matrix",
         "[[1, 0, 0], [0, cos(gamma_tp), sin(gamma_tp)], [0, -sin(gamma_tp), cos(gamma_tp)]]",
         "[[1, 0, 0], [0, cos(gamma_tp), -sin(gamma_tp)], [0, sin(gamma_tp), cos(gamma_tp)]]",
-        format_code="矩阵",
+        format_code="matrix",
     ))
-    _must(transposed is not None and transposed.surface == "转置", f"转置：{transposed}")
+    _must(transposed is not None and transposed.surface == "transpose", f"transpose: {transposed}")
     applied = _structural(_slot(
         "13", "matrix",
         "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
         "[[1, 0, 0], [0, 1, 0], [0, 0, -1]]",
-        format_code="矩阵",
+        format_code="matrix",
     ))
-    _must(applied is not None and applied.surface == "局部符号写反" and applied.fault == EXE, f"执行单格：{applied}")
+    _must(applied is not None and applied.surface == "local sign flip" and applied.fault == EXE, f"execution cell: {applied}")
     calculated = _structural(_slot(
         "55", "matrix",
         "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
         "[[1, 0, 0], [0, 1, 0], [0, 0, -1]]",
-        format_code="矩阵",
+        format_code="matrix",
     ))
     _must(
-        calculated is not None and calculated.surface == "局部符号写反" and calculated.fault == ALG,
-        f"数理单格：{calculated}",
+        calculated is not None and calculated.surface == "local sign flip" and calculated.fault == ALG,
+        f"algebra cell: {calculated}",
     )
     total = (
         "[[cos(alpha_M)*cos(beta_M), sin(alpha_M)*cos(beta_M), sin(beta_M)], "
@@ -777,75 +777,75 @@ def _self_check() -> None:
         "cos(beta_M)*cos(gamma_M)]]"
     )
     collapsed = "[[cos(alpha_M), sin(alpha_M), 0], [-sin(alpha_M), cos(alpha_M), 0], [0, 0, -1]]"
-    block = _structural(_slot("55", "matrix", total, collapsed, format_code="矩阵"))
-    _must(block is not None and block.surface == "单角旋转块", f"单角旋转块：{block}")
-    frames = ("体轴系", "天平系", "风轴系")
+    block = _structural(_slot("55", "matrix", total, collapsed, format_code="matrix"))
+    _must(block is not None and block.surface == "single-angle rotation block", f"single-angle rotation block: {block}")
+    frames = ("body-axis frame", "balance frame", "wind frame")
     pair = verdicts_for([
-        _slot("9", "choice", "体轴系", "风轴系", options=frames, format_code="无"),
-        _slot("10", "choice", "风轴系", "体轴系", options=frames, format_code="无"),
-        _slot("14", "choice", "体轴系", "体轴系", options=frames, format_code="无", correct=True),
+        _slot("9", "choice", "body-axis frame", "wind frame", options=frames, format_code="choice"),
+        _slot("10", "choice", "wind frame", "body-axis frame", options=frames, format_code="choice"),
+        _slot("14", "choice", "body-axis frame", "body-axis frame", options=frames, format_code="choice", correct=True),
     ])
-    _must(pair["9"].surface == "成对对调" and pair["9"].fault == DIR, f"对调：{pair['9']}")
-    _must(pair["10"].fault == DIR and "ID9" in pair["10"].detail, f"对调对方：{pair['10']}")
-    _must("14" not in pair, "答对的空不应进入约束")
+    _must(pair["9"].surface == "pairwise swap" and pair["9"].fault == DIR, f"swap: {pair['9']}")
+    _must(pair["10"].fault == DIR and "ID9" in pair["10"].detail, f"swap partner: {pair['10']}")
+    _must("14" not in pair, "A correct blank should not enter the constraint")
     load = ("R_(γ_M-γ_tp)", "RTP_TZ1", "RTP_TZ2")
     repeated = verdicts_for([
-        _slot("98", "choice", "RTP_TZ2", "RTP_TZ1", options=load, format_code="无", process="balance_to_body"),
-        _slot("99", "choice", "RTP_TZ1", "R_(γ_M-γ_tp)", options=load, format_code="无", process="balance_to_body"),
-        _slot("100", "choice", "R_(γ_M-γ_tp)", "RTP_TZ1", options=load, format_code="无", process="balance_to_body"),
+        _slot("98", "choice", "RTP_TZ2", "RTP_TZ1", options=load, format_code="choice", process="balance_to_body"),
+        _slot("99", "choice", "RTP_TZ1", "R_(γ_M-γ_tp)", options=load, format_code="choice", process="balance_to_body"),
+        _slot("100", "choice", "R_(γ_M-γ_tp)", "RTP_TZ1", options=load, format_code="choice", process="balance_to_body"),
     ])
-    _must(repeated["98"].surface == "代号重复" and repeated["98"].fault == EXE, f"代号重复：{repeated['98']}")
-    _must("RTP_TZ2" in repeated["98"].detail, f"缺号：{repeated['98'].detail}")
-    _must(repeated["99"].surface == "成对对调" and repeated["100"].surface == "成对对调", f"载荷对调：{repeated}")
+    _must(repeated["98"].surface == "code repeated" and repeated["98"].fault == EXE, f"code repeated: {repeated['98']}")
+    _must("RTP_TZ2" in repeated["98"].detail, f"missing code: {repeated['98'].detail}")
+    _must(repeated["99"].surface == "pairwise swap" and repeated["100"].surface == "pairwise swap", f"load swap: {repeated}")
     opened = "[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"
     closed = "[[1, 0, 0], [0, -1, 0], [0, 0, -1]]"
-    readable = _structural(_slot("104", "matrix", opened, closed, format_code="矩阵"))
-    _must(readable is not None and readable.fault == ALG and readable.surface == "局部符号写反", f"可计算时 ID104 仍按数理：{readable}")
+    readable = _structural(_slot("104", "matrix", opened, closed, format_code="matrix"))
+    _must(readable is not None and readable.fault == ALG and readable.surface == "local sign flip", f"ID104 stays algebra when it can be calculated: {readable}")
     blocked = _structural(_slot(
-        "104", "matrix", opened, closed, format_code="矩阵",
+        "104", "matrix", opened, closed, format_code="matrix",
         refused=True, reject_sets=(("98",), ("99",), ("100",)),
     ))
     _must(
-        blocked is not None and blocked.fault == "传播" and blocked.surface == "局部符号写反"
-        and "拒绝" in blocked.detail and "ID98" in blocked.detail
+        blocked is not None and blocked.fault == "propagated" and blocked.surface == "local sign flip"
+        and "rejected" in blocked.detail and "ID98" in blocked.detail
         and "ID99" in blocked.detail and "ID100" in blocked.detail,
-        f"计算器拒绝时 ID104 应沿连乘码传播：{blocked}",
+        f"when the calculator rejected, ID104 should propagate along the product codes: {blocked}",
     )
-    nameless = _structural(_slot("104", "matrix", opened, closed, format_code="矩阵", refused=True))
-    _must(nameless is not None and nameless.fault == "未认定", f"拒绝但没有上游时不应落回 ALG：{nameless}")
+    nameless = _structural(_slot("104", "matrix", opened, closed, format_code="matrix", refused=True))
+    _must(nameless is not None and nameless.fault == "unresolved", f"a rejection with no upstream should not fall back to ALG: {nameless}")
 
 
 _EXPECT = {
-    "9": ("成对对调", DIR),
-    "10": ("成对对调", DIR),
-    "23": ("选项替换", RSN),
-    "47": ("成对对调", EXE),
-    "48": ("成对对调", EXE),
-    "50": ("成对对调", EXE),
-    "51": ("成对对调", EXE),
-    "55": ("单角旋转块", "传播"),
-    "59": ("角度丢弃", "传播"),
-    "60": ("角度丢弃", "传播"),
-    "61": ("写成零", "传播"),
-    "80": ("角度丢弃", "传播"),
-    "81": ("角度丢弃", ALG),
-    "98": ("代号重复", EXE),
-    "99": ("成对对调", EXE),
-    "100": ("成对对调", EXE),
-    "104": ("局部符号写反", "传播"),
-    "126": ("写成含角", EXE),
-    "132": ("转置", EXE),
-    "147": ("倍角展开", "传播"),
-    "148": ("倍角展开", "传播"),
-    "176": ("倍角展开", "传播"),
-    "177": ("倍角展开", "传播"),
-    "111": ("一项符号写反", "传播"),
-    "113": ("一项负号未写", "传播"),
-    "114": ("一项符号写反", "传播"),
-    "116": ("一项负号未写", "传播"),
-    "197": ("力系数替换", ALG),
-    "199": ("力系数替换", ALG),
-    "200": ("力系数替换", ALG),
+    "9": ("pairwise swap", DIR),
+    "10": ("pairwise swap", DIR),
+    "23": ("option replaced", RSN),
+    "47": ("pairwise swap", EXE),
+    "48": ("pairwise swap", EXE),
+    "50": ("pairwise swap", EXE),
+    "51": ("pairwise swap", EXE),
+    "55": ("single-angle rotation block", "propagated"),
+    "59": ("angle dropped", "propagated"),
+    "60": ("angle dropped", "propagated"),
+    "61": ("written as zero", "propagated"),
+    "80": ("angle dropped", "propagated"),
+    "81": ("angle dropped", ALG),
+    "98": ("code repeated", EXE),
+    "99": ("pairwise swap", EXE),
+    "100": ("pairwise swap", EXE),
+    "104": ("local sign flip", "propagated"),
+    "126": ("written with an angle", EXE),
+    "132": ("transpose", EXE),
+    "147": ("double-angle expansion", "propagated"),
+    "148": ("double-angle expansion", "propagated"),
+    "176": ("double-angle expansion", "propagated"),
+    "177": ("double-angle expansion", "propagated"),
+    "111": ("one term sign flipped", "propagated"),
+    "113": ("one term missing its minus", "propagated"),
+    "114": ("one term sign flipped", "propagated"),
+    "116": ("one term missing its minus", "propagated"),
+    "197": ("force coefficient replaced", ALG),
+    "199": ("force coefficient replaced", ALG),
+    "200": ("force coefficient replaced", ALG),
 }
 
 
@@ -855,24 +855,24 @@ def _audit_live() -> None:
     for node, (surface, fault) in _EXPECT.items():
         hit = found.get(node)
         if hit is None or hit.surface != surface or hit.fault != fault:
-            got = "无" if hit is None else f"{hit.surface}/{hit.fault} {hit.detail}"
-            mismatches.append(f"ID{node} 期望 {surface}/{fault}，实际 {got}")
+            got = "none" if hit is None else f"{hit.surface}/{hit.fault} {hit.detail}"
+            mismatches.append(f"ID{node} expected {surface}/{fault}, got {got}")
     blocked = found.get("104")
-    if blocked is None or not {"ID98", "ID99", "ID100"} <= set(blocked.detail.replace("或", " ").split()):
-        got = "无" if blocked is None else blocked.detail
-        mismatches.append(f"ID104 应沿 ID98 或 ID99 或 ID100，实际 {got}")
+    if blocked is None or not {"ID98", "ID99", "ID100"} <= set(blocked.detail.replace(" or ", " ").split()):
+        got = "none" if blocked is None else blocked.detail
+        mismatches.append(f"ID104 should follow ID98 or ID99 or ID100, got {got}")
     frame = found.get("24")
     if frame is None or frame.fault != DIR:
-        got = "无" if frame is None else f"{frame.surface}/{frame.fault}"
-        mismatches.append(f"ID24 是直接识别上的拒绝，应仍为 DIR，实际 {got}")
+        got = "none" if frame is None else f"{frame.surface}/{frame.fault}"
+        mismatches.append(f"ID24 is a rejection on direct recognition and should stay DIR, got {got}")
     if mismatches:
-        raise RuntimeError("；".join(mismatches))
+        raise RuntimeError("; ".join(mismatches))
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="按答案模式认定故障")
+    parser = argparse.ArgumentParser(description="Assign faults from answer patterns")
     parser.add_argument("--sample", default="body-rule")
     parser.add_argument("--condition", default="self-trunc")
     parser.add_argument("--out", type=Path, default=None)

@@ -1,52 +1,52 @@
 [
   {
     "id": "01",
-    "factor": "无",
-    "title": "球腕正装"
+    "factor": "none",
+    "title": "upright wrist"
   },
   {
     "id": "02",
-    "factor": "关节转角 q1",
-    "title": "q1 正方向相反"
+    "factor": "joint angle q1",
+    "title": "q1 sense reversed"
   },
   {
     "id": "03",
-    "factor": "关节转角 q2",
-    "title": "q2 正方向相反"
+    "factor": "joint angle q2",
+    "title": "q2 sense reversed"
   },
   {
     "id": "04",
-    "factor": "关节转角 q3",
-    "title": "q3 正方向相反"
+    "factor": "joint angle q3",
+    "title": "q3 sense reversed"
   },
   {
     "id": "05",
-    "factor": "工具俯仰任务角",
-    "title": "工具俯仰任务角取反"
+    "factor": "tool pitch",
+    "title": "tool pitch reversed"
   },
   {
     "id": "06",
-    "factor": "工具侧向任务角",
-    "title": "工具侧向任务角取反"
+    "factor": "tool lateral angle",
+    "title": "tool lateral angle reversed"
   },
   {
     "id": "07",
-    "factor": "工具滚转任务角",
-    "title": "工具滚转任务角取反"
+    "factor": "tool roll",
+    "title": "tool roll reversed"
   },
   {
     "id": "08",
-    "factor": "前缘后掠角",
-    "title": "前缘后掠角取反"
+    "factor": "leading-edge sweep",
+    "title": "leading-edge sweep reversed"
   },
   {
     "id": "09",
-    "factor": "上反角",
-    "title": "上反角取反"
+    "factor": "dihedral",
+    "title": "dihedral reversed"
   },
   {
     "id": "10",
-    "factor": "翼根前缘坐标",
-    "title": "翼根前缘坐标取反"
+    "factor": "wing-root coordinate",
+    "title": "wing-root coordinate reversed"
   }
 ]

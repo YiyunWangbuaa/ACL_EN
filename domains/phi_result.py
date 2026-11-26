@@ -14,7 +14,7 @@ class Contradiction:
         self.reason = reason
 
 
-_INSTRUMENT = ("无法解析", "没有计算器", "不在 1–", "不是 3×3", "不是三维")
+_INSTRUMENT = ("cannot parse", "no calculator", "not in 1-", "not 3×3", "not three-dimensional")
 
 
 def from_execution(execution):

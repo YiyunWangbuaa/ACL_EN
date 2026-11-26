@@ -7,10 +7,10 @@ data directories.
 Four parallel domains. Their manuscripts do not mix. data/ has no
 cross / reconstruction / basic selection layer.
 
-wind_tunnel       风洞。主实验 data/wind_tunnel/single
-flight            飞行力学。主实验 data/flight/review/flow
-robotics          机器人学。主实验 data/robotics/single
-vision            机器视觉。主实验 data/vision/single，只含物体与双目长篇幅稿
+wind_tunnel       Wind tunnel. Main experiment data/wind_tunnel/single
+flight            Flight mechanics. Main experiment data/flight/review/flow
+robotics          Robotics. Main experiment data/robotics/single
+vision            Computer vision. Main experiment data/vision/single, long manuscripts of Object and stereo only
 
 SETS keeps legacy aliases for old generator scripts. Those keys are not a
 second taxonomy; they resolve into the four domains above, or into removed
@@ -46,8 +46,8 @@ def _slices(base: Path) -> dict[str, Path]:
 
 DOMAINS = {
     "wind_tunnel": {
-        "zh": "风洞",
-        "status": "已有数据",
+        "zh": "Wind tunnel",
+        "status": "data available",
         "root": _WIND,
         "review": _WIND / "review",
         "stress": _WIND / "stress",
@@ -55,26 +55,26 @@ DOMAINS = {
         "pair": _WIND / "pair",
     },
     "aerodynamics": {
-        "zh": "飞行力学",
-        "status": "已有数据",
+        "zh": "Flight mechanics",
+        "status": "data available",
         "root": _FLIGHT,
         "review": _FLIGHT / "review",
-        "flow": {"zh": "空间坐标转换", "review": _FLIGHT / "review" / "flow"},
+        "flow": {"zh": "spatial transforms", "review": _FLIGHT / "review" / "flow"},
     },
     "robotics": {
-        "zh": "机器人学",
-        "status": "已有数据",
+        "zh": "Robotics",
+        "status": "data available",
         "root": _ROBOTICS,
         "review": _ROBOTICS / "review",
-        "kinematics": {"zh": "运动学", "review": _ROBOTICS / "review" / "kinematics"},
+        "kinematics": {"zh": "kinematics", "review": _ROBOTICS / "review" / "kinematics"},
     },
     "computer_vision": {
-        "zh": "机器视觉",
-        "status": "已有数据",
+        "zh": "Computer vision",
+        "status": "data available",
         "root": _VISION,
         "review": _VISION / "review",
-        "scene": {"zh": "物体与双目环节", "review": _VISION / "review" / "scene"},
-        "theory": {"zh": "基础理论环节", "review": _VISION / "review" / "scene"},
+        "scene": {"zh": "Object and stereo stage", "review": _VISION / "review" / "scene"},
+        "theory": {"zh": "basics stage", "review": _VISION / "review" / "scene"},
     },
 }
 
@@ -119,15 +119,15 @@ SETS = {
         "pilot": _REMOVED_FLIGHT_BASIC / "pilot",
         "processes": {
             "ground_to_body": {
-                "zh": "地面系到机体系",
+                "zh": "ground to body",
                 **_slices(_REMOVED_FLIGHT_BASIC / "ground_to_body"),
             },
             "ground_to_track_air": {
-                "zh": "地面系转航迹系和气流系",
+                "zh": "ground to track and airflow",
                 **_slices(_REMOVED_FLIGHT_BASIC / "ground_to_track_air"),
             },
             "body_to_airflow": {
-                "zh": "体轴系到气流系",
+                "zh": "body to airflow",
                 **_slices(_REMOVED_FLIGHT_BASIC / "body_to_airflow"),
             },
         },
@@ -154,25 +154,25 @@ EVAL_DOMAINS = ("wind_tunnel", "flight", "cv", "robotics")
 
 EVAL = {
     "wind_tunnel": {
-        "zh": "风洞",
+        "zh": "Wind tunnel",
         "data": _WIND / "single" / "samples.jsonl",
         "kind": "jsonl",
         "tiers": (),
     },
     "flight": {
-        "zh": "飞行力学",
+        "zh": "Flight mechanics",
         "data": _FLIGHT / "review" / "flow",
         "kind": "manuscript",
         "tiers": (),
     },
     "cv": {
-        "zh": "机器视觉",
+        "zh": "Computer vision",
         "data": _VISION / "single",
         "kind": "manuscript",
         "tiers": (),
     },
     "robotics": {
-        "zh": "机器人学",
+        "zh": "Robotics",
         "data": _ROBOTICS / "single",
         "kind": "manuscript",
         "tiers": (),

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Generate cloze answers for moving body-frame moments to a reference point.
 
-The questions follow Ref_point.md. Which body slot is axial, and therefore
+The questions follow doc/Ref_point.md. Which body slot is axial, and therefore
 which engineering coordinate flips, comes from BodyFrameModel. The lengths are
 the measured scalars in the manuscript: model length L, sting-base gap L_t,
 and balance-center-to-sting-base distance L_r.
@@ -45,15 +45,15 @@ from body_frame_model import (
 ENGINEERING = {"XTZ": "Xg", "YTZ": "Yg", "ZTZ": "Zg"}
 MOMENT_CODE = {"axial": "CA", "normal": "CN", "lateral": "CZ"}
 FORCE_OF_ROLE = {item.role: item.symbol for item in LOAD_COEFFICIENTS if item.kind == "force"}
-ORIGINS = ["天平校心", "机体质心", "风洞原点"]
+ORIGINS = ["balance center", "airframe center of mass", "tunnel origin"]
 SLOTS = ["Xg", "Yg", "Zg"]
-PLACES = ["原点", "力矩参考点"]
-SIGNS = ["正", "负"]
+PLACES = ["origin", "moment reference point"]
+SIGNS = ["positive", "negative"]
 MOMENT_KEYS = ("MCN_CA", "MCZ_CA", "MCA_CZ", "MCN_CZ", "MCA_CN", "MCZ_CN")
 FORCE_OPTIONS = ("CN", "CA", "CZ")
 ARM_OPTIONS = ("Yg", "Zg", "(Xr - Xg)")
 DENOM_OPTIONS = ("L", "L_t", "L_r", "L_RT")
-# Local manuscript ids. Public ids are these plus the 力矩参考点 offset 180.
+# Local manuscript ids. Public ids are these plus the moment reference point offset 180.
 FORCE_LOCAL = tuple(str(21 + index) for index in range(6))
 ARM_LOCAL = tuple(str(27 + index) for index in range(6))
 DENOM_LOCAL = "33"
@@ -144,33 +144,33 @@ def generate(spec: dict) -> dict:
             "answer": answer if isinstance(answer, str) else _text(answer, axial_name),
         })
 
-    add(1, "C2", "体轴系原点所在位置", "天平校心", ORIGINS)
-    add(2, "A1", "天平校心到模型顶点的距离 Xr", "L + L_t - L_r")
-    add(3, "C1", "与体轴数学坐标正方向定义不同的工程分量", ENGINEERING[axial_name], SLOTS)
-    add(3, "A1", "力矩参考点的体轴数学坐标", _vector_text(math_coords, axial_name))
-    add(4, "C2", "力矩等效的起点", "原点", PLACES)
-    add(4, "C2", "力矩等效的终点", "力矩参考点", PLACES)
-    add(4, "C2", "产生额外力矩的力所在位置", "原点", PLACES)
-    add(4, "C2", "额外力矩的作用位置", "力矩参考点", PLACES)
+    add(1, "C2", "the origin of that body-axis frame is at", "balance center", ORIGINS)
+    add(2, "A1", "The distance from the balance center to the model nose is Xr", "L + L_t - L_r")
+    add(3, "C1", "The coordinate component that may differ from the mathematical body-axis coordinate", ENGINEERING[axial_name], SLOTS)
+    add(3, "A1", "After conversion to mathematical body-axis coordinates, the moment reference point is", _vector_text(math_coords, axial_name))
+    add(4, "C2", "the body-axis place the moment is transferred from", "origin", PLACES)
+    add(4, "C2", "the place the moment is transferred to", "moment reference point", PLACES)
+    add(4, "C2", "the place of the force that produces the extra moment", "origin", PLACES)
+    add(4, "C2", "the place where the extra moment acts", "moment reference point", PLACES)
     rendered = {key: _template(contributions[key], axial_name) for key in MOMENT_KEYS}
     for key in MOMENT_KEYS:
         add(
             5,
             "A1",
-            f"等效力矩系数 {key} 的符号。假设 Xg、Yg、Zg、Xr 都为正",
-            "负" if rendered[key].startswith("-") else "正",
+            f"The sign of {key}. Assume Xg, Yg, Zg, and Xr are all positive",
+            "negative" if rendered[key].startswith("-") else "positive",
             SIGNS,
         )
     for key in MOMENT_KEYS:
         add(
             5,
             "A2",
-            f"等效力矩系数 {key}。只允许使用模板 C·L_c/L_RT："
-            "C 填入 CA、CZ、CN 中对应该力的系数，"
-            "L_c 填入由 Xg、Yg、Zg、Xr 组成的力臂。"
-            "假设 Xg、Yg、Zg、Xr 都为正。"
-            "负号写在整个式子最外侧，力臂内部必须为正，表示额外力矩的绝对值。"
-            "不要保留字母 C 或 L_c",
+            f"The equivalent moment coefficient {key}. Each term may be written only as C·L_c/L_RT. "
+            "C must be the force coefficient that produces that moment, and it must be one of CA, CZ, and CN. "
+            "L_c must be the moment arm, and the arm may use only Xg, Yg, Zg, and Xr. "
+            "Assume Xg, Yg, Zg, and Xr are all positive. "
+            "The sign is placed outside the whole expression, and the arm itself must be positive and is the absolute value of the extra moment. "
+            "The letters C and L_c must not remain in the answer",
             rendered[key],
         )
     parts = {key: _split_formula(rendered[key]) for key in MOMENT_KEYS}
@@ -185,24 +185,24 @@ def generate(spec: dict) -> dict:
         _sign, force, arm, denom = parts[key]
         named = key.split("_", 1)[0][1:]
         if force != named or force not in FORCE_OPTIONS or arm not in arm_options or denom != "L_RT":
-            raise DefinitionError(f"{key} 的公式 {rendered[key]} 拆不出测点选项。")
+            raise DefinitionError(f"The formula {rendered[key]} of {key} does not split into the probe options.")
     for index, key in enumerate(MOMENT_KEYS):
         _sign, force, arm, denom = parts[key]
         add(
             5, "A1",
-            f"等效力矩系数 {key} 的分子，用的力系数是哪个",
+            f"Which force coefficient is in the numerator of {key}?",
             force, list(FORCE_OPTIONS), FORCE_LOCAL[index],
         )
     for index, key in enumerate(MOMENT_KEYS):
         _sign, _force, arm, _denom = parts[key]
         add(
             5, "A1",
-            f"等效力矩系数 {key} 的分子，用的坐标分量是哪个",
+            f"Which coordinate component is in the numerator of {key}?",
             arm, arm_options, ARM_LOCAL[index],
         )
     add(
         5, "A1",
-        "等效力矩系数的分母，用的长度是哪个",
+        "Which length is the denominator of the equivalent moment coefficient?",
         "L_RT", list(DENOM_OPTIONS), DENOM_LOCAL,
     )
 
@@ -241,8 +241,8 @@ def _positive_arm(arm_expr):
 
 
 def _split_formula(formula: str) -> tuple[str, str, str, str]:
-    """符号、力系数、坐标分量、分母。式子由 _template 写成 ±C·L_c/L_RT。"""
-    sign = "负" if formula.startswith("-") else "正"
+    """Sign, force coefficient, coordinate component, and denominator. _template writes the expression as ±C·L_c/L_RT."""
+    sign = "negative" if formula.startswith("-") else "positive"
     body = formula[1:] if formula.startswith("-") else formula
     force, rest = body.split("·", 1)
     arm, denom = rest.rsplit("/", 1)
@@ -280,18 +280,18 @@ def _vector_text(values, axial_name: str) -> str:
 
 
 def _render(payload: dict) -> str:
-    lines = ["# 力矩参考点评测答案", ""]
+    lines = ["# moment reference point answers", ""]
     step = None
     for item in payload["items"]:
         if item["step"] != step:
             step = item["step"]
-            lines.append(f"## 步骤 {step}")
+            lines.append(f"## Step {step}")
             lines.append("")
         options = ""
         if item["options"]:
             options = "（" + "/".join(item["options"]) + "）"
         lines.append(
-            f"- ID {item['manuscript_id']} [{item['label']}] {item['prompt']}{options}：{item['answer']}"
+            f"- ID {item['manuscript_id']} [{item['label']}] {item['prompt']}{options}: {item['answer']}"
         )
     lines.append("")
     return "\n".join(lines)
@@ -301,20 +301,20 @@ def _check_standard() -> None:
     payload = generate(STANDARD_SPEC)
     by_id = {item["manuscript_id"]: item["answer"] for item in payload["items"]}
     assert len(payload["items"]) == 33
-    assert by_id["1"] == "天平校心"
+    assert by_id["1"] == "balance center"
     assert by_id["2"] == "L + L_t - L_r"
     assert by_id["3"] == "Xg"
     assert by_id["4"] == "[Xr - Xg, Yg, Zg]"
-    assert by_id["5"] == "原点"
-    assert by_id["6"] == "力矩参考点"
-    assert by_id["7"] == "原点"
-    assert by_id["8"] == "力矩参考点"
-    assert by_id["9"] == "正"
-    assert by_id["10"] == "负"
-    assert by_id["11"] == "正"
-    assert by_id["12"] == "负"
-    assert by_id["13"] == "负"
-    assert by_id["14"] == "正"
+    assert by_id["5"] == "origin"
+    assert by_id["6"] == "moment reference point"
+    assert by_id["7"] == "origin"
+    assert by_id["8"] == "moment reference point"
+    assert by_id["9"] == "positive"
+    assert by_id["10"] == "negative"
+    assert by_id["11"] == "positive"
+    assert by_id["12"] == "negative"
+    assert by_id["13"] == "negative"
+    assert by_id["14"] == "positive"
     assert by_id["15"] == "CN·Zg/L_RT"
     assert by_id["16"] == "-CZ·Yg/L_RT"
     assert by_id["17"] == "CA·Yg/L_RT"
@@ -324,17 +324,17 @@ def _check_standard() -> None:
     for offset, key in enumerate(MOMENT_KEYS):
         sign = by_id[str(9 + offset)]
         formula = by_id[str(15 + offset)]
-        if (sign == "负") != formula.startswith("-"):
-            raise AssertionError(f"{key} 的符号 {sign} 与式子 {formula} 不一致。")
+        if (sign == "negative") != formula.startswith("-"):
+            raise AssertionError(f"The sign {sign} of {key} does not agree with the expression {formula}.")
         part_sign, force, arm, denom = _split_formula(formula)
         if part_sign != sign:
-            raise AssertionError(f"{key} 拆出的符号 {part_sign} 与符号题 {sign} 不一致。")
+            raise AssertionError(f"The split sign {part_sign} of {key} does not agree with the sign question {sign}.")
         if by_id[FORCE_LOCAL[offset]] != force:
-            raise AssertionError(f"{key} 的力系数测点应为 {force}。")
+            raise AssertionError(f"The force-coefficient probe of {key} should be {force}.")
         if by_id[ARM_LOCAL[offset]] != arm:
-            raise AssertionError(f"{key} 的坐标分量测点应为 {arm}。")
+            raise AssertionError(f"The coordinate-component probe of {key} should be {arm}.")
         if denom != "L_RT" or by_id[DENOM_LOCAL] != "L_RT":
-            raise AssertionError(f"{key} 的分母应为 L_RT。")
+            raise AssertionError(f"The denominator of {key} should be L_RT.")
 
     rearward = json.loads(json.dumps(STANDARD_SPEC))
     rearward["body_frame"]["XTZ"] = {"along": "body_axial", "points": "body_rearward"}
@@ -344,11 +344,11 @@ def _check_standard() -> None:
     for offset, key in enumerate(MOMENT_KEYS):
         sign = turned[str(9 + offset)]
         formula = turned[str(15 + offset)]
-        if sign not in SIGNS or (sign == "负") != formula.startswith("-"):
-            raise AssertionError(f"轴向朝后时 {key} 的符号 {sign} 与式子 {formula} 不一致。")
+        if sign not in SIGNS or (sign == "negative") != formula.startswith("-"):
+            raise AssertionError(f"When the axial axis points rearward, the sign {sign} of {key} does not agree with {formula}.")
         _part_sign, force, arm, denom = _split_formula(formula)
         if turned[FORCE_LOCAL[offset]] != force or turned[ARM_LOCAL[offset]] != arm or denom != "L_RT":
-            raise AssertionError(f"轴向朝后时 {key} 的分子测点与式子 {formula} 不一致。")
+            raise AssertionError(f"When the axial axis points rearward, the numerator probe of {key} does not agree with {formula}.")
 
     left = json.loads(json.dumps(STANDARD_SPEC))
     left["body_frame"]["chirality"] = "left"
@@ -357,11 +357,11 @@ def _check_standard() -> None:
         formula = flipped[str(15 + offset)]
         sign, force, arm, denom = _split_formula(formula)
         if flipped[str(9 + offset)] != sign:
-            raise AssertionError(f"左手系 {key} 的符号题与式子不一致。")
+            raise AssertionError(f"In a left-handed frame the sign question of {key} does not agree with the expression.")
         if flipped[FORCE_LOCAL[offset]] != force or flipped[ARM_LOCAL[offset]] != arm:
-            raise AssertionError(f"左手系 {key} 的分子测点与式子 {formula} 不一致。")
+            raise AssertionError(f"In a left-handed frame the numerator probe of {key} does not agree with {formula}.")
         if arm not in ARM_OPTIONS or denom != "L_RT" or flipped[DENOM_LOCAL] != "L_RT":
-            raise AssertionError(f"左手系 {key} 的坐标或分母不在选项里：{formula}")
+            raise AssertionError(f"In a left-handed frame the coordinate or the denominator of {key} is not among the options: {formula}")
 
 
 def main() -> None:

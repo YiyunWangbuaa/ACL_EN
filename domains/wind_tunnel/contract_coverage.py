@@ -42,31 +42,31 @@ _BODY = ("XTZ", "YTZ", "ZTZ")
 _WIND = ("XFD", "YFD", "ZFD")
 _BALANCE = ("XTP", "YTP", "ZYP")
 _FRAME_FAMILY = {
-    "中间体轴系": "TZ",
-    "机体系": "TZ",
-    "体轴系": "TZ",
-    "风轴系": "FD",
-    "天平系": "TP",
+    "intermediate body-axis frame": "TZ",
+    "body-axis frame": "TZ",
+    "body-axis frame": "TZ",
+    "wind frame": "FD",
+    "balance frame": "TP",
 }
 _AXIS_FAMILY = {name: "TZ" for name in _BODY} | {name: "FD" for name in _WIND} | {name: "TP" for name in _BALANCE}
-# 法向、轴向、侧向在机体绝对方向上的正方向。绑定文本只决定哪根坐标轴指向它。
-_ABSOLUTE = {"法向": "body_up", "轴向": "body_forward", "侧向": "body_right"}
+# Positive normal, axial, and lateral directions on the airframe. The binding text only chooses which coordinate axis points that way.
+_ABSOLUTE = {"normal": "body_up", "axial": "body_forward", "lateral": "body_right"}
 _BODY_DIRECTION = {
-    "前面": "body_forward", "后面": "body_rearward",
-    "上方": "body_up", "下方": "body_down",
-    "左侧": "body_left", "右侧": "body_right",
+    "front": "body_forward", "rear": "body_rearward",
+    "upward": "body_up", "downward": "body_down",
+    "left": "body_left", "right": "body_right",
 }
-# role 只命名。轴名从「当前坐标系那一族」的绑定读出，不固定在机体三元组上。
+# A role only names the blank. The axis name is read from the binding of the current frame family, not fixed to the airframe triple.
 _AXIS_RULE = {
-    "24": ("侧向", "23"),
-    "32": ("法向", "31"),
-    "41": ("轴向", "40"),
+    "24": ("lateral", "23"),
+    "32": ("normal", "31"),
+    "41": ("axial", "40"),
 }
-_SLOT_ORDER = ("法向", "轴向", "侧向")
+_SLOT_ORDER = ("normal", "axial", "lateral")
 _FAMILY_SLOTS = {
-    "TZ": {"法向": "5", "轴向": "6", "侧向": "7"},
-    "FD": {"法向": "2", "轴向": "3", "侧向": "4"},
-    "TP": {"法向": "89", "轴向": "90", "侧向": "91"},
+    "TZ": {"normal": "5", "axial": "6", "lateral": "7"},
+    "FD": {"normal": "2", "axial": "3", "lateral": "4"},
+    "TP": {"normal": "89", "axial": "90", "lateral": "91"},
 }
 _READ_TRIADS = tuple(
     slots[role] for slots in _FAMILY_SLOTS.values() for role in _SLOT_ORDER
@@ -78,26 +78,26 @@ _TURN_RULE = {
     "42": ("41", "35", "gamma"),
     "87": ("86", "85", "balance"),
 }
-_ABS = {"轴向": (1, 0, 0), "侧向": (0, 1, 0), "法向": (0, 0, -1)}
+_ABS = {"axial": (1, 0, 0), "lateral": (0, 1, 0), "normal": (0, 0, -1)}
 _ZH_OPPOSITE = {
-    "上方": "下方", "下方": "上方",
-    "左侧": "右侧", "右侧": "左侧",
-    "前面": "后面", "后面": "前面",
+    "upward": "downward", "downward": "upward",
+    "left": "right", "right": "left",
+    "front": "rear", "rear": "front",
 }
 _ROLE_OF = {
-    "上方": "法向", "下方": "法向",
-    "前面": "轴向", "后面": "轴向",
-    "右侧": "侧向", "左侧": "侧向",
+    "upward": "normal", "downward": "normal",
+    "front": "axial", "rear": "axial",
+    "right": "lateral", "left": "lateral",
 }
-_BODY_ROLES = {"法向": "5", "轴向": "6", "侧向": "7"}
-_WIND_ROLES = {"法向": "120", "侧向": "121", "轴向": "122"}
+_BODY_ROLES = {"normal": "5", "axial": "6", "lateral": "7"}
+_WIND_ROLES = {"normal": "120", "lateral": "121", "axial": "122"}
 _FIXED = {"69": "arctan", "75": "arcsin", "182": "L + L_t - L_r"}
 _DECLARED = {"20": "mechanism-alpha", "21": "theory-alpha", "28": "mechanism-beta", "29": "theory-beta", "155": "theory-alpha", "156": "theory-beta"}
 _SIGN_OF = {"XTZ": "62", "YTZ": "63", "ZTZ": "64", "XFD": "161", "YFD": "162", "ZFD": "163"}
 _BETA_SIGN = {"XTZ": "65", "YTZ": "66", "ZTZ": "67"}
 _SLOT = {"Xg": "XTZ", "Yg": "YTZ", "Zg": "ZTZ"}
 _ENGINEERING = {"XTZ": "Xg", "YTZ": "Yg", "ZTZ": "Zg"}
-_PATH = (("185", "原点"), ("186", "力矩参考点"), ("187", "原点"), ("188", "力矩参考点"))
+_PATH = (("185", "origin"), ("186", "moment reference point"), ("187", "origin"), ("188", "moment reference point"))
 _MOMENT_KEY = {str(189 + index): key for index, key in enumerate(("MCN_CA", "MCZ_CA", "MCA_CZ", "MCN_CZ", "MCA_CN", "MCZ_CN"))}
 _XR = sp.symbols("Xr", real=True)
 _CANON = {"Xg": XG_SYM, "Yg": YG_SYM, "Zg": ZG_SYM, "Xr": _XR, "L_RT": L_RT_SYM, **FORCE_SYMBOL}
@@ -288,11 +288,11 @@ def _value(model, node_id: str, texts: dict[str, str]) -> str:
     if node_id in {"71", "77"}:
         return _named_axis(texts, texts["21" if node_id == "71" else "29"], _BODY_ROLES, _BODY)
     if node_id == "73":
-        return _named_axis(texts, "前面", _BODY_ROLES, _BODY)
+        return _named_axis(texts, "front", _BODY_ROLES, _BODY)
     if node_id in {"166", "171"}:
         return _wind_name(texts["149" if node_id == "166" else "150"])
     if node_id in {"168", "173"}:
-        return _named_axis(texts, "前面", _WIND_ROLES, _WIND)
+        return _named_axis(texts, "front", _WIND_ROLES, _WIND)
     if node_id in {"174", "175"}:
         start = 164 if node_id == "174" else 169
         parts = [texts[str(start + offset)] for offset in range(5)]
@@ -305,7 +305,7 @@ def _value(model, node_id: str, texts: dict[str, str]) -> str:
         return _coordinate(texts, texts["183"])
     if node_id in _MOMENT_KEY:
         return _moment_sign(texts, _MOMENT_KEY[node_id])
-    raise _Bad(f"ID{node_id} 没有计算器。")
+    raise _Bad(f"ID{node_id} has no calculator.")
 
 
 def _directed_component(text: str, allowed: tuple[str, ...]) -> list[int]:
@@ -313,7 +313,7 @@ def _directed_component(text: str, allowed: tuple[str, ...]) -> list[int]:
     negative = raw.startswith("-")
     name = raw[1:] if negative else raw
     if name not in allowed:
-        raise _Bad(f"“{raw}”不是该坐标系的坐标轴。")
+        raise _Bad(f"{raw!r} is not a coordinate axis of this frame.")
     values = [0, 0, 0]
     values[allowed.index(name)] = -1 if negative else 1
     return values
@@ -330,7 +330,7 @@ def _substitute_unit(texts: dict[str, str]) -> str:
     column = sp.Matrix(_vector(texts.get("56", "")))
     norm = sp.simplify(column.norm())
     if norm == 0:
-        raise _Bad("平置空速坐标是零向量。")
+        raise _Bad("The level airspeed coordinates are the zero vector.")
     if norm != 1:
         column = sp.simplify(column / norm)
     return _show_vector(column)
@@ -351,11 +351,11 @@ def _roll_difference(texts: dict[str, str]) -> str:
 
 def _hand(text: str) -> int:
     value = str(text).strip()
-    if value == "正":
+    if value == "positive":
         return 1
-    if value == "负":
+    if value == "negative":
         return -1
-    raise _Bad("正方向不是正或负。")
+    raise _Bad("The sign is neither positive nor negative.")
 
 
 def _turn_inputs(node_id: str) -> tuple[str, ...]:
@@ -371,7 +371,7 @@ def _binding(text: str, allowed: tuple[str, ...]) -> tuple[str, int]:
     negative = raw.startswith("-")
     name = raw[1:] if negative else raw
     if name not in allowed:
-        raise _Bad(f"“{raw}”不是该坐标系的坐标轴。")
+        raise _Bad(f"{raw!r} is not a coordinate axis of this frame.")
     return name, -1 if negative else 1
 
 
@@ -384,14 +384,14 @@ def _triad(texts: dict[str, str], slots: tuple[str, ...], allowed: tuple[str, ..
         letters.append(name[0])
         parsed.append((name, sign))
     if len(letters) != 3 or set(letters) != {"X", "Y", "Z"}:
-        raise _Bad(f"三根坐标轴必须恰好是 X、Y、Z 各一根，现在是 {''.join(letters) or '空'}。")
+        raise _Bad(f"The three coordinate axes must be exactly one X, one Y, and one Z; got {''.join(letters) or 'empty'}.")
     return parsed
 
 
 def _family_of(frame: str) -> str:
     family = _FRAME_FAMILY.get(str(frame).strip())
     if family is None:
-        raise _Bad(f"坐标系“{frame}”不在约定的族里。")
+        raise _Bad(f"Frame {frame!r} is outside the declared families.")
     return family
 
 
@@ -405,9 +405,9 @@ def _frame_matches(frame: str, axis: str) -> None:
     family = _FRAME_FAMILY.get(str(frame).strip())
     axis_family = _AXIS_FAMILY.get(axis)
     if family is None:
-        raise _Bad(f"坐标系“{frame}”不在约定的族里。")
+        raise _Bad(f"Frame {frame!r} is outside the declared families.")
     if family != axis_family:
-        raise _Bad(f"坐标系“{frame}”与轴“{axis}”不同族。")
+        raise _Bad(f"Frame {frame!r} and axis {axis!r} are not in the same family.")
 
 
 def _declared_axis(texts: dict[str, str], role: str, frame: str) -> tuple[str, tuple[int, ...]]:
@@ -428,15 +428,15 @@ def _axis_choice(node_id: str, texts: dict[str, str]) -> str:
 
 def _rotation_word(sense: str) -> str:
     if sense == POSITIVE_ROTATION:
-        return "正"
+        return "positive"
     if sense == NEGATIVE_ROTATION:
-        return "负"
-    raise _Bad("这根轴和这个方向定不出转向。")
+        return "negative"
+    raise _Bad("This axis and this direction do not determine a turning sense.")
 
 
 def _wing_of_hand(hand: str) -> str:
-    if hand not in {"相同", "相反"}:
-        raise _Bad("右手定则关系不是相同或相反。")
+    if hand not in {"same", "opposite"}:
+        raise _Bad("The right-hand relation is neither same nor opposite.")
     return _wing_about_nose(hand)
 
 
@@ -444,17 +444,17 @@ def _balance_turn(texts: dict[str, str]) -> str:
     name, _sign = _binding(texts.get("90", ""), _BALANCE)
     stated = str(texts.get("86", "")).strip()
     if stated != name:
-        raise _Bad(f"转向只在轴“{name}”上成立，当前写的是“{stated}”。")
+        raise _Bad(f"The turning sense holds only on axis {name!r}; the text says {stated!r}.")
     expr = _parse(texts.get("85", ""))
     coeff = None
     for symbol in getattr(expr, "free_symbols", ()):
         if getattr(symbol, "name", "") == "gamma_M":
             coeff = sp.simplify(expr.coeff(symbol))
     if coeff == 1:
-        return "正"
+        return "positive"
     if coeff == -1:
-        return "逆"
-    raise _Bad("滚转表达式里 γ_M 的系数不是 1 或 -1。")
+        return "reverse"
+    raise _Bad("The coefficient of γ_M in the roll expression is neither 1 nor -1.")
 
 
 def _turn_paired(model, node_id: str, texts: dict[str, str]) -> str:
@@ -467,39 +467,39 @@ def _turn_paired(model, node_id: str, texts: dict[str, str]) -> str:
     _frame_matches(frame, name)
     stated = str(texts.get(axis_node, "")).strip()
     if stated != name:
-        raise _Bad(f"转向只在轴“{name}”上成立，当前写的是“{stated}”。")
+        raise _Bad(f"The turning sense holds only on axis {name!r}; the text says {stated!r}.")
     if kind == "gamma":
         sense = model._roll_sense(vector, _wing_of_hand(str(texts.get(direction_id, "")).strip()))
     else:
         direction = str(texts.get(direction_id, "")).strip()
         offset = _BODY_DIRECTION.get(direction)
         if offset is None:
-            raise _Bad(f"方向“{direction}”不是上下左右前后。")
+            raise _Bad(f"Direction {direction!r} is not upward, downward, left, right, front, or rear.")
         sense = model._airspeed_rotation_sense(vector, offset)
     return _rotation_word(sense)
 
 
 def _path_order(model, node_id: str) -> str:
     """The angle sequence itself is read from the declaration. No earlier blank states it."""
-    names = {"alpha": "迎角", "beta": "侧滑角", "gamma": "滚转角"}
+    names = {"alpha": "angle of attack", "beta": "sideslip", "gamma": "roll"}
     first, second, third = (str(item) for item in model.euler_order)
     declared = {"16": names[first], "17": names[second], "18": names[third]}
     try:
         return declared[node_id]
     except KeyError as exc:
-        raise _Bad("机构顺序不在迎角、侧滑、滚转的两种合法顺序里。") from exc
+        raise _Bad("The mechanism order is not one of the two legal orders of angle of attack, sideslip, and roll.") from exc
 
 
 def attitude_convention(texts: dict[str, str]) -> tuple[str, bool]:
-    """(主动/被动, 是否外旋). 动轴只配内旋，定轴只配外旋。"""
+    """(active or passive, whether extrinsic). Moving axes take only an intrinsic rotation, and fixed axes take only an extrinsic rotation."""
     sense = str(texts.get("44", "")).strip()
     kind = str(texts.get("45", "")).strip()
     spin = str(texts.get("46", "")).strip()
-    if sense not in {"主动", "被动"}:
-        raise _Bad("坐标系转换不是主动或被动。")
-    paired = {("动轴", "内旋"): False, ("定轴", "外旋"): True}
+    if sense not in {"active", "passive"}:
+        raise _Bad("The coordinate transform is neither active nor passive.")
+    paired = {("moving axes", "intrinsic"): False, ("fixed axes", "extrinsic"): True}
     if (kind, spin) not in paired:
-        raise _Bad("动轴必须配内旋，定轴必须配外旋。")
+        raise _Bad("Moving axes require an intrinsic rotation, and fixed axes require an extrinsic rotation.")
     return sense, paired[(kind, spin)]
 
 
@@ -520,48 +520,48 @@ def _product_order(node_id: str, texts: dict[str, str]) -> str:
     if node_id in fixed:
         return fixed[node_id]
     sense, extrinsic = attitude_convention(texts)
-    codes = {"迎角": "R_α_M", "侧滑角": "R_β_M", "滚转角": "R_γ_M"}
+    codes = {"angle of attack": "R_α_M", "sideslip": "R_β_M", "roll": "R_γ_M"}
     ordered = [codes.get(str(texts.get(item, "")).strip()) for item in ("16", "17", "18")]
     if any(item is None for item in ordered) or len(set(ordered)) != 3:
-        raise _Bad("变换顺序不是迎角、侧滑角、滚转角的一个排列。")
+        raise _Bad("The transform order is not a permutation of angle of attack, sideslip, and roll.")
     first, second, third = ordered
     slots = (first, second, third) if extrinsic else (third, second, first)
-    if sense == "主动":
+    if sense == "active":
         slots = tuple(reversed(slots))
     return {"47": slots[0], "48": slots[1], "49": slots[2]}[node_id]
 
 
 def _alignment(node_id: str, texts: dict[str, str]):
     if node_id == "8":
-        rows, cols = _assign(texts, (("5", "法向"), ("6", "轴向"), ("7", "侧向")), _BODY), _assign(texts, (("2", "法向"), ("3", "轴向"), ("4", "侧向")), _WIND)
+        rows, cols = _assign(texts, (("5", "normal"), ("6", "axial"), ("7", "lateral")), _BODY), _assign(texts, (("2", "normal"), ("3", "axial"), ("4", "lateral")), _WIND)
         return _matrix(rows, cols, _BODY, _WIND)
     if node_id == "95":
-        rows = _assign(texts, (("92", "法向"), ("93", "轴向"), ("94", "侧向")), _BODY)
-        cols = _assign(texts, (("89", "法向"), ("90", "轴向"), ("91", "侧向")), _BALANCE)
+        rows = _assign(texts, (("92", "normal"), ("93", "axial"), ("94", "lateral")), _BODY)
+        cols = _assign(texts, (("89", "normal"), ("90", "axial"), ("91", "lateral")), _BALANCE)
         return _matrix(rows, cols, _BODY, _BALANCE)
-    rows = _assign(texts, (("120", "法向"), ("121", "侧向"), ("122", "轴向")), _WIND)
-    cols = _assign(texts, (("123", "法向"), ("124", "侧向"), ("125", "轴向")), _BALANCE)
+    rows = _assign(texts, (("120", "normal"), ("121", "lateral"), ("122", "axial")), _WIND)
+    cols = _assign(texts, (("123", "normal"), ("124", "lateral"), ("125", "axial")), _BALANCE)
     return _matrix(rows, cols, _WIND, _BALANCE)
 
 
 def _mount(node_id: str, texts: dict[str, str]):
     if node_id == "13":
         relation = str(texts.get("12", "")).strip()
-        inverted = {"相同": False, "相反": True}.get(relation)
-        rows = _assign(texts, (("5", "法向"), ("6", "轴向"), ("7", "侧向")), _BODY)
-        cols = _assign(texts, (("2", "法向"), ("3", "轴向"), ("4", "侧向")), _WIND)
+        inverted = {"same": False, "opposite": True}.get(relation)
+        rows = _assign(texts, (("5", "normal"), ("6", "axial"), ("7", "lateral")), _BODY)
+        cols = _assign(texts, (("2", "normal"), ("3", "axial"), ("4", "lateral")), _WIND)
         row_names, col_names = _BODY, _WIND
     else:
         relation = str(texts.get("96", "")).strip()
-        inverted = {"正装": False, "倒装": True}.get(relation)
-        rows = _assign(texts, (("92", "法向"), ("93", "轴向"), ("94", "侧向")), _BODY)
-        cols = _assign(texts, (("89", "法向"), ("90", "轴向"), ("91", "侧向")), _BALANCE)
+        inverted = {"upright": False, "inverted": True}.get(relation)
+        rows = _assign(texts, (("92", "normal"), ("93", "axial"), ("94", "lateral")), _BODY)
+        cols = _assign(texts, (("89", "normal"), ("90", "axial"), ("91", "lateral")), _BALANCE)
         row_names, col_names = _BODY, _BALANCE
     if inverted is None:
-        raise _Bad("安装关系不是正装、倒装、相同或相反。")
+        raise _Bad("The installation relation is not upright, inverted, same, or opposite.")
     alignment = _matrix(rows, cols, row_names, col_names)
     if alignment.det() == 0:
-        raise _Bad("坐标轴绑定不能组成可逆的对齐矩阵。")
+        raise _Bad("The axis binding does not form an invertible alignment matrix.")
     if not inverted:
         return sp.eye(3)
     placed = _matrix(rows, cols, row_names, col_names, invert_rows=True)
@@ -574,13 +574,13 @@ def _installation(model, texts: dict[str, str]) -> str:
     axis = str(texts.get("130", "")).strip()
     turn = str(texts.get("131", "")).strip()
     if axis not in _BALANCE:
-        raise _Bad(f"{axis} 不是天平坐标轴。")
-    if turn == "正":
+        raise _Bad(f"{axis} is not a balance coordinate axis.")
+    if turn == "positive":
         theta = GAMMA_TP_SYM
-    elif turn == "逆":
+    elif turn == "reverse":
         theta = -GAMMA_TP_SYM
     else:
-        raise _Bad("安装角转向不是正或逆。")
+        raise _Bad("The installation-angle turn is neither positive nor reverse.")
     try:
         left = recognized_left_handed(texts, "TP")
     except ValueError as exc:
@@ -590,11 +590,11 @@ def _installation(model, texts: dict[str, str]) -> str:
 
 
 def _forward(texts: dict[str, str]) -> str:
-    assigned = _assign(texts, (("123", "法向"), ("124", "侧向"), ("125", "轴向")), _BALANCE)
+    assigned = _assign(texts, (("123", "normal"), ("124", "lateral"), ("125", "axial")), _BALANCE)
     values = []
     for name in _BALANCE:
         role, sign = assigned[name]
-        values.append(sign if role == "轴向" else 0)
+        values.append(sign if role == "axial" else 0)
     return _show_vector(values)
 
 
@@ -613,7 +613,7 @@ def _deformed(model, node_id: str, texts: dict[str, str]) -> str:
     index = {"142": 0, "143": 1, "144": 2}[node_id]
     sign = _small_sign(values[index], ("alpha_e", "beta_e"))
     if sign is None:
-        raise _Bad("变形分量的符号无法确定。")
+        raise _Bad("The sign of the deformed component cannot be determined.")
     return sign
 
 
@@ -625,13 +625,13 @@ def _wind(texts: dict[str, str], index: int) -> str:
         name = str(texts.get(slot, "")).strip()
         matrix_id = names.get(name)
         if matrix_id is None:
-            raise _Bad(f"连乘槽中的“{name}”不是 RP_TP_FD 或 R_γ_tp。")
+            raise _Bad(f"{name!r} in the product is neither RP_TP_FD nor R_γ_tp.")
         if name in seen:
-            raise _Bad("连乘码重复，不是一个排列。")
+            raise _Bad("A product code is repeated, so this is not a permutation.")
         seen.append(name)
         factors.append(_square(texts[matrix_id]))
     if set(seen) != set(names):
-        raise _Bad("连乘码不是 RP_TP_FD 与 R_γ_tp 的排列。")
+        raise _Bad("The product codes are not a permutation of RP_TP_FD and R_γ_tp.")
     vector = _column(texts["145"])
     product = factors[0] * factors[1] * vector
     return _show_scalar(product[index])
@@ -640,36 +640,36 @@ def _wind(texts: dict[str, str], index: int) -> str:
 def _sense(left: str, right: str) -> str:
     left, right = str(left).strip(), str(right).strip()
     if left not in _ZH_OPPOSITE or right not in _ZH_OPPOSITE:
-        raise _Bad("方向不是上下、左右或前后。")
+        raise _Bad("The direction is not up/down, left/right, or front/rear.")
     if left == right:
-        return "正"
+        return "positive"
     if _ZH_OPPOSITE[left] == right:
-        return "负"
-    return "不确定"
+        return "negative"
+    return "indeterminate"
 
 
 def _wing(relation: str) -> str:
     try:
         return _role(_wing_about_nose(str(relation).strip()))
     except Exception as exc:
-        raise _Bad("滚转与右手定则的关系不是相同或相反。") from exc
+        raise _Bad("The relation of roll to the right-hand rule is neither same nor opposite.") from exc
 
 
 def _effect(bend: str, mount: str) -> str:
     bend, mount = str(bend).strip(), str(mount).strip()
-    if bend not in _ZH_OPPOSITE or mount not in {"正装", "反装"}:
-        raise _Bad("弯曲方向或安装方式无法确定。")
-    placed = bend if mount == "正装" else _ZH_OPPOSITE[bend] if bend in {"上方", "下方", "左侧", "右侧"} else bend
+    if bend not in _ZH_OPPOSITE or mount not in {"upright", "inverted"}:
+        raise _Bad("The bend direction or the installation cannot be determined.")
+    placed = bend if mount == "upright" else _ZH_OPPOSITE[bend] if bend in {"upward", "downward", "left", "right"} else bend
     return _ZH_OPPOSITE[placed]
 
 
 def _agreement(relation: str, hand: str) -> str:
     pair = (str(relation).strip(), str(hand).strip())
-    if pair in {("相同", "正"), ("相反", "负")}:
-        return "正"
-    if pair in {("相同", "负"), ("相反", "正")}:
-        return "负"
-    raise _Bad("弹性滚转和理论滚转的方向关系无法比较。")
+    if pair in {("same", "positive"), ("opposite", "negative")}:
+        return "positive"
+    if pair in {("same", "negative"), ("opposite", "positive")}:
+        return "negative"
+    raise _Bad("The directions of elastic roll and theoretical roll cannot be compared.")
 
 
 def _direction(model, kind: str) -> str:
@@ -682,7 +682,7 @@ def _direction(model, kind: str) -> str:
     else:
         toward = model.angles[BETA].positive_airspeed_toward
     if not toward:
-        raise _Bad("声明里没有这个方向。")
+        raise _Bad("The declaration does not contain this direction.")
     return _zh(toward)
 
 
@@ -690,14 +690,14 @@ def _flow(model, theory_name: str, flow_name: str) -> str:
     theory = model.angles[theory_name].positive_airspeed_toward
     flow = model.flow_angles[flow_name].positive_airspeed_toward
     if not theory or not flow:
-        raise _Bad("气流偏角或理论角没有声明方向。")
-    return "正" if flow == theory else "负"
+        raise _Bad("The flow-offset angle or the theoretical angle has no declared direction.")
+    return "positive" if flow == theory else "negative"
 
 
 def _outer(text: str) -> str:
     sign = str(text).strip()
-    if sign not in {"正", "负"}:
-        raise _Bad("外层符号不是正或负。")
+    if sign not in {"positive", "negative"}:
+        raise _Bad("The outer sign is neither positive nor negative.")
     return sign
 
 
@@ -707,61 +707,61 @@ def _beta_denominator(texts: dict[str, str]) -> str:
     if inverse == "arcsin":
         return "1"
     if inverse == "arctan":
-        raise _Bad("侧滑写成 arctan 时，分母是体轴分量，不能沿用 arcsin 的常数 1。")
-    raise _Bad("侧滑反三角函数不是 arcsin 或 arctan。")
+        raise _Bad("When sideslip is written with arctan, the denominator is a body-axis component and cannot keep the constant 1 from arcsin.")
+    raise _Bad("The sideslip inverse function is neither arcsin nor arctan.")
 
 
 def _beta_denominator_sign(texts: dict[str, str]) -> str:
     """The sign is asked before the component, so it follows the inverse function."""
     inverse = str(texts.get("75", "")).strip()
     if inverse == "arcsin":
-        return "正"
+        return "positive"
     if inverse == "arctan":
-        raise _Bad("侧滑写成 arctan 时，分母是体轴分量，符号不能沿用常数 1 的正号。")
-    raise _Bad("侧滑反三角函数不是 arcsin 或 arctan。")
+        raise _Bad("When sideslip is written with arctan, the denominator is a body-axis component and its sign cannot keep the positive sign of the constant 1.")
+    raise _Bad("The sideslip inverse function is neither arcsin nor arctan.")
 
 
 def _lookup(texts: dict[str, str], axis: str, table: dict[str, str]) -> str:
     node_id = table.get(str(axis).strip())
     if node_id is None:
-        raise _Bad(f"分量“{axis}”没有对应的符号。")
+        raise _Bad(f"Component {axis!r} has no corresponding sign.")
     sign = str(texts.get(node_id, "")).strip()
-    if sign not in {"正", "负"}:
-        raise _Bad(f"ID{node_id} 的符号不是正或负。")
+    if sign not in {"positive", "negative"}:
+        raise _Bad(f"The sign of ID{node_id} is neither positive nor negative.")
     return sign
 
 
 def _named_axis(texts: dict[str, str], direction: str, roles: dict[str, str], allowed: tuple[str, ...]) -> str:
     role = _ROLE_OF.get(str(direction).strip())
     if role is None:
-        raise _Bad(f"方向“{direction}”不能对应到法向、轴向或侧向。")
+        raise _Bad(f"Direction {direction!r} does not correspond to normal, axial, or lateral.")
     raw = str(texts.get(roles[role], "")).strip()
     name = raw[1:] if raw.startswith("-") else raw
     if name not in allowed:
-        raise _Bad(f"“{raw}”不是该坐标系的坐标轴。")
+        raise _Bad(f"{raw!r} is not a coordinate axis of this frame.")
     return name
 
 
 def _wind_name(text: str) -> str:
     name = str(text).strip()
     if name not in _WIND:
-        raise _Bad(f"“{name}”不是风轴分量。")
+        raise _Bad(f"{name!r} is not a wind-frame component.")
     return name
 
 
 def _ratio(outer: str, num_sign: str, num_axis: str, den_sign: str, den_axis: str) -> str:
     outer, num_sign, den_sign = (item.strip() for item in (outer, num_sign, den_sign))
     num_axis, den_axis = num_axis.strip(), den_axis.strip()
-    if outer not in {"正", "负"} or num_sign not in {"正", "负"} or den_sign not in {"正", "负"}:
-        raise _Bad("分式的符号不是正或负。")
+    if outer not in {"positive", "negative"} or num_sign not in {"positive", "negative"} or den_sign not in {"positive", "negative"}:
+        raise _Bad("The sign of the quotient is neither positive nor negative.")
     if num_axis not in _WIND or den_axis not in _WIND:
-        raise _Bad("分子或分母不是风轴分量。")
+        raise _Bad("The numerator or the denominator is not a wind-frame component.")
     body = f"{_factor(num_sign, num_axis)}/{_factor(den_sign, den_axis)}"
-    return f"-{body}" if outer == "负" else body
+    return f"-{body}" if outer == "negative" else body
 
 
 def _factor(sign: str, axis: str) -> str:
-    return f"({axis})" if sign == "正" else f"(-{axis})"
+    return f"({axis})" if sign == "positive" else f"(-{axis})"
 
 
 def _substituted(texts: dict[str, str], formula_id: str) -> str:
@@ -777,20 +777,20 @@ def _substituted(texts: dict[str, str], formula_id: str) -> str:
 
 def _gamma(sign: str) -> str:
     sign = str(sign).strip()
-    if sign == "正":
+    if sign == "positive":
         return "γ_e"
-    if sign == "负":
+    if sign == "negative":
         return "-γ_e"
-    raise _Bad("弹性滚转增量的符号不是正或负。")
+    raise _Bad("The sign of the elastic roll increment is neither positive nor negative.")
 
 
 def _coordinate(texts: dict[str, str], slot: str) -> str:
     axis = _SLOT.get(str(slot).strip())
     if axis is None:
-        raise _Bad("不同的工程分量不是 Xg、Yg 或 Zg。")
+        raise _Bad("The differing engineering component is not Xg, Yg, or Zg.")
     _vectors, roles, signs = _body_geometry(texts)
     if roles.get(axis) != "axial":
-        raise _Bad(f"{slot} 对应的体轴不在绝对轴向上。")
+        raise _Bad(f"The body axis for {slot} is not the absolute axial axis.")
     forward = signs[axis]
     cells = []
     for name in _BODY:
@@ -806,30 +806,30 @@ def _coordinate(texts: dict[str, str], slot: str) -> str:
 def _moment_sign(texts: dict[str, str], key: str) -> str:
     for node_id, expected in _PATH:
         if str(texts.get(node_id, "")).strip() != expected:
-            raise _Bad("力矩等效的起点、终点或力的位置与模板不一致。")
+            raise _Bad("The start, the end, or the force location of the moment transfer does not match the template.")
     coords = [_adopt(item) for item in _vector(texts["184"])]
     expr = moment_term(texts, coords, key)
     numer, denom = sp.fraction(sp.together(sp.simplify(expr)))
     if sp.simplify(denom - L_RT_SYM) != 0:
-        raise _Bad("力矩项没有除以 L_RT。")
+        raise _Bad("The moment term is not divided by L_RT.")
     force = next((name for name, symbol in FORCE_SYMBOL.items() if symbol in numer.free_symbols), None)
     if force is None:
-        raise _Bad("力矩项里没有 CA、CZ 或 CN。")
+        raise _Bad("The moment term does not contain CA, CZ, or CN.")
     arm = _adopt(sp.expand(sp.simplify(numer / FORCE_SYMBOL[force])))
     leading = sp.simplify(sp.Poly(sp.expand(arm), _XR, XG_SYM, YG_SYM, ZG_SYM).LC())
     if leading == 1:
-        return "正"
+        return "positive"
     if leading == -1:
-        return "负"
-    raise _Bad("力矩符号的主系数不是 1 或 -1。")
+        return "negative"
+    raise _Bad("The leading coefficient of the moment sign is neither 1 nor -1.")
 
 
-_ROLE_EN = {"法向": "normal", "轴向": "axial", "侧向": "lateral"}
+_ROLE_EN = {"normal": "normal", "axial": "axial", "lateral": "lateral"}
 
 
 def _body_geometry(texts: dict[str, str]):
     """Coordinate vectors implied by the current body-axis bindings, not the sample frame."""
-    assigned = _assign(texts, (("5", "法向"), ("6", "轴向"), ("7", "侧向")), _BODY)
+    assigned = _assign(texts, (("5", "normal"), ("6", "axial"), ("7", "lateral")), _BODY)
     vectors = {}
     roles = {}
     signs = {}
@@ -861,9 +861,9 @@ def moment_term(texts: dict[str, str], coords, key: str):
             if f"M{force_symbol}_{MOMENT_CODE[roles[name]]}" == key:
                 found = sp.simplify(_dot_expr(moment, vectors[name]) / L_RT_SYM)
     if found is None:
-        raise _Bad(f"没有矩分量 {key}。")
+        raise _Bad(f"There is no moment component {key}.")
     if sp.simplify(found) == 0:
-        raise _Bad("力臂长度为零。")
+        raise _Bad("The moment arm has length zero.")
     return found
 
 
@@ -874,10 +874,10 @@ def _assign(texts: dict[str, str], pairs: tuple[tuple[str, str], ...], names: tu
         sign = -1 if raw.startswith("-") else 1
         name = raw[1:] if raw.startswith("-") else raw
         if name not in names or name in found:
-            raise _Bad(f"ID{node_id} 的坐标轴“{raw}”不能和其他轴组成一组。")
+            raise _Bad(f"Coordinate axis {raw!r} of ID{node_id} cannot form a set with the other axes.")
         found[name] = (role, sign)
     if set(found) != set(names):
-        raise _Bad("三根坐标轴没有各对应一个绝对方向。")
+        raise _Bad("The three coordinate axes do not each correspond to one absolute direction.")
     return found
 
 
@@ -898,14 +898,14 @@ def _abs_vector(role: str, sign: int) -> tuple[int, int, int]:
 
 def _shift(texts: dict[str, str], direction: str) -> list[int]:
     sense = {
-        "上方": ("法向", 1), "下方": ("法向", -1),
-        "右侧": ("侧向", 1), "左侧": ("侧向", -1),
-        "前面": ("轴向", 1), "后面": ("轴向", -1),
+        "upward": ("normal", 1), "downward": ("normal", -1),
+        "right": ("lateral", 1), "left": ("lateral", -1),
+        "front": ("axial", 1), "rear": ("axial", -1),
     }.get(str(direction).strip())
     if sense is None:
-        raise _Bad(f"弯曲方向“{direction}”不是上下、左右或前后。")
+        raise _Bad(f"Bend direction {direction!r} is not up/down, left/right, or front/rear.")
     role, sign = sense
-    assigned = _assign(texts, (("123", "法向"), ("124", "侧向"), ("125", "轴向")), _BALANCE)
+    assigned = _assign(texts, (("123", "normal"), ("124", "lateral"), ("125", "axial")), _BALANCE)
     values = []
     for name in _BALANCE:
         bound, pointing = assigned[name]
@@ -917,25 +917,25 @@ def _angle_sign(expr, active: str) -> str:
     values = {"alpha_M": 0, "beta_M": 0, "gamma_M": 0, active: sp.Rational(1, 10)}
     number = sp.simplify(_replace_named(expr, values))
     if number == 0:
-        return "不确定"
+        return "indeterminate"
     if getattr(number, "is_number", False) and number.is_real:
         if number > 0:
-            return "正"
+            return "positive"
         if number < 0:
-            return "负"
-    raise _Bad("分量在单角下的符号无法确定。")
+            return "negative"
+    raise _Bad("The sign of the component under a single angle cannot be determined.")
 
 
 def _elastic_sign(expr) -> str:
     reduced = _replace_named(expr, {"gamma_tp": 0})
     sign = _small_sign(reduced, ("alpha_e", "beta_e"))
     if sign is None:
-        raise _Bad("风轴分量在安装角为零时的符号无法确定。")
+        raise _Bad("The sign of the wind-frame component when the installation angle is zero cannot be determined.")
     return sign
 
 
 def _numeric_sign(value) -> int | None:
-    """1、0、-1 when the expression is a real number. None when the sign is open."""
+    """1, 0, or -1 when the expression is a real number. None when the sign is open."""
     number = sp.simplify(value)
     if not (getattr(number, "is_number", False) and bool(number.is_real)):
         return None
@@ -961,10 +961,10 @@ def _small_sign(expr, names: tuple[str, ...]) -> str | None:
     if constant_sign is None:
         return None
     if constant_sign != 0:
-        return "正" if constant_sign > 0 else "负"
+        return "positive" if constant_sign > 0 else "negative"
     if len(set(usable)) != 1:
-        return "不确定"
-    return "正" if usable[0] > 0 else "负"
+        return "indeterminate"
+    return "positive" if usable[0] > 0 else "negative"
 
 
 def _coefficient(expr, name: str):
@@ -986,7 +986,7 @@ def _vector(text: str) -> list:
     parsed = _parse(text)
     sympy, _locals = _sympy_modules()
     if not isinstance(parsed, sympy.MatrixBase) or parsed.shape not in {(3, 1), (1, 3)}:
-        raise _Bad(f"“{text}”不是三维向量。")
+        raise _Bad(f"{text!r} is not three-dimensional.")
     return list(parsed)
 
 
@@ -998,7 +998,7 @@ def _column(text: str):
 def _square(text: str):
     parsed = _parse(text)
     if getattr(parsed, "shape", None) != (3, 3):
-        raise _Bad("矩阵不是 3×3。")
+        raise _Bad("The matrix is not 3×3.")
     return parsed
 
 
@@ -1007,7 +1007,7 @@ def _parse(text: str):
     try:
         return _parse_expr(str(text), sympy, locals_map)
     except Exception as exc:
-        raise _Bad(f"无法解析“{text}”。") from exc
+        raise _Bad(f"cannot parse {text!r}.") from exc
 
 
 def _symbols() -> dict[str, sp.Expr]:
@@ -1025,9 +1025,9 @@ def _adopt(expr):
 
 def _zh(direction: str) -> str:
     return {
-        "forward": "前面", "rearward": "后面",
-        "up": "上方", "down": "下方",
-        "left": "左侧", "right": "右侧",
+        "forward": "front", "rearward": "rear",
+        "up": "upward", "down": "downward",
+        "left": "left", "right": "right",
     }[direction.split("_", 1)[1]]
 
 

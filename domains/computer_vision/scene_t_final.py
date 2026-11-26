@@ -22,7 +22,7 @@ def _alt(node: str) -> str:
 
 def _equals(node: str, left: str, right: str) -> bool:
     row = questions()[node]
-    fmt = row["format"] if not row["options"] else "表达式"
+    fmt = row["format"] if not row["options"] else "expression"
     return answers_equal(left, right, fmt)
 
 
@@ -48,18 +48,18 @@ def check_t_final() -> None:
     report = []
     for target in T_FINAL:
         if target not in NODE_IDS:
-            raise RuntimeError(f"终点 {target} 不在 1–165")
+            raise RuntimeError(f"terminal {target} not in 1-165")
         fixes = minimal_fixes(target)
         if not fixes and target == "165":
-            report.append(f"ID{target} 自修 {{ID{target}}}")
+            report.append(f"ID{target} self-repair {{ID{target}}}")
             fixes = ((target,),)
         elif not fixes:
-            raise RuntimeError(f"终点 ID{target} 没有最小修复集")
+            raise RuntimeError(f"terminal ID{target} has no minimal fix set")
         elif target == "165":
-            report.append(f"ID{target} 自修 {{ID{target}}}")
+            report.append(f"ID{target} self-repair {{ID{target}}}")
         else:
-            report.append(f"ID{target} 核 {list(fixes)}")
-    print("阶段6 系统修复：" + "；".join(report), flush=True)
+            report.append(f"ID{target} core {list(fixes)}")
+    print("stage 6 system repair: " + "; ".join(report), flush=True)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ It is only used for cross products. It is not a coordinate frame.
 Absolute lateral axes follow one right-hand rule on every frame:
 lateral = normal x axial. The track note lists axial before normal; the same
 rule is used there. Every normal points down, including the ground normal, so
-every 右方 is geometric right. 向地面的右 uses this named direction.
+every rightward direction is geometric right. "Right of the ground" uses this named direction.
 
 The industry default puts every frame on the same right-handed habit: X lies
 on the axial axis and points with it, Z lies on the normal axis and points
@@ -58,12 +58,12 @@ _GEOM = {
 }
 _GEOM_NAME = {vector: name for name, vector in _GEOM.items()}
 _GEOM_ZH = {
-    "forward": "前",
-    "rearward": "后",
-    "right": "右",
-    "left": "左",
-    "up": "上",
-    "down": "下",
+    "forward": "forward",
+    "rearward": "rearward",
+    "right": "right",
+    "left": "left",
+    "up": "up",
+    "down": "down",
 }
 _OPPOSITE_GEOM = {
     "forward": "rearward",
@@ -80,9 +80,9 @@ POSITIVE_ROTATION = "positive_rotation"
 NEGATIVE_ROTATION = "negative_rotation"
 UNDEFINED_ROTATION = "undefined"
 _SENSE_ZH = {
-    POSITIVE_ROTATION: "正",
-    NEGATIVE_ROTATION: "负",
-    UNDEFINED_ROTATION: "未定",
+    POSITIVE_ROTATION: "positive",
+    NEGATIVE_ROTATION: "negative",
+    UNDEFINED_ROTATION: "undefined",
 }
 RIGHT_HANDED = "right"
 LEFT_HANDED = "left"
@@ -247,26 +247,26 @@ def _angle_spec(name: str, symbol: str, title: str, group: str, pair: tuple[str,
 ANGLE_SPEC = {
     item.name: item
     for item in (
-        _angle_spec(THETA, "θ", "俯仰角", "attitude", ("ground", "body"), "lateral", "active", "body_forward", "ground_up", "机头向地面上方偏"),
-        _angle_spec(PSI, "ψ", "偏航角", "attitude", ("ground", "body"), "normal", "active", "body_forward", "ground_right", "机头向地面右方偏"),
-        _angle_spec(PHI, "Φ", "滚转角", "attitude", ("ground", "body"), "axial", "roll", "body_right", "body_down", "飞行器向机体右方滚转"),
-        _angle_spec(MU, "μ", "航迹倾斜角", "track", ("ground", "track"), "lateral", "active", "track_forward", "ground_up", "空速向地面上方偏"),
-        _angle_spec(VARPHI, "φ", "航迹方位角", "track", ("ground", "track"), "normal", "active", "airflow_forward", _embed_direction("ground", "right"), "空速投影在 xg 右侧"),
-        _angle_spec(GAMMA, "γ", "航迹滚转角", "track", ("track", "airflow"), "axial", "roll", "body_right", "body_down", "飞行器向机体右方滚转"),
-        _angle_spec(ALPHA, "α", "迎角", "airflow", ("body", "stability"), "lateral", "active", "body_forward", "body_down", "空速投影处于机体轴向下方"),
-        _angle_spec(BETA, "β", "侧滑角", "airflow", ("stability", "airflow"), "normal", "active", "body_forward", "body_right", "空速处于飞行器右方"),
+        _angle_spec(THETA, "θ", "pitch", "attitude", ("ground", "body"), "lateral", "active", "body_forward", "ground_up", "the nose pitches above the ground"),
+        _angle_spec(PSI, "ψ", "yaw", "attitude", ("ground", "body"), "normal", "active", "body_forward", "ground_right", "the nose yaws to the right of the ground"),
+        _angle_spec(PHI, "Φ", "roll", "attitude", ("ground", "body"), "axial", "roll", "body_right", "body_down", "the aircraft rolls to its right"),
+        _angle_spec(MU, "μ", "flight-path inclination", "track", ("ground", "track"), "lateral", "active", "track_forward", "ground_up", "the airspeed pitches above the ground"),
+        _angle_spec(VARPHI, "φ", "track azimuth", "track", ("ground", "track"), "normal", "active", "airflow_forward", _embed_direction("ground", "right"), "the airspeed projection lies to the right of xg"),
+        _angle_spec(GAMMA, "γ", "flight-path bank", "track", ("track", "airflow"), "axial", "roll", "body_right", "body_down", "the aircraft rolls to its right"),
+        _angle_spec(ALPHA, "α", "angle of attack", "airflow", ("body", "stability"), "lateral", "active", "body_forward", "body_down", "the airspeed projection lies below the airframe axis"),
+        _angle_spec(BETA, "β", "sideslip", "airflow", ("stability", "airflow"), "normal", "active", "body_forward", "body_right", "the airspeed lies to the right of the aircraft"),
     )
 }
-# 几何定义。正负仍由样本符号决定，不改旋转方向。
+# Geometric definitions. Sign still comes from the sample and does not change the rotation direction.
 _ATTITUDE_CLAUSE = {
-    THETA: "机体轴向正方向与地面的夹角，机体抬头时（机头向地面的上方偏时）",
-    PSI: "机体轴向正方向在地面上的投影与地面坐标轴 Xg 间的夹角。机头向地面的右偏",
-    PHI: "机体的法向正方向与通过机体轴向的铅垂面的夹角，飞行器向机体的右侧滚转时",
-    ALPHA: "空速在飞行器对称面上的投影与机体系轴向正方向的夹角。投影处于机体轴向下方时",
-    BETA: "空速向量与飞行器对称面的夹角，空速在飞行器右侧",
-    MU: "空速向量（气流系轴向正方向）与地面的夹角，飞行器向地面上方飞时",
-    VARPHI: "空速向量（气流系轴向正方向）在地面上的投影与地面坐标轴 Xg 间的夹角。在 Xg 的右侧",
-    GAMMA: "气流系的法向正方向与通过空速的铅垂面的夹角，飞行器向机体的右侧滚转时",
+    THETA: "the angle between the positive airframe axis and the ground. When the nose pitches above the ground, the angle is",
+    PSI: "the angle between the ground projection of the positive airframe axis and the ground axis Xg. When the nose yaws to the right of the ground, the angle is",
+    PHI: "the angle between the positive airframe normal and the vertical plane through the airframe axis. When the aircraft rolls to its right, the angle is",
+    ALPHA: "the angle between the projection of the airspeed onto the aircraft plane of symmetry and the positive airframe axis. When that projection lies below the airframe axis, the angle is",
+    BETA: "the angle between the airspeed vector and the aircraft plane of symmetry. When the airspeed lies to the right of the aircraft, the angle is",
+    MU: "the angle between the airspeed vector (the positive airflow axis) and the ground. When the aircraft climbs, the angle is",
+    VARPHI: "the angle between the ground projection of the airspeed vector (the positive airflow axis) and the ground axis Xg. When the projection lies to the right of Xg, the angle is",
+    GAMMA: "the angle between the positive airflow normal and the vertical plane through the airspeed. When the aircraft rolls to its right, the angle is",
 }
 GROUP_ORDER = {
     "attitude": ATTITUDE_ORDER,
@@ -296,11 +296,11 @@ DIRECTED_TRANSFORMS = (
     ("airflow", "body", AIRFLOW_ORDER, True),
 )
 FRAME_ZH = {
-    "ground": "地面",
-    "body": "机体",
-    "airflow": "气流",
-    "stability": "稳定",
-    "track": "航迹",
+    "ground": "ground",
+    "body": "body",
+    "airflow": "airflow",
+    "stability": "stability",
+    "track": "track",
 }
 
 
@@ -452,40 +452,40 @@ class FlightFrameModel:
 
     def describe(self) -> str:
         lines = [
-            "嵌入：前 × 几何右 = 下。只用于叉乘，不是任一坐标系。",
-            "侧向正方向一律取法向 × 轴向。五个系的法向都指向下方，所以右方都指向几何右方。",
-            "欧拉顺序固定，不是定义。姿态：偏航、俯仰、滚转。航迹：方位、倾斜、滚转。气流：侧滑、迎角。",
-            "转向按绕坐标轴指向的右手定则。左手系不改这个转向名，被动矩阵另把转角改号。",
-            "迎角、侧滑、姿态角和航迹角转动定义里写出的那根向量。",
-            "绑定按有向转换分开。地面到机体、地面到航迹、航迹到气流、机体到气流是定义正向；反向转换把转向取反。",
-            "每个角先绑到绝对方向轴，再由该坐标系的坐标轴与绝对方向的对应关系推断具体坐标轴。",
-            "有向转换只看起点和终点：每个转换用它的起点系的绝对方向，逆变换的起点就是正向的终点，只把转向取反，不参考中间坐标系。",
-            "地面到气流包含全部航迹角。地面到航迹不含航迹滚转。气流与航迹之间只有航迹滚转。",
-            "机体与气流之间绑定侧滑角和迎角。",
+            "Embedding: forward x geometric right = down. Used only for cross products, not as a coordinate frame.",
+            "The positive lateral direction is always normal x axial. All five normals point down, so every rightward direction is geometric right.",
+            "Euler order is fixed, not a definition. Attitude: yaw, pitch, roll. Track: azimuth, inclination, bank. Airflow: sideslip, angle of attack.",
+            "Sense follows the right-hand rule about the coordinate axis's pointing direction. A left-handed frame does not rename that sense; the passive matrix flips the angle sign instead.",
+            "Angle of attack, sideslip, attitude angles, and flight-path angles rotate the vector named in the definition.",
+            "Bindings are split by directed transform. Ground to body, ground to track, track to airflow, and body to airflow are the forward definitions; the reverse transform flips the sense.",
+            "Each angle is first bound to an absolute-direction axis, then the concrete coordinate axis is inferred from how that frame's axes correspond to the absolute directions.",
+            "A directed transform looks only at its origin and destination. Each transform uses the absolute directions of its origin frame. The inverse starts where the forward transform ends and only flips the sense. It does not consult intermediate frames.",
+            "Ground to airflow includes every flight-path angle. Ground to track omits flight-path bank. Between airflow and track there is only flight-path bank.",
+            "Sideslip and angle of attack are bound between the body and the airflow.",
             "",
         ]
         for owner in OWNERS:
             geometry = self.geometry[owner]
             lines.append(
-                f"{owner} 绝对轴：轴向 {geometry.positive['axial']}，"
-                f"法向 {geometry.positive['normal']}，"
-                f"侧向 {geometry.positive['lateral']}"
-                f"（嵌入后指向几何{_GEOM_ZH[geometry.lateral_embeds]}方）。"
+                f"{owner} absolute axes: axial {geometry.positive['axial']}, "
+                f"normal {geometry.positive['normal']}, "
+                f"lateral {geometry.positive['lateral']}"
+                f" (after embedding this points geometrically {_GEOM_ZH[geometry.lateral_embeds]})."
             )
         lines.append("")
         for owner in OWNERS:
             _append_frame(lines, self.frames[owner], self.chirality[owner], COORDINATE_AXES[owner])
             lines.append("")
-        lines.append("欧拉角定义")
+        lines.append("Euler-angle definitions")
         for group, names in GROUP_ORDER.items():
             lines.append(f"  [{group}]")
             for name in names:
                 _append_angle(lines, self.angles[name], self.frames)
         lines.append("")
-        lines.append("有向转换")
+        lines.append("Directed transforms")
         for origin, destination, _angles, inverse in DIRECTED_TRANSFORMS:
-            direction = "逆向" if inverse else "正向"
-            lines.append(f"  {FRAME_ZH[origin]} → {FRAME_ZH[destination]}（{direction}）")
+            direction = "inverse" if inverse else "forward"
+            lines.append(f"  {FRAME_ZH[origin]} -> {FRAME_ZH[destination]} ({direction})")
             for item in self.transforms.get((origin, destination), ()):
                 _append_transform(lines, item)
         return "\n".join(lines)
@@ -629,11 +629,11 @@ class FlightFrameModel:
             return
         record.associated_axis = axis.name
         if not sign:
-            record.definition = "坐标轴已绑定，正方向未声明。"
+            record.definition = "The coordinate axis is bound, and its positive sense is not declared."
             return
         toward = spec.toward if sign == POSITIVE else geometry_opposite(spec.toward)
         record.positive_toward = toward
-        sense = "为正" if sign == POSITIVE else "为负"
+        sense = " positive" if sign == POSITIVE else " negative"
         clause = _ATTITUDE_CLAUSE.get(name)
         record.definition = f"{clause}{sense}" if clause else f"{spec.motion}{sense}"
         record.rotation_when_positive = self._sense_in_frame(name, axis, start)
@@ -728,42 +728,42 @@ def _rotation_sense(axis: tuple[int, int, int], moving: tuple[int, int, int], to
 
 def _append_frame(lines: list[str], store: dict[str, AxisRecord], chirality: str, names: tuple[str, ...]) -> None:
     owner = next(iter(store.values())).owner
-    lines.append(f"{owner} 坐标轴（{chirality or '未声明'}）")
+    lines.append(f"{owner} coordinate axes ({chirality or 'undeclared'})")
     for name in names:
         axis = store[name]
         if not axis.points_to:
-            lines.append(f"  {name}：未建立")
+            lines.append(f"  {name}: not established")
             continue
-        lines.append(f"  {name}：沿 {axis.absolute_axis}，指向 {axis.points_to}（{axis.source}）")
+        lines.append(f"  {name}: along {axis.absolute_axis}, pointing {axis.points_to} ({axis.source})")
         for item in axis.transform_bindings:
             spec = ANGLE_SPEC[item.angle]
             lines.append(
-                f"    {FRAME_ZH[item.origin]}→{FRAME_ZH[item.destination]}："
+                f"    {FRAME_ZH[item.origin]} -> {FRAME_ZH[item.destination]}: "
                 f"{spec.symbol} {_SENSE_ZH[item.rotation_when_positive]}"
             )
 
 
 def _append_angle(lines: list[str], record: AngleRecord, frames: dict[str, dict[str, AxisRecord]]) -> None:
-    lines.append(f"  {record.symbol} {record.title}：{record.definition or '未声明'}")
+    lines.append(f"  {record.symbol} {record.title}: {record.definition or 'undeclared'}")
     if not record.associated_axis:
-        lines.append(f"    所在坐标系 {record.frame} 尚未建立，不能绑定 {record.absolute_axis}")
+        lines.append(f"    frame {record.frame} is not established, so {record.absolute_axis} cannot be bound")
         return
     axis = frames[record.frame][record.associated_axis]
     lines.append(
-        f"    绑定 {record.frame} 的 {record.associated_axis}，"
-        f"沿 {axis.absolute_axis}，指向 {axis.points_to}"
+        f"    bound to {record.associated_axis} of {record.frame}, "
+        f"along {axis.absolute_axis}, pointing {axis.points_to}"
     )
-    lines.append(f"    定义正向绕该坐标轴：{_SENSE_ZH[record.rotation_when_positive]}")
+    lines.append(f"    forward sense about that axis: {_SENSE_ZH[record.rotation_when_positive]}")
 
 
 def _append_transform(lines: list[str], item: TransformBinding) -> None:
     spec = ANGLE_SPEC[item.angle]
     if not item.axis:
-        lines.append(f"    {spec.symbol} {spec.title}：绝对方向 {item.absolute_axis} 尚未建立")
+        lines.append(f"    {spec.symbol} {spec.title}: absolute direction {item.absolute_axis} is not established")
         return
     lines.append(
-        f"    {spec.symbol} {spec.title}：绝对方向 {item.absolute_axis} → "
-        f"{FRAME_ZH[item.frame]}的 {item.axis}，正角转向 {_SENSE_ZH[item.rotation_when_positive]}"
+        f"    {spec.symbol} {spec.title}: absolute direction {item.absolute_axis} -> "
+        f"{item.axis} of {FRAME_ZH[item.frame]}, positive-angle sense {_SENSE_ZH[item.rotation_when_positive]}"
     )
 
 

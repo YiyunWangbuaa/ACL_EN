@@ -11,15 +11,15 @@ from domains.robotics.pipeline_scope import FORWARD_IDS, INVERSE_IDS, NODE_IDS, 
 
 REVIEW = DOMAINS["robotics"]["kinematics"]["review"]
 _SLOT = re.compile(
-    r"\{ID:(\d+), 选项:(.*?), 输出格式:(.*?), 标签:(.*?), 答案:(.*?)\}"
+    r"\{ID:(\d+), options:(.*?), format:(.*?), label:(.*?), answer:(.*?)\}"
 )
-_FORWARD_MARK = "# 正运动学样本"
-_INVERSE_MARK = "# 逆运动学样本"
+_FORWARD_MARK = "# Forward kinematics"
+_INVERSE_MARK = "# Inverse kinematics"
 
 
 def _parse_options(raw: str) -> list[str]:
     text = raw.strip()
-    if text == "无":
+    if text == "none":
         return []
     found = []
     for part in text.split("；"):
@@ -47,7 +47,7 @@ def _section_slots(body: str, prefix: str, expected: tuple[str, ...]) -> dict[st
                 letter = raw_answer.upper()
                 index = ord(letter) - ord("A")
                 if index < 0 or index >= len(options):
-                    raise RuntimeError(f"{node} 选项字母越界：{raw_answer}")
+                    raise RuntimeError(f"{node} option letter out of range: {raw_answer}")
                 answer_text = options[index]
             else:
                 for index, option in enumerate(options):
@@ -56,7 +56,7 @@ def _section_slots(body: str, prefix: str, expected: tuple[str, ...]) -> dict[st
                         answer_text = option
                         break
                 if not letter:
-                    raise RuntimeError(f"{node} 无法解析选择题答案：{raw_answer!r}")
+                    raise RuntimeError(f"{node} cannot parse the choice answer: {raw_answer!r}")
         found[node] = {
             "id": node,
             "public_id": public,
@@ -70,24 +70,24 @@ def _section_slots(body: str, prefix: str, expected: tuple[str, ...]) -> dict[st
         }
     missing = [node for node in expected if node not in found]
     if missing:
-        raise RuntimeError(f"{prefix} 缺空：{missing}")
+        raise RuntimeError(f"{prefix} missing blanks: {missing}")
     return found
 
 
 @lru_cache(maxsize=1)
 def questions() -> dict[str, dict]:
-    raise RuntimeError("机器人学理论稿已删除，这些题在运动学稿中。")
+    raise RuntimeError("The robotics theory manuscript has been removed. These items are in the kinematics manuscript.")
     path = REVIEW / f"sample_{SAMPLE_ID}.md"
     text = path.read_text(encoding="utf-8")
     if _FORWARD_MARK not in text or _INVERSE_MARK not in text:
-        raise RuntimeError("审阅稿缺少正/逆分节标题")
+        raise RuntimeError("The review manuscript is missing the forward or inverse section heading")
     forward_body = text.split(_FORWARD_MARK, 1)[1].split(_INVERSE_MARK, 1)[0]
     inverse_body = text.split(_INVERSE_MARK, 1)[1]
     found = {}
     found.update(_section_slots(forward_body, "F", FORWARD_IDS))
     found.update(_section_slots(inverse_body, "I", INVERSE_IDS))
     if set(found) != set(NODE_IDS):
-        raise RuntimeError(f"节点集合不完整：少 {set(NODE_IDS) - set(found)}")
+        raise RuntimeError(f"node set is incomplete: missing {set(NODE_IDS) - set(found)}")
     return found
 
 

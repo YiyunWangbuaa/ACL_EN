@@ -26,10 +26,10 @@ RELATION_TYPES = ("direct_answer", "direct_method", "scope_constraint", "downstr
 AUTHORED_RELATIONS = ("direct_answer", "direct_method", "scope_constraint")
 
 PROCESSES = {
-    "wind_to_body": "风轴系到体轴系",
-    "balance_to_body": "天平系到体轴系",
-    "balance_to_wind": "天平系到风轴系",
-    "reference_point": "力矩参考点",
+    "wind_to_body": "wind frame to body-axis frame",
+    "balance_to_body": "balance frame to body-axis frame",
+    "balance_to_wind": "balance frame to wind frame",
+    "reference_point": "moment reference point",
 }
 
 # Closure only. These stay out of authored contract targets.
@@ -39,68 +39,68 @@ _NOT_AUTHORED = frozenset({
 })
 
 _GLOBALS = (
-    ("C_CONV_WIND_TO_BODY", "conv", "风轴到体轴的转换方向", "wind_to_body", ""),
-    ("C_CONV_BALANCE_TO_BODY", "conv", "天平到体轴的转换方向", "balance_to_body", ""),
-    ("C_CONV_BALANCE_TO_WIND", "conv", "天平到风轴的转换方向", "balance_to_wind", ""),
-    ("C_CONV_PASSIVE", "conv", "坐标变换用被动形式", "passive", ""),
-    ("C_CONV_INTRINSIC", "conv", "姿态旋转用动轴内旋", "intrinsic", ""),
-    ("C_CONV_MOVING_FRAME", "conv", "体轴系是动轴", "moving", ""),
-    ("C_AXIS_WIND_X", "axis", "风轴 X 沿风洞轴向指向前方", "tunnel_forward", "tunnel_lateral"),
-    ("C_AXIS_WIND_Y", "axis", "风轴 Y 沿风洞法向指向上方", "tunnel_up", "tunnel_lateral"),
-    ("C_AXIS_WIND_HANDEDNESS", "axis", "风轴系手性", "right_handed", "left_handed"),
-    ("C_AXIS_BODY_X", "axis", "体轴 XTZ 沿机体轴向指向前方", "body_forward", "body_aft"),
-    ("C_AXIS_BODY_Y", "axis", "体轴 YTZ 沿机体法向指向上方", "body_up", "body_down"),
-    ("C_AXIS_BODY_HANDEDNESS", "axis", "体轴系手性", "right_handed", "left_handed"),
-    ("C_AXIS_BALANCE_X", "axis", "天平 XTP 沿天平轴向指向前方", "balance_forward", "balance_aft"),
-    ("C_AXIS_BALANCE_Y", "axis", "天平 YTP 沿天平法向指向上方", "balance_up", "balance_down"),
-    ("C_AXIS_BALANCE_HANDEDNESS", "axis", "天平系手性", "right_handed", "left_handed"),
-    ("C_AXIS_ALPHA", "axis", "机构迎角绕绝对侧向", "absolute_lateral", ""),
-    ("C_AXIS_BETA", "axis", "机构侧滑绕绝对法向", "absolute_normal", ""),
-    ("C_AXIS_GAMMA", "axis", "机构滚转绕绝对轴向", "absolute_forward", ""),
-    ("C_AXIS_GAMMA_TP", "axis", "天平安装角绕天平绝对轴向", "balance_axial", ""),
-    ("C_AXIS_ELASTIC_ALPHA", "axis", "弹性迎角的旋转轴", "balance_lateral", ""),
-    ("C_AXIS_ELASTIC_BETA", "axis", "弹性侧滑的旋转轴", "balance_normal", ""),
-    ("C_AXIS_ELASTIC_GAMMA", "axis", "弹性滚转的旋转轴", "balance_axial", ""),
-    ("C_SIGN_ALPHA_M", "sign", "机构迎角正方向", "airspeed_body_down", "airspeed_body_up"),
-    ("C_SIGN_ALPHA", "sign", "理论迎角正方向", "airspeed_body_down", "airspeed_body_up"),
-    ("C_SIGN_BETA_M", "sign", "机构侧滑正方向", "airspeed_body_right", "airspeed_body_left"),
-    ("C_SIGN_BETA", "sign", "理论侧滑正方向", "airspeed_body_right", "airspeed_body_left"),
-    ("C_SIGN_GAMMA_M", "sign", "机构滚转正方向", "right_wing_down", "right_wing_up"),
-    ("C_SIGN_GAMMA", "sign", "理论滚转正方向", "right_wing_down", "right_wing_up"),
-    ("C_SIGN_GAMMA_TP", "sign", "天平安装角正方向", "right_hand_about_balance_forward", "opposite"),
-    ("C_SIGN_ELASTIC_ALPHA", "sign", "弹性迎角正方向", "balance_up", "balance_down"),
-    ("C_SIGN_ELASTIC_BETA", "sign", "弹性侧滑正方向", "balance_left", "balance_right"),
-    ("C_SIGN_ELASTIC_GAMMA", "sign", "弹性滚转正方向", "clockwise_looking_forward", "counterclockwise"),
-    ("C_SIGN_FLOW_ALPHA", "sign", "气流偏角迎角正方向", "airspeed_body_down", "airspeed_body_up"),
-    ("C_SIGN_FLOW_BETA", "sign", "气流偏角侧滑正方向", "airspeed_body_right", "airspeed_body_left"),
-    ("C_INSTALL_MODEL", "install", "模型安装正装或反装", "upright", "inverted"),
-    ("C_METHOD_EULER_ORDER", "method", "机构角顺序", "alpha_beta_gamma", "beta_alpha_gamma"),
-    ("C_METHOD_PREPOSE_SLOTS", "method", "前置矩阵放在连乘式的 R4、R5", "R4_RP2_R5_RP1", ""),
-    ("C_METHOD_LOAD_PRODUCT_ORDER", "method", "载荷连乘顺序", "R1_RTP_TZ2_R2_RTP_TZ1_R3_roll", ""),
-    ("C_METHOD_WIND_PRODUCT_ORDER", "method", "天平到风轴的连乘顺序", "R1_RP_TP_FD_R2_R_gamma_tp", ""),
-    ("C_METHOD_ROLL_DIFFERENCE", "method", "天平系与机体系的滚转角差", "gamma_m_minus_gamma_tp", ""),
-    ("C_METHOD_ALPHA_INVERSE", "method", "理论迎角的反三角函数", "arctan", ""),
-    ("C_METHOD_BETA_INVERSE", "method", "理论侧滑的反三角函数", "arcsin", ""),
-    ("C_METHOD_BETA_UNIT_DENOMINATOR", "method", "理论侧滑的分母取正的 1", "positive_one", ""),
-    ("C_METHOD_DELTA_ALPHA_TEMPLATE", "method", "弹性迎角增量写成正分子分母的分式", "positive_quotient", ""),
-    ("C_METHOD_DELTA_BETA_TEMPLATE", "method", "弹性侧滑增量写成正分子分母的分式", "positive_quotient", ""),
-    ("C_METHOD_SMALL_ANGLE", "method", "弹性变形用小角度近似", "sin_theta_eq_theta", ""),
-    ("C_METHOD_TORQUE_TEMPLATE", "method", "等效力矩用 C·L_c/L_RT", "coefficient_dot_arm_over_L_RT", ""),
-    ("C_FORCE_AXIS", "force", "力系数对应绝对轴", "CN_normal_CA_axial_CZ_lateral", ""),
-    ("C_MOMENT_AXIS", "force", "力矩系数对应绝对轴", "MN_normal_MA_axial_MZ_lateral", ""),
-    ("C_GEOM_MODEL_LENGTH", "geom", "模型顶点到模型底部 L", "L", ""),
-    ("C_GEOM_SUPPORT_LENGTH", "geom", "模型底部到支杆底部 L_t", "L_t", ""),
-    ("C_GEOM_BALANCE_LENGTH", "geom", "天平校心到支杆底部 L_r", "L_r", ""),
-    ("C_GEOM_ORIGIN", "geom", "体轴系原点在天平校心", "balance_center", ""),
-    ("C_GEOM_ENGINEERING_AXIAL", "geom", "工程轴向从顶点向后量", "rearward_from_nose", ""),
-    ("C_TORQUE_SOURCE", "geom", "力矩等效的起点", "origin", ""),
-    ("C_TORQUE_TARGET", "geom", "力矩等效的终点", "reference_point", ""),
-    ("C_FORCE_APPLICATION", "geom", "产生额外力矩的力的位置", "origin", ""),
-    ("C_TORQUE_EFFECT", "geom", "额外力矩的作用位置", "reference_point", ""),
-    ("C_SCOPE_ALIGNMENT_TARGET", "scope", "对齐矩阵所作用的坐标系", "target_frame", ""),
-    ("C_SCOPE_ALIGNMENT_SOURCE", "scope", "对齐矩阵所对照的坐标系", "source_frame", ""),
-    ("C_SCOPE_ROTATION_FRAME", "scope", "姿态旋转写在中间体轴系", "body_frame", ""),
-    ("C_SCOPE_LEVEL_FRAME", "scope", "平置后只研究平置机体系", "level_body", ""),
+    ("C_CONV_WIND_TO_BODY", "conv", "conversion direction from the wind frame to the body-axis frame", "wind_to_body", ""),
+    ("C_CONV_BALANCE_TO_BODY", "conv", "conversion direction from the balance frame to the body-axis frame", "balance_to_body", ""),
+    ("C_CONV_BALANCE_TO_WIND", "conv", "conversion direction from the balance frame to the wind frame", "balance_to_wind", ""),
+    ("C_CONV_PASSIVE", "conv", "coordinate transforms use the passive form", "passive", ""),
+    ("C_CONV_INTRINSIC", "conv", "attitude rotations use an intrinsic moving-axis sequence", "intrinsic", ""),
+    ("C_CONV_MOVING_FRAME", "conv", "the body-axis frame is moving axes", "moving", ""),
+    ("C_AXIS_WIND_X", "axis", "wind-frame X points forward along the tunnel axial axis", "tunnel_forward", "tunnel_lateral"),
+    ("C_AXIS_WIND_Y", "axis", "wind-frame Y points upward along the tunnel normal", "tunnel_up", "tunnel_lateral"),
+    ("C_AXIS_WIND_HANDEDNESS", "axis", "handedness of the wind frame", "right_handed", "left_handed"),
+    ("C_AXIS_BODY_X", "axis", "body-axis XTZ points forward along the airframe axial axis", "body_forward", "body_aft"),
+    ("C_AXIS_BODY_Y", "axis", "body-axis YTZ points upward along the airframe normal", "body_up", "body_down"),
+    ("C_AXIS_BODY_HANDEDNESS", "axis", "handedness of the body-axis frame", "right_handed", "left_handed"),
+    ("C_AXIS_BALANCE_X", "axis", "balance XTP points forward along the balance axial axis", "balance_forward", "balance_aft"),
+    ("C_AXIS_BALANCE_Y", "axis", "balance YTP points upward along the balance normal", "balance_up", "balance_down"),
+    ("C_AXIS_BALANCE_HANDEDNESS", "axis", "handedness of the balance frame", "right_handed", "left_handed"),
+    ("C_AXIS_ALPHA", "axis", "mechanism angle of attack about the absolute lateral axis", "absolute_lateral", ""),
+    ("C_AXIS_BETA", "axis", "mechanism sideslip about the absolute normal axis", "absolute_normal", ""),
+    ("C_AXIS_GAMMA", "axis", "mechanism roll about the absolute axial axis", "absolute_forward", ""),
+    ("C_AXIS_GAMMA_TP", "axis", "balance installation angle about the absolute balance axis", "balance_axial", ""),
+    ("C_AXIS_ELASTIC_ALPHA", "axis", "rotation axis of the elastic angle of attack", "balance_lateral", ""),
+    ("C_AXIS_ELASTIC_BETA", "axis", "rotation axis of the elastic sideslip", "balance_normal", ""),
+    ("C_AXIS_ELASTIC_GAMMA", "axis", "rotation axis of the elastic roll", "balance_axial", ""),
+    ("C_SIGN_ALPHA_M", "sign", "positive direction of the mechanism angle of attack", "airspeed_body_down", "airspeed_body_up"),
+    ("C_SIGN_ALPHA", "sign", "positive direction of the theoretical angle of attack", "airspeed_body_down", "airspeed_body_up"),
+    ("C_SIGN_BETA_M", "sign", "positive direction of the mechanism sideslip", "airspeed_body_right", "airspeed_body_left"),
+    ("C_SIGN_BETA", "sign", "positive direction of the theoretical sideslip", "airspeed_body_right", "airspeed_body_left"),
+    ("C_SIGN_GAMMA_M", "sign", "positive direction of the mechanism roll", "right_wing_down", "right_wing_up"),
+    ("C_SIGN_GAMMA", "sign", "positive direction of the theoretical roll", "right_wing_down", "right_wing_up"),
+    ("C_SIGN_GAMMA_TP", "sign", "positive direction of the balance installation angle", "right_hand_about_balance_forward", "opposite"),
+    ("C_SIGN_ELASTIC_ALPHA", "sign", "positive direction of the elastic angle of attack", "balance_up", "balance_down"),
+    ("C_SIGN_ELASTIC_BETA", "sign", "positive direction of the elastic sideslip", "balance_left", "balance_right"),
+    ("C_SIGN_ELASTIC_GAMMA", "sign", "positive direction of the elastic roll", "clockwise_looking_forward", "counterclockwise"),
+    ("C_SIGN_FLOW_ALPHA", "sign", "positive direction of the flow-offset angle of attack", "airspeed_body_down", "airspeed_body_up"),
+    ("C_SIGN_FLOW_BETA", "sign", "positive direction of the flow-offset sideslip", "airspeed_body_right", "airspeed_body_left"),
+    ("C_INSTALL_MODEL", "install", "upright or inverted model installation", "upright", "inverted"),
+    ("C_METHOD_EULER_ORDER", "method", "order of the mechanism angles", "alpha_beta_gamma", "beta_alpha_gamma"),
+    ("C_METHOD_PREPOSE_SLOTS", "method", "pre-matrices occupy R4 and R5 in the product", "R4_RP2_R5_RP1", ""),
+    ("C_METHOD_LOAD_PRODUCT_ORDER", "method", "order of the load product", "R1_RTP_TZ2_R2_RTP_TZ1_R3_roll", ""),
+    ("C_METHOD_WIND_PRODUCT_ORDER", "method", "order of the product from the balance frame to the wind frame", "R1_RP_TP_FD_R2_R_gamma_tp", ""),
+    ("C_METHOD_ROLL_DIFFERENCE", "method", "roll difference between the balance frame and the airframe", "gamma_m_minus_gamma_tp", ""),
+    ("C_METHOD_ALPHA_INVERSE", "method", "inverse function of the theoretical angle of attack", "arctan", ""),
+    ("C_METHOD_BETA_INVERSE", "method", "inverse function of the theoretical sideslip", "arcsin", ""),
+    ("C_METHOD_BETA_UNIT_DENOMINATOR", "method", "the theoretical sideslip denominator is positive 1", "positive_one", ""),
+    ("C_METHOD_DELTA_ALPHA_TEMPLATE", "method", "the elastic angle of attack increment is a quotient with a positive numerator and denominator", "positive_quotient", ""),
+    ("C_METHOD_DELTA_BETA_TEMPLATE", "method", "the elastic sideslip increment is a quotient with a positive numerator and denominator", "positive_quotient", ""),
+    ("C_METHOD_SMALL_ANGLE", "method", "elastic deformation uses the small-angle approximation", "sin_theta_eq_theta", ""),
+    ("C_METHOD_TORQUE_TEMPLATE", "method", "equivalent moments use C·L_c/L_RT", "coefficient_dot_arm_over_L_RT", ""),
+    ("C_FORCE_AXIS", "force", "force coefficients correspond to absolute axes", "CN_normal_CA_axial_CZ_lateral", ""),
+    ("C_MOMENT_AXIS", "force", "moment coefficients correspond to absolute axes", "MN_normal_MA_axial_MZ_lateral", ""),
+    ("C_GEOM_MODEL_LENGTH", "geom", "L from the model nose to the model base", "L", ""),
+    ("C_GEOM_SUPPORT_LENGTH", "geom", "L_t from the model base to the bottom of the sting", "L_t", ""),
+    ("C_GEOM_BALANCE_LENGTH", "geom", "L_r from the balance center to the bottom of the sting", "L_r", ""),
+    ("C_GEOM_ORIGIN", "geom", "the body-axis origin is at the balance center", "balance_center", ""),
+    ("C_GEOM_ENGINEERING_AXIAL", "geom", "the engineering axial component is measured rearward from the nose", "rearward_from_nose", ""),
+    ("C_TORQUE_SOURCE", "geom", "start of the moment transfer", "origin", ""),
+    ("C_TORQUE_TARGET", "geom", "end of the moment transfer", "reference_point", ""),
+    ("C_FORCE_APPLICATION", "geom", "location of the force that produces the extra moment", "origin", ""),
+    ("C_TORQUE_EFFECT", "geom", "location where the extra moment acts", "reference_point", ""),
+    ("C_SCOPE_ALIGNMENT_TARGET", "scope", "frame the alignment matrix acts on", "target_frame", ""),
+    ("C_SCOPE_ALIGNMENT_SOURCE", "scope", "frame the alignment matrix is compared with", "source_frame", ""),
+    ("C_SCOPE_ROTATION_FRAME", "scope", "attitude rotations are written in the intermediate body-axis frame", "body_frame", ""),
+    ("C_SCOPE_LEVEL_FRAME", "scope", "after the level pose only the level airframe is studied", "level_body", ""),
 )
 
 _GLOBAL = {item[0]: item for item in _GLOBALS}
@@ -219,12 +219,12 @@ _FACTORS = (
     _factor(
         "F_WIND_Z", _W, (("C_AXIS_WIND_HANDEDNESS", ""), ("C_AXIS_WIND_X", ""), ("C_AXIS_WIND_Y", "")),
         ("4",), "direct_answer", ("axis_direction",), "axis_inference", "wind_axes",
-        "侧向轴由风轴手性和已声明的 X、Y 推断。",
+        "The lateral axis is inferred from the wind-frame handedness and the declared X and Y.",
     ),
     _factor(
         "F_BODY_Z", _W, (("C_AXIS_BODY_HANDEDNESS", ""), ("C_AXIS_BODY_X", ""), ("C_AXIS_BODY_Y", "")),
         ("7",), "direct_answer", ("axis_direction",), "axis_inference", "body_axes",
-        "ZTZ 由体轴手性和已声明的 X、Y 推断，不是单独改写的原子。",
+        "ZTZ is inferred from the body-axis handedness and the declared X and Y. It is not an atom rewritten on its own.",
     ),
     _factor(
         "F_RP1", _W,
@@ -233,7 +233,7 @@ _FACTORS = (
             ("C_AXIS_BODY_X", ""), ("C_AXIS_BODY_Y", ""), ("C_AXIS_BODY_HANDEDNESS", ""),
         ),
         ("8",), "direct_answer", ("diagonal_pattern", "off_diagonal_sign"), "matrix", "rp1",
-        "轴声明到对齐矩阵的第一次应用。正装标准下可以是单位阵，单位阵仍是这些声明的结果。",
+        "The first use of the axis declaration in the alignment matrix. Under the upright standard it can be the identity, and the identity is still the result of these declarations.",
     ),
     _factor(
         "F_RP2", _W,
@@ -272,7 +272,7 @@ _FACTORS = (
             ("C_CONV_PASSIVE", ""), ("C_CONV_INTRINSIC", ""),
         ),
         ("26",), "direct_answer", ("diagonal_pattern", "off_diagonal_sign"), "matrix", "alpha",
-        "被动和内旋规定矩阵写成哪种形式。当前生成器不单独扰动它们来改单轴元素；元素变化来自手性、转轴和正方向。",
+        "Passive form and intrinsic rotation decide how the matrix is written. The current generator does not perturb them alone to change a single-axis element; element changes come from handedness, the rotation axis, and the positive direction.",
     ),
     _factor(
         "F_BETA_M_DIRECTION", _W, (("C_INSTALL_MODEL", "beta"), ("C_SIGN_BETA_M", "")),
@@ -303,7 +303,7 @@ _FACTORS = (
             ("C_CONV_PASSIVE", ""), ("C_CONV_INTRINSIC", ""),
         ),
         ("34",), "direct_answer", ("diagonal_pattern", "off_diagonal_sign"), "matrix", "beta",
-        "被动和内旋的说明与 F_ALPHA_MATRIX 相同。",
+        "The note on passive form and intrinsic rotation is the same as for F_ALPHA_MATRIX.",
     ),
     _factor(
         "F_GAMMA_M_WING", _W, (("C_SIGN_GAMMA_M", ""), ("C_AXIS_BODY_X", "")),
@@ -333,14 +333,14 @@ _FACTORS = (
         ),
         ("43",), "direct_answer", ("diagonal_pattern", "upper_off_diagonal_sign", "lower_off_diagonal_sign"),
         "matrix", "gamma",
-        "标准右手、绕 X 的被动矩阵是 [[1,0,0],[0,cos,sin],[0,-sin,cos]]。左手性翻转 sin。内旋不单独改这些元素，它进入连乘因子。",
+        "The standard right-handed passive matrix about X is [[1,0,0],[0,cos,sin],[0,-sin,cos]]. Left-handedness flips sin. Intrinsic rotation does not change these elements by itself; it enters the product factors.",
         {"43": {"axis": "X", "upper_off_diagonal_sign": "+", "lower_off_diagonal_sign": "-"}},
     ),
     _factor(
         "F_ATTITUDE_PRODUCT", _W,
         (("C_METHOD_EULER_ORDER", ""), ("C_CONV_PASSIVE", ""), ("C_CONV_INTRINSIC", "")),
         ("47", "48", "49"), "direct_method", ("matrix_order",), "product_order", "product",
-        "只决定 R1、R2、R3。R4、R5 不读欧拉顺序。",
+        "It decides only R1, R2, and R3. R4 and R5 do not read the Euler order.",
     ),
     _factor(
         "F_PREPOSE_PRODUCT", _W,
@@ -371,7 +371,7 @@ _FACTORS = (
             ("C_AXIS_GAMMA_TP", ""), ("C_AXIS_BALANCE_HANDEDNESS", ""), ("C_CONV_PASSIVE", ""),
         ),
         ("88",), "direct_answer", ("diagonal_pattern", "off_diagonal_sign"), "matrix", "roll",
-        "局部安装角矩阵。总矩阵 ID104 另有连乘因子。",
+        "The local installation-angle matrix. The total matrix ID104 has its own product factors.",
     ),
     _factor(
         "F_BALANCE_Z", _B, (("C_AXIS_BALANCE_HANDEDNESS", ""), ("C_AXIS_BALANCE_X", ""), ("C_AXIS_BALANCE_Y", "")),
@@ -380,7 +380,7 @@ _FACTORS = (
     _factor(
         "F_BODY_Z_LOAD", _B, (("C_AXIS_BODY_HANDEDNESS", ""), ("C_AXIS_BODY_X", ""), ("C_AXIS_BODY_Y", "")),
         ("94",), "direct_answer", ("axis_direction",), "axis_inference", "body_axes",
-        "体轴指向在这个子过程里重新读取，不依赖风轴系到体轴系的 ID7。",
+        "The body-axis directions are read again in this subprocess and do not depend on ID7 of wind frame to body-axis frame.",
     ),
     _factor(
         "F_RTP_TZ1", _B,
@@ -398,12 +398,12 @@ _FACTORS = (
     _factor(
         "F_LOAD_PRODUCT", _B, (("C_METHOD_LOAD_PRODUCT_ORDER", ""), ("C_CONV_PASSIVE", "")),
         ("98", "99", "100"), "direct_method", ("matrix_order",), "product_order", "load_product",
-        "标准顺序是 R1=RTP_TZ2，R2=RTP_TZ1，R3=安装滚转。",
+        "The standard order is R1=RTP_TZ2, R2=RTP_TZ1, R3=the installation roll.",
     ),
     _factor(
         "F_LOAD_TOTAL", _B, (("C_METHOD_LOAD_PRODUCT_ORDER", ""), ("C_CONV_PASSIVE", "")),
         ("104",), "direct_answer", ("matrix_product",), "matrix", "load_total",
-        "组合执行点。分矩阵是否正确看 ID88、ID95、ID97，不把那些契约再接到 ID104。",
+        "The combined execution point. Whether the component matrices are right is read at ID88, ID95, and ID97; those contracts are not attached again at ID104.",
     ),
     _factor(
         "F_LOAD_BINDING", _B, (("C_FORCE_AXIS", ""), ("C_MOMENT_AXIS", "")),
@@ -458,7 +458,7 @@ _FACTORS = (
     _factor(
         "F_WIND_PRODUCT", _D, (("C_METHOD_WIND_PRODUCT_ORDER", ""), ("C_CONV_PASSIVE", "")),
         ("133", "134"), "direct_method", ("matrix_order",), "product_order", "wind_product",
-        "标准顺序是 R1=RP_TP_FD，R2=R_γ_tp。",
+        "The standard order is R1=RP_TP_FD, R2=R_γ_tp.",
     ),
     _factor(
         "F_BALANCE_FORWARD", _D,
@@ -484,7 +484,7 @@ _FACTORS = (
             ("C_AXIS_BALANCE_X", "axes"), ("C_AXIS_BALANCE_Y", "axes"), ("C_AXIS_BALANCE_HANDEDNESS", "axes"),
         ),
         ("145",), "direct_answer", ("x", "y_alpha", "z_beta"), "vector", "elastic_vector",
-        "标准声明下是 [1, α_e, -β_e]。后面的风轴分量和增量式由答案边继续走。",
+        "Under the standard declaration it is [1, α_e, -β_e]. Later wind-frame components and increment formulas continue along answer edges.",
         {"145": {"x": "1", "y_alpha": "+α_e", "z_beta": "-β_e"}},
     ),
     _factor(
@@ -496,7 +496,7 @@ _FACTORS = (
         ("146", "147", "148"), "direct_answer",
         ("alpha_coefficient_sign", "beta_coefficient_sign", "sin_gamma_tp_sign", "cos_gamma_tp_sign"),
         "formula", "elastic_wind",
-        "这三空是风轴分量。弹性角展开式是 ID176、ID177，不并进这三空。",
+        "These three blanks are wind-frame components. The elastic-angle expansions are ID176 and ID177 and are not folded into these three blanks.",
         {"146": {"expression": "1"}},
     ),
     _factor(
@@ -543,7 +543,7 @@ _FACTORS = (
         "F_DELTA_ALPHA_FORMULA", _D,
         (("C_METHOD_DELTA_ALPHA_TEMPLATE", ""), ("C_SIGN_ALPHA", ""), ("C_AXIS_WIND_X", "axes"), ("C_AXIS_WIND_Y", "axes")),
         ("174",), "direct_answer", ("wind_component_quotient",), "formula", "delta_alpha",
-        "只写风轴分量分式，不写弹性角。",
+        "Write only the wind-frame quotient, not an elastic angle.",
         {"174": {"expression": "(YFD)/(XFD)"}},
     ),
     _factor(
@@ -557,7 +557,7 @@ _FACTORS = (
         (("C_SIGN_ELASTIC_ALPHA", ""), ("C_SIGN_ELASTIC_BETA", ""), ("C_SIGN_GAMMA_TP", ""), ("C_CONV_PASSIVE", "")),
         ("176",), "direct_answer", ("alpha_coefficient_sign", "beta_coefficient_sign", "sin_sign", "cos_sign"),
         "formula", "delta_alpha",
-        "把风轴分量再展开成弹性角。和 ID174 不是同一个应用。",
+        "Expand the wind-frame components into elastic angles. This is not the same application as ID174.",
         {"176": {"expression": "α_e*cos(γ_tp) - β_e*sin(γ_tp)"}},
     ),
     _factor(
@@ -590,7 +590,7 @@ _FACTORS = (
         ),
         ("184",), "direct_answer", ("axial_component", "normal_component", "lateral_component"),
         "vector", "coordinate",
-        "标准声明、XTZ 指向前方时，轴向分量是 Xr - Xg。",
+        "Under the standard declaration, when XTZ points forward, the axial component is Xr - Xg.",
         {"184": {"expression": "[Xr - Xg, Yg, Zg]", "axial_component": "Xr - Xg"}},
     ),
     _factor(
@@ -601,7 +601,7 @@ _FACTORS = (
         ),
         ("189", "190", "191", "192", "193", "194"), "direct_answer", ("outer_sign",),
         "sign", "torque_sign",
-        "只负责外层正负。力系数绑定是另一个因子。",
+        "It is responsible only for the outer sign. The force-coefficient binding is another factor.",
     ),
     _factor(
         "F_TORQUE_BINDING", _R, (("C_FORCE_AXIS", ""), ("C_MOMENT_AXIS", "")),
@@ -616,7 +616,7 @@ _FACTORS = (
         ),
         ("195", "196", "197", "198", "199", "200"), "direct_answer",
         ("coefficient", "lever_arm", "outer_sign"), "formula", "torque_formula",
-        "标准声明下的六项。换手性或轴向指向后，系数、力臂和符号都会变，不能把这一列当成所有定义的金标。",
+        "The six terms under the standard declaration. After a change of handedness or axial direction, the coefficient, the arm, and the sign all change, so this column is not the gold for every definition.",
         {
             "195": {"name": "MCN_CA", "coefficient": "CN", "lever_arm": "Zg", "outer_sign": "+"},
             "196": {"name": "MCZ_CA", "coefficient": "CZ", "lever_arm": "Yg", "outer_sign": "-"},
@@ -642,19 +642,19 @@ def _ids(values) -> list[str]:
 def _instance_process(instance_id: str) -> str:
     _global_id, process, _slot = _split_instance(instance_id)
     if process not in PROCESSES:
-        raise RuntimeError(f"{instance_id} 的子过程无法识别。")
+        raise RuntimeError(f"The subprocess of {instance_id} is not recognized.")
     return process
 
 
 def _parent_instance(process: str, global_id: str, slot: str) -> str:
     if global_id not in _GLOBAL:
-        raise RuntimeError(f"未知契约原子 {global_id}。")
+        raise RuntimeError(f"Unknown contract atom {global_id}.")
     return _iid(global_id, process, slot)
 
 
 def _rule_id(factor_id: str) -> str:
     if not factor_id.startswith("F_"):
-        raise RuntimeError(f"绑定规则应由应用记录转换，收到 {factor_id}。")
+        raise RuntimeError(f"A binding rule should be converted from an application record; got {factor_id}.")
     return "RULE_" + factor_id[2:]
 
 
@@ -711,7 +711,7 @@ def _authored() -> tuple[dict[str, dict[str, str]], list[dict]]:
         slot = found.setdefault(instance_id, {})
         previous = slot.get(target)
         if previous is not None and previous != relation:
-            raise RuntimeError(f"{instance_id} 对 ID{target} 同时是 {previous} 和 {relation}。")
+            raise RuntimeError(f"{instance_id} is both {previous} and {relation} for ID{target}.")
         slot[target] = relation
         if previous is None:
             edges.append({
@@ -743,71 +743,71 @@ def _check() -> None:
     answers = _answers()
     edge_count = sum(len(item.depends_on) for item in answers.values())
     if len(answers) != 207 or edge_count != 406:
-        raise RuntimeError(f"答案图应为 207 空、406 边，现在是 {len(answers)} 空、{edge_count} 边。")
+        raise RuntimeError(f"The answer graph should have 207 blanks and 406 edges, found {len(answers)} blanks and {edge_count} edges.")
     factor_ids = [item["id"] for item in _FACTORS]
     if len(factor_ids) != len(set(factor_ids)):
-        raise RuntimeError("契约绑定规则编号重复。")
+        raise RuntimeError("Contract binding-rule ids are duplicated.")
     if any(not item["id"].startswith("F_") for item in _FACTORS):
-        raise RuntimeError("内部应用记录必须以 F_ 开头，输出时才改成 RULE_。")
+        raise RuntimeError("An internal application record must start with F_ and is renamed to RULE_ only on output.")
     direct, edges = _authored()
     for edge in edges:
         if edge["source"].startswith(("F_", "RULE_")) or edge["target"].startswith(("F_", "RULE_")):
-            raise RuntimeError("绑定规则不能成为图节点。")
+            raise RuntimeError("A binding rule cannot be a graph node.")
         if edge["combination"] not in ("single", "joint"):
-            raise RuntimeError(f"未知的契约作用方式 {edge['combination']}。")
+            raise RuntimeError(f"Unknown contract combination {edge['combination']}.")
     depth = max(item.dependency_depth for item in answers.values())
     if depth != 8:
-        raise RuntimeError(f"答案图深度应为 8，现在是 {depth}。")
+        raise RuntimeError(f"The answer-graph depth should be 8, found {depth}.")
     for item in answers.values():
         for parent in item.depends_on:
             if parent.startswith(("C_", "F_", "RULE_")):
-                raise RuntimeError(f"ID{item.blank_id} 的推导边连到了契约对象 {parent}。")
+                raise RuntimeError(f"A derivation edge of ID{item.blank_id} points at contract object {parent}.")
     for instance_id, targets in direct.items():
         process = _instance_process(instance_id)
         process_name = PROCESSES[process]
         for target, relation in targets.items():
             if target not in answers:
-                raise RuntimeError(f"{instance_id} 指向不存在的 ID{target}。")
+                raise RuntimeError(f"{instance_id} points at missing ID{target}.")
             if target in _NOT_AUTHORED:
-                raise RuntimeError(f"{instance_id} 把下游或已删除空 ID{target} 标成了直接作用。")
+                raise RuntimeError(f"{instance_id} marks downstream or removed blank ID{target} as a direct effect.")
             if answers[target].process != process_name:
-                raise RuntimeError(f"{instance_id} 跨子过程连到了 ID{target}。")
+                raise RuntimeError(f"{instance_id} crosses subprocesses to ID{target}.")
             if relation not in AUTHORED_RELATIONS:
-                raise RuntimeError(f"{instance_id} 不能手工标注 {relation}。")
+                raise RuntimeError(f"{instance_id} cannot be hand-labeled {relation}.")
     for factor in _FACTORS:
         if factor["process"] not in PROCESSES:
-            raise RuntimeError(f"{factor['id']} 的子过程无法识别。")
+            raise RuntimeError(f"The subprocess of {factor['id']} is not recognized.")
         if len(factor["parents"]) < 2:
-            raise RuntimeError(f"{factor['id']} 不是联合条件。")
+            raise RuntimeError(f"{factor['id']} is not a joint condition.")
         if factor["relation"] not in AUTHORED_RELATIONS:
-            raise RuntimeError(f"{factor['id']} 不能手工标注 {factor['relation']}。")
+            raise RuntimeError(f"{factor['id']} cannot be hand-labeled {factor['relation']}.")
         if "52" in factor["targets"] or "101" in factor["targets"]:
-            raise RuntimeError(f"{factor['id']} 指向已删除空。")
+            raise RuntimeError(f"{factor['id']} points at a removed blank.")
     gamma = next(item for item in _FACTORS if item["id"] == "F_GAMMA_MATRIX")
     if gamma["targets"] != ("43",):
-        raise RuntimeError("R_γ_M 的应用点应为 ID43。")
+        raise RuntimeError("The application point of R_γ_M should be ID43.")
     if "55" not in answers["43"].descendants or "52" in answers:
-        raise RuntimeError("ID43 的答案后继应包含 ID55，且 ID52 不在图中。")
+        raise RuntimeError("The answer successors of ID43 should include ID55, and ID52 is not in the graph.")
     installs = [key for key in direct if key.startswith("C_INSTALL_MODEL@")]
     if len(installs) < 5:
-        raise RuntimeError("安装声明的重复读取没有分成不同实例。")
+        raise RuntimeError("Repeated reads of the installation declaration were not split into different instances.")
     wind_passive = direct[_iid("C_CONV_PASSIVE", _W)]
     if "44" not in wind_passive:
-        raise RuntimeError("风轴系的被动约定应直接询问 ID44。")
+        raise RuntimeError("The passive convention of the wind frame should ask ID44 directly.")
     if "43" not in wind_passive:
-        raise RuntimeError("风轴系的被动约定应作为 ID43 绑定规则的联合父项。")
+        raise RuntimeError("The passive convention of the wind frame should be a joint parent of the ID43 binding rule.")
     if any(answers[target].process != PROCESSES[_W] for target in wind_passive):
-        raise RuntimeError("风轴系的被动实例连到了其他子过程。")
+        raise RuntimeError("The passive instance of the wind frame connects to another subprocess.")
     formula = next(item for item in _FACTORS if item["id"] == "F_TORQUE_FORMULA")
     if "195" not in formula["targets"] or "184" in formula["targets"]:
-        raise RuntimeError("力臂式的直接作用点是 ID195–ID200。")
+        raise RuntimeError("The direct effect of the moment-arm formula is ID195-ID200.")
     vector = next(item for item in _FACTORS if item["id"] == "F_ELASTIC_AXIS_VECTOR")
     if vector["targets"] != ("145",):
-        raise RuntimeError("小角度轴向向量是 ID145。")
+        raise RuntimeError("The small-angle axial vector is ID145.")
     elastic = next(item for item in _FACTORS if item["id"] == "F_DELTA_ALPHA_ELASTIC")
     quotient = next(item for item in _FACTORS if item["id"] == "F_DELTA_ALPHA_FORMULA")
     if set(elastic["targets"]) & set(quotient["targets"]):
-        raise RuntimeError("ID174 和 ID176 必须分属两个因子。")
+        raise RuntimeError("ID174 and ID176 must belong to two different factors.")
     _check_paths()
 
 
@@ -880,21 +880,21 @@ def _check_paths() -> None:
         if item["target"] == "ID80"
     ]
     if ("ID60",) not in from_sixty or ("ID60", "ID63", "ID70") not in from_sixty:
-        raise RuntimeError("ID60 到 ID80 应同时保留直连和 ID63、ID70 那条路径。")
+        raise RuntimeError("ID60 to ID80 should keep both the direct edge and the path through ID63 and ID70.")
     if any("ID22" in via or "ID68" in via for via in from_sixty):
-        raise RuntimeError("ID60 的路径不能接到 ID22→ID68。")
+        raise RuntimeError("The path of ID60 must not connect to ID22->ID68.")
     from_sign = [
         tuple(item["via"])
         for item in _indirect_records("probe", {"22": "direct_answer"})
         if item["target"] == "ID80"
     ]
     if ("ID22", "ID68") not in from_sign or any("ID60" in via for via in from_sign):
-        raise RuntimeError("ID22 到 ID80 只走 ID68，不经过 ID60。")
+        raise RuntimeError("ID22 to ID80 goes only through ID68 and does not pass ID60.")
     from_gamma = _indirect_records("probe", {"43": "direct_answer"})
     if not any(item["target"] == "ID55" and item["via"] == ["ID43"] for item in from_gamma):
-        raise RuntimeError("ID43 的直接后继是 ID55。")
+        raise RuntimeError("The direct successor of ID43 is ID55.")
     if any(part in removed for item in from_gamma for part in item["via"] + [item["target"]]):
-        raise RuntimeError("路径里出现了已删除的编号。")
+        raise RuntimeError("A path contains a removed id.")
     direct, _edges = _authored()
     alpha = _iid("C_SIGN_ALPHA", _W)
     alpha_routes = [
@@ -903,9 +903,9 @@ def _check_paths() -> None:
         for via in _simple_vias(start).get("80", ())
     ]
     if not alpha_routes or any("60" in via for via in alpha_routes):
-        raise RuntimeError("理论迎角符号到 ID80 的路径不能经过 ID60。")
+        raise RuntimeError("The path from the theoretical angle-of-attack sign to ID80 must not pass ID60.")
     if not any(via[-2:] == ("22", "68") for via in alpha_routes):
-        raise RuntimeError("理论迎角符号到 ID80 应经过 ID22→ID68。")
+        raise RuntimeError("The path from the theoretical angle-of-attack sign to ID80 should pass ID22->ID68.")
     handed = _iid("C_AXIS_BODY_HANDEDNESS", _W)
     handed_routes = [
         via
@@ -916,7 +916,7 @@ def _check_paths() -> None:
         via[0] == "43" and "55" in via and "22" not in via
         for via in handed_routes
     ):
-        raise RuntimeError("体轴手性到 ID80 应有一条从 ID43 经 ID55、且不经过 ID22 的路径。")
+        raise RuntimeError("Body-axis handedness to ID80 should have a path from ID43 through ID55 that does not pass ID22.")
 
 
 def _direct_relation(edge: dict) -> dict:
@@ -958,15 +958,15 @@ def _attach_relations(answer_rules: dict, direct: dict, edges: list) -> dict[str
         ))
         for item in records:
             if item["target"] != f"ID{blank_id}":
-                raise RuntimeError(f"ID{blank_id} 的契约关系指向了 {item['target']}。")
+                raise RuntimeError(f"The contract relation of ID{blank_id} points at {item['target']}.")
             if item["potential"] is not True or item["actual_error_path"] is not None:
-                raise RuntimeError("结构文件只保存潜在契约依赖，实际错误路径必须为空。")
+                raise RuntimeError("The structure file stores only potential contract dependencies, so the actual error path must be empty.")
             if any(part in removed for part in item["via"]):
-                raise RuntimeError(f"ID{blank_id} 的路径含已删除编号。")
+                raise RuntimeError(f"The path of ID{blank_id} contains a removed id.")
             if item["relation"] == "direct" and item["via"]:
-                raise RuntimeError(f"ID{blank_id} 的直接契约关系不应带路径。")
+                raise RuntimeError(f"The direct contract relation of ID{blank_id} should not carry a path.")
             if item["relation"] == "indirect" and item["via"][0] != item["direct_target"]:
-                raise RuntimeError(f"ID{blank_id} 的间接路径没有从直接作用点开始。")
+                raise RuntimeError(f"The indirect path of ID{blank_id} does not start at the direct effect.")
         slot = answer_rules.setdefault(blank_id, {
             "contract_targets": [],
             "sensitive_fields": [],
@@ -1112,48 +1112,48 @@ def contract_layer() -> dict:
         })
     return {
         "meaning": (
-            "正式图只人工标注契约到直接答案，以及原有的 389 条答案推导边。"
-            "契约到后续答案的间接关系由答案图的全部简单路径计算，记在答案的 contract_relations 上，不写回 depends_on。"
-            "这是潜在依赖，与某次运行无关。actual_error_path 在本文件中为空："
-            "只有路径上每个答案都错，才构成实际错误路径；正确的中间节点阻断串联。"
-            "单点注入只观察被改答案的直接子节点。模型前缀沿后代闭包看潜在影响，归因停在最早的错误节点。"
+            "The published graph hand-labels only contracts onto direct answers, plus the existing 389 answer-derivation edges. "
+            "Indirect relations from a contract to later answers are computed from every simple path in the answer graph, stored on the answer's contract_relations, and not written back into depends_on. "
+            "That is a potential dependency and is independent of any one run. actual_error_path is empty in this file: "
+            "an actual error path exists only when every answer on the path is wrong; a correct intermediate node blocks the chain. "
+            "A single-point injection watches only the direct children of the changed answer. A model prefix follows the descendant closure for potential effect, and attribution stops at the earliest wrong node."
         ),
-        "formula": "契约直接作用答案，答案边推出间接路径。潜在依赖和实际错误路径分开存放。",
+        "formula": "A contract acts directly on an answer, and answer edges produce the indirect path. Potential dependencies and actual error paths are stored apart.",
         "storage": {
-            "authored_direct": "direct_edges。只人工标注契约原子对直接受影响答案的作用。",
-            "answer_edges": "答案图的 depends_on。仍是 389 条推导边，不写入契约，也不写入间接路径。",
-            "contract_relations": "answer_bindings 上的派生字段。direct 是人工边，indirect 带 via 和贡献类型。同一契约的多条简单路径都保留。",
-            "potential_contract_dependency": "contract_relations 中 potential 为 true 的记录。只说明直接作用的答案若变化，标准推导可能影响哪些后续答案。",
-            "actual_error_path": "结构文件里恒为 null。合并一次运行时，只有 via 与目标上的每个答案都错，才把该 via 写入；中间有正确节点则为 null。",
-            "single_point_injection": "只改变一个直接作用答案时，观察它的 direct_dependents，不用整段后代闭包。",
-            "model_prefix": "沿答案后代看潜在影响。第一个错节点是归因起点，影响只沿仍然错误的后代继续，正确的中间节点阻断实际错误路径。",
-            "paths": "不把多源影响压成一条路径。ID22→ID68→ID80 与 ID60→ID80、ID60→ID63→ID70→ID80 分开保存。ID43 的后继是 ID55，不使用已删除的 ID52。",
+            "authored_direct": "direct_edges. Hand-labeled effects of a contract atom on the answers it changes directly.",
+            "answer_edges": "depends_on of the answer graph. Still 389 derivation edges, with no contracts and no indirect paths written in.",
+            "contract_relations": "A derived field on answer_bindings. direct is a hand edge, and indirect carries via and a contribution type. Every simple path of the same contract is kept.",
+            "potential_contract_dependency": "Records in contract_relations whose potential is true. They say which later answers the standard derivation may affect if a directly acted-on answer changes.",
+            "actual_error_path": "Always null in the structure file. When a run is merged in, a via is written only if every answer on that via and the target is wrong; a correct intermediate node leaves it null.",
+            "single_point_injection": "When only one directly acted-on answer changes, watch its direct_dependents and do not use the whole descendant closure.",
+            "model_prefix": "Follow answer descendants for potential effect. The first wrong node is where attribution starts, and the effect continues only along descendants that are still wrong. A correct intermediate node blocks the actual error path.",
+            "paths": "Do not collapse multi-source effects into one path. ID22->ID68->ID80, ID60->ID80, and ID60->ID63->ID70->ID80 are stored separately. The successor of ID43 is ID55, and the removed ID52 is not used.",
         },
         "id_notes": [
-            "公开编号用答案图的编号。天平系到体轴系从 ID82 起，天平系到风轴系从 ID117 起，力矩参考点从 ID181 起。",
-            "ID52–54 和 ID101–103 不建节点。ID43 的答案后继是 ID55。",
-            "安装滚转矩阵是 ID88，RTP_TZ1 是 ID95，RTP_TZ2 是 ID97，载荷总矩阵是 ID104。",
-            "小角度天平轴向向量是 ID145。风轴分量是 ID146–148。风轴分式是 ID174、ID175。弹性角展开是 ID176、ID177。",
-            "力矩参考点的数学坐标是 ID184，符号空是 ID189–194，力臂式是 ID195–200。",
-            "ID45 问的是动轴或定轴，不是体轴手性。手性进入 ID7，并和滚转轴、正方向一起绑定 ID43 的符号。",
-            "RULE_* 是契约绑定规则，不是答案，也不占路径长度。",
-            "间接契约关系按答案图的全部简单路径保存。ID43 之后是 ID55，不是已删除的 ID52。",
+            "Public ids are the answer-graph ids. balance frame to body-axis frame starts at ID82, balance frame to wind frame starts at ID117, and moment reference point starts at ID181.",
+            "ID52-54 and ID101-103 are not nodes. The answer successor of ID43 is ID55.",
+            "The installation roll matrix is ID88, RTP_TZ1 is ID95, RTP_TZ2 is ID97, and the total load matrix is ID104.",
+            "The small-angle balance axial vector is ID145. The wind-frame components are ID146-148. The wind-frame quotients are ID174 and ID175. The elastic-angle expansions are ID176 and ID177.",
+            "The mathematical coordinates of the moment reference point are ID184, the sign blanks are ID189-194, and the moment-arm formulas are ID195-200.",
+            "ID45 asks whether the axes are moving or fixed, not the body-axis handedness. Handedness enters at ID7 and, with the roll axis and the positive direction, binds the sign of ID43.",
+            "RULE_* is a contract binding rule. It is not an answer and it does not add to the path length.",
+            "Indirect contract relations are stored as every simple path of the answer graph. After ID43 comes ID55, not the removed ID52.",
         ],
         "relation_states": {
-            "direct": "存在人工标注的契约作用边。",
-            "indirect": "没有这条直接边，但契约的某个直接作用点能沿答案边到达该空。via 是具体路径。",
-            "none": "没有可行路径。contract_relations 里不出现该契约。",
+            "direct": "A hand-labeled contract-effect edge exists.",
+            "indirect": "There is no such direct edge, but some direct effect of the contract can reach this blank along answer edges. via is the concrete path.",
+            "none": "No feasible path. The contract does not appear in contract_relations.",
         },
         "relation_types": {
-            "direct_answer": "该契约直接改变这一空的答案取值。",
-            "direct_method": "该契约直接规定方法、转轴、顺序或名称绑定。",
-            "scope_constraint": "该契约约束坐标系或对象范围，不因此改变这一空的金标。",
-            "downstream": "只从答案图的后代计算，不是手工边，也不是契约作用边。",
+            "direct_answer": "This contract directly changes the answer value of this blank.",
+            "direct_method": "This contract directly sets the method, the rotation axis, the order, or a name binding.",
+            "scope_constraint": "This contract constrains the frame or the object, and does not by that change the gold of this blank.",
+            "downstream": "Computed only from descendants in the answer graph. It is not a hand edge and not a contract-effect edge.",
         },
         "statuses": {
-            "observed": "有直接问答。",
-            "derived": "没有直接问答，但答案上有可核对的字段。",
-            "latent": "生成器里的固定约定。没有单独问答时不进入评测图，只留在绑定规则的固定上下文里。",
+            "observed": "There is a direct question and answer.",
+            "derived": "There is no direct question, but the answer has a field that can be checked.",
+            "latent": "A fixed convention in the generator. When there is no separate question it stays out of the scored graph and remains only in the fixed context of a binding rule.",
         },
         "global_atom_count": len(globals_out),
         "atom_count": len(instances),
@@ -1175,13 +1175,13 @@ def contract_layer() -> dict:
             "edge_count": sum(len(item.depends_on) for item in _answers().values()),
         },
         "diagnosis_fields": {
-            "run_state": "一次运行在答案图上的 local_error、propagated_error、recovered 或 correct。绑定规则没有运行状态。",
-            "definition_identified": "该实例的直接问答是否答对。",
-            "sensitive_element_correct": "绑定规则列出的敏感字段是否答对。",
-            "full_answer_correct": "完整矩阵、向量或公式是否答对。",
-            "failure_stage": "直接问答正确而敏感字段错误时，标成契约没有落实到数学对象。",
-            "potential_relation": "contract_relations 记录图上的潜在路径，与某次运行无关。",
-            "actual_error_path": "结构文件中为空。路径上出现正确的中间答案时，不能把前后错误串成一条实际错误路径。",
+            "run_state": "One run on the answer graph is local_error, propagated_error, recovered, or correct. A binding rule has no run state.",
+            "definition_identified": "Whether the direct question of this instance was answered correctly.",
+            "sensitive_element_correct": "Whether the sensitive fields listed by the binding rule were answered correctly.",
+            "full_answer_correct": "Whether the full matrix, vector, or formula was answered correctly.",
+            "failure_stage": "When the direct question is right and a sensitive field is wrong, mark that the contract was not carried into the mathematical object.",
+            "potential_relation": "contract_relations records potential paths on the graph and is independent of any one run.",
+            "actual_error_path": "Empty in the structure file. When a correct intermediate answer appears on the path, the errors before and after it cannot be chained into one actual error path.",
         },
         "globals": globals_out,
         "instances": instances,

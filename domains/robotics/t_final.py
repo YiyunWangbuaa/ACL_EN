@@ -26,7 +26,7 @@ def _alt(node: str) -> str:
 
 def _equals(node: str, left: str, right: str) -> bool:
     row = questions()[node]
-    fmt = row["format"] if not row["options"] else "表达式"
+    fmt = row["format"] if not row["options"] else "expression"
     return answers_equal(left, right, fmt)
 
 
@@ -46,15 +46,15 @@ def check_t_final() -> None:
     report = []
     for target in T_FINAL:
         if target not in NODE_IDS:
-            raise RuntimeError(f"终点 {target} 不在范围")
+            raise RuntimeError(f"terminal {target} is out of range")
         fixes = minimal_fixes(target)
         if not fixes:
-            report.append(f"{target} 无核（计算器在故障赋值下拒绝）")
+            report.append(f"{target} has no core (the calculator rejects the faulty assignment)")
         else:
-            report.append(f"{target} 核 {list(fixes)}")
+            report.append(f"{target} core {list(fixes)}")
         if not fixes:
-            raise RuntimeError(f"终点 {target} 没有最小修复集")
-    print("阶段6 系统修复：" + "；".join(report), flush=True)
+            raise RuntimeError(f"terminal {target} has no minimal repair set")
+    print("stage 6 system repair: " + "; ".join(report), flush=True)
 
 
 if __name__ == "__main__":

@@ -35,22 +35,22 @@ SCALAR_FLIP = {
     MU: {"sign": "negative"},
     GAMMA: {"sign": "negative"},
 }
-SCALAR_ZH = {
-    VARPHI: "航迹方位角改为空速投影在 xg 右侧时为负",
-    MU: "航迹倾斜角改为空速向地面上方偏时为负",
-    GAMMA: "航迹滚转角改为飞行器向机体右方滚转时为负",
+SCALAR_EN = {
+    VARPHI: "Track azimuth is negative when the horizontal airspeed projection lies to the right of Xg",
+    MU: "Track inclination is negative when the aircraft climbs",
+    GAMMA: "Track roll is negative when the aircraft rolls to its right",
 }
 
 
 def _frame_phrase(title: str, spec: dict) -> str:
     shown = {"Xb": "xb", "Yb": "yb", "Zb": "zb"}
     declared = [
-        f"{shown.get(name, name)}沿{axis['along'].split('_', 1)[1]}指向{axis['points'].split('_', 1)[1]}"
+        f"{shown.get(name, name)} lies along {axis['along'].split('_', 1)[1]} and points {axis['points'].split('_', 1)[1]}"
         for name, axis in spec.items()
         if name != "chirality"
     ]
-    hand = "右手系" if spec["chirality"] == "right" else "左手系"
-    return f"{title}改为{hand}，" + "，".join(declared)
+    hand = "right-handed" if spec["chirality"] == "right" else "left-handed"
+    return f"{title} is {hand}, " + ", ".join(declared)
 
 
 def _samples() -> list[dict]:
@@ -91,21 +91,21 @@ def _samples() -> list[dict]:
             made += 1
             phrases = []
             for key in chosen:
-                if key in SCALAR_ZH:
-                    phrases.append(SCALAR_ZH[key])
+                if key in SCALAR_EN:
+                    phrases.append(SCALAR_EN[key])
                 elif key == "ground_frame":
-                    phrases.append(_frame_phrase("地面系", spec[key]))
+                    phrases.append(_frame_phrase("the ground frame", spec[key]))
                 elif key == "track_frame":
-                    phrases.append(_frame_phrase("航迹系", spec[key]))
+                    phrases.append(_frame_phrase("the track frame", spec[key]))
                 else:
-                    phrases.append(_frame_phrase("气流系", spec[key]))
+                    phrases.append(_frame_phrase("the airflow frame", spec[key]))
             samples.append({
                 "id": f"{tier}-{made:02d}",
                 "tier": tier,
                 "changed_count": tier,
                 "changed": chosen,
-                "title": f"变更{tier}项",
-                "change": f"这一子过程的 6 项定义中变更 {tier} 项：" + "；".join(phrases) + "。",
+                "title": f"change {tier} items",
+                "change": f"Of the 6 definitions that enter this subprocess, {tier} differ from the standard definition: " + "; ".join(phrases) + ".",
                 "spec": spec,
             })
     return samples
@@ -147,23 +147,23 @@ def main() -> None:
             if index == 1 or index % 16 == 0 or index == len(samples):
                 print(f"wrote {index}/{len(samples)}", flush=True)
     lines = [
-        "# 空气动力学定义变更数据",
+        "# Flight-mechanics definition samples",
         "",
-        f"子过程：地面系转航迹系和气流系，每条 {BLANK_COUNT} 个空，公共编号 {public_span(PROCESS)[0]} 到 {public_span(PROCESS)[1]}。进入这些空的定义有 6 项：方位符号、倾斜符号、航迹滚转符号、地面系、航迹系、气流系。机体系、稳定性坐标系以及姿态角、迎角、侧滑角保持当前默认，因为这一子过程不读取它们。",
+        f"Subprocess: ground to track and airflow, {BLANK_COUNT} blanks each, public numbers {public_span(PROCESS)[0]} through {public_span(PROCESS)[1]}. Six definitions enter these blanks: the azimuth sign, the inclination sign, the track-roll sign, the ground frame, the track frame, and the airflow frame. The airframe, the stability frame, and the attitude angles, angle of attack, and sideslip stay on the current standard definition, because this subprocess does not read them.",
         "",
-        "地面系在含默认的 16 套合法声明里抽取非默认的 15 套。航迹系和气流系各抽取两轴声明的 48 套，它们都和默认的 X、Z 声明不同。",
+        "The ground frame is drawn from the 15 non-standard declarations among the 16 legal ones, including the standard. The track frame and the airflow frame are each drawn from 48 two-axis declarations, all different from the standard X and Z declaration.",
         "",
-        "| 档 | 变更项 | 条数 | 编号 |",
+        "| tier | items changed | count | ids |",
         "| --- | --- | --- | --- |",
     ]
     for tier in TIERS:
-        lines.append(f"| {tier}/6 | {tier} | {PER_TIER} | {tier}-01 至 {tier}-0{PER_TIER} |")
+        lines.append(f"| {tier}/6 | {tier} | {PER_TIER} | {tier}-01 to {tier}-0{PER_TIER} |")
     lines.extend([
         "",
-        f"抽样种子 {SEED}。数据在 data/flight/basic/ground_to_track_air/batch/samples.jsonl，每行一条，含定义声明和 41 个空的标准答案。",
+        f"Sample seed {SEED}. The data are in data/flight/basic/ground_to_track_air/batch/samples.jsonl, one sample per line, with the declaration and the answers of 41 blanks.",
         "",
     ])
-    (OUT_DIR / "00_索引.md").write_text("\n".join(lines), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {len(samples)} samples to {OUT_DIR}")
 
 

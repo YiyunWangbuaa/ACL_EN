@@ -1,291 +1,292 @@
-# 数据 01 统一默认
+# Data 01 common default
 
-本文件是飞行力学领域审阅稿。编号 1 到 131。前四个子过程做地面、航迹、机体和气流之间的坐标转换。后两个子过程做气动力六分量转换和力矩参考点换算。气动力子过程与参考点子过程单独注入：参考点子过程直接给出机体系中的力和力矩，不使用气动力子过程的回答。这里不做飞行包线判断，不做误差补偿。
+This is a flight-mechanics review manuscript. Blanks are numbered 1 through 131. The first four subprocesses convert coordinates among the ground, track, airframe, and airflow. The last two convert the six aerodynamic components and transfer the moment reference point. The load subprocess and the reference-point subprocess are injected separately: the reference-point subprocess states the airframe force and moment directly and does not use the answers of the load subprocess. This manuscript does not judge the flight envelope and does not apply an error correction.
 
-本条定义：五个坐标系和八个角度都取标准定义。
-单定义扰动：无
+Definition of this item: All five frames and all eight angles use the standard definition.
+Single-definition perturbation: none
 
-审阅说明、标签、答案和生成注记不送入模型。输出格式规范送入。前四个子过程使用前面的定义声明和物理常识。后两个子过程使用气动力与参考点定义，不携带前四个子过程的正文。送入模型的还有当前子过程名，以及从该子过程开头直到当前句号的正文。当前句之前的空写成答案原文。每句只有一个待填槽。
+Review notes, labels, answers, and generation notes are not sent to the model. The output-format rules are sent. The first four subprocesses use the declaration and the background above. The last two use the aerodynamic-load and reference-point declaration and do not carry the text of the first four. The model also receives the current subprocess name and the text from the start of that subprocess through the period of the current sentence. Blanks before the current sentence are filled with the answer text. Each sentence has one open blank.
 
-## 输出格式规范
+## Output format
 
-- 无：选择题。值只写选项字母。示例：A
-- 向量：一行三个分量，形如 [a, b, c]。逗号后恰好一个空格。顺序是 X、Y、Z。示例：[1, 0, 0]
-- 矩阵：一行 3×3，形如 [[a, b, c], [d, e, f], [g, h, i]]。逗号后恰好一个空格。示例：[[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-- 表达式：一行。乘号用 *。示例：a*cos(α)+b
+- choice: multiple choice. Write only the option letter. Example: A
+- vector: three components on one line, as [a, b, c]. Put exactly one space after each comma. The order is X, Y, Z. Example: [1, 0, 0]
+- matrix: one 3×3 matrix, as [[a, b, c], [d, e, f], [g, h, i]]. Put exactly one space after each comma. Example: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+- expression: one line. Use * for multiplication. Example: a*cos(α)+b
 
-## 定义声明
+## Declaration
 
-固定约定
-- 坐标变换采用被动变换。姿态角、航迹角和气流角采用动轴内旋。
-- 向量是列向量，变换矩阵左乘列向量。坐标分量变换矩阵从右向左作用。
-- gRb 表示机体系相对地面系的姿态，把机体系分量映射到地面系。逆向变换使用其转置。
-- 对偏航、俯仰、滚转这一动轴姿态构造，地面系到机体系的分量变换为 bRg=Cx(Φ)*Cy(θ)*Cz(ψ)，逆向变换为其转置。其他变换按明确的起始系、目标系和中间系确定连乘顺序。
-- 分量按各系的 X、Y、Z 顺序书写。
-- 取 -90°<α、β、θ、μ<90°，使迎角投影、航迹水平投影及所用姿态角分支不发生本稿未处理的退化。方位角和滚转角采用主值区间 [-180°, 180°)。
+Fixed conventions
+- Coordinate transforms are passive. Attitude angles, track angles, and airflow angles use an intrinsic moving-axis sequence.
+- Vectors are column vectors, and a transform matrix multiplies a column vector on the left. Component transforms act from right to left.
+- gRb is the attitude of the airframe relative to the ground frame and maps airframe components into the ground frame. The reverse transform is its transpose.
+- For the moving-axis attitude yaw, pitch, roll, the component transform from the ground frame to the airframe is bRg=Cx(Φ)*Cy(θ)*Cz(ψ), and the reverse transform is its transpose. Every other transform takes its product order from the stated start frame, target frame, and intermediate frame.
+- Components are written in the X, Y, Z order of each frame.
+- Take -90°<α, β, θ, μ<90°, so the attack projection, the horizontal track projection, and the attitude branch used here do not meet a degeneracy that this manuscript does not handle. Azimuth and roll use the principal interval [-180°, 180°).
 
-数学规则
-- 正交矩阵的转置等于它的逆矩阵。
-- 任意合法三维旋转矩阵的行列式为 +1。
+Mathematical rules
+- The transpose of an orthogonal matrix equals its inverse.
+- The determinant of any valid three-dimensional rotation matrix is +1.
 
-绝对方向与手性
-- 地面系、机体系、稳定性系、航迹系和气流系都是右手系。
-- 轴向正方向是前方，侧向正方向是右方，法向正方向是下方。前方 × 右方 = 下方。
-- 轴向、侧向、法向是物理方向，不是固定的坐标轴名。各系坐标轴的局部正方向不随姿态角改变。
+Absolute directions and chirality
+- The ground frame, airframe, stability frame, track frame, and airflow frame are right-handed.
+- The positive axial direction is forward, the positive lateral direction is right, and the positive normal direction is down. Forward × right = down.
+- Axial, lateral, and normal are physical directions, not fixed coordinate-axis names. The local positive direction of each frame axis does not change with the attitude angles.
 
-坐标系
-- 地面系 {g}：Xg 是水平面前方，Yg 是水平面右方，Zg 铅垂向下。地面系是固定参考系。
-- 机体系 {b}：xb 沿机头，yb 指向机体右方，zb 指向机体下方。机体系固定于飞行器。机体对称面是 xb-zb 平面。
-- 稳定性系 {s}：Xs 是空速在机体对称面上的投影并指向前方，Ys 垂直于对称面指向右方，Zs 在对称面内垂直于 Xs 并指向下方。
-- 航迹系 {p}：Xp 沿空速，Zp 位于过空速的铅垂面内、垂直于空速并取向下分支，Yp=Zp×Xp。航迹系不含滚转。这里的航迹使用空速方向，不是地速。
-- 气流系 {a}：Xa 沿空速。Za 位于机体对称面内、垂直于 Xa，并取与 Zb 点积为正的分支。Ya=Za×Xa。
-- 气流系相对航迹系绕共同的空速轴滚转。γ 按 +Xp 的右手定则，再按本条角度声明取正负。
+Frames
+- Ground frame {g}: Xg is forward in the horizontal plane, Yg is right in the horizontal plane, and Zg is vertically down. The ground frame is the fixed reference.
+- Airframe {b}: xb follows the nose, yb points right on the airframe, and zb points down on the airframe. The airframe is fixed to the aircraft. The plane of symmetry is the xb-zb plane.
+- Stability frame {s}: Xs is the forward projection of the airspeed onto the airframe plane of symmetry, Ys is perpendicular to that plane and points right, and Zs lies in the plane, is perpendicular to Xs, and points down.
+- Track frame {p}: Xp follows the airspeed, Zp lies in the vertical plane through the airspeed, is perpendicular to the airspeed, and takes the downward branch, and Yp=Zp×Xp. The track frame has no roll. The track here uses the airspeed direction, not the ground speed.
+- Airflow frame {a}: Xa follows the airspeed. Za lies in the airframe plane of symmetry, is perpendicular to Xa, and is the branch whose dot product with Zb is positive. Ya=Za×Xa.
+- The airflow frame rolls relative to the track frame about their shared airspeed axis. γ follows the right-hand rule about +Xp, and the sign is then the sign in this angle declaration.
 
-角度
-- 偏航角 ψ：机体轴向正方向在地面上的投影与地面坐标轴 Xg 间的夹角。机头向地面的右偏为正。
-- 俯仰角 θ：机体轴向正方向与地面的夹角，机体抬头时（机头向地面的上方偏时）为正。
-- 滚转角 Φ：机体的法向正方向与通过机体轴向的铅垂面的夹角，飞行器向机体的右侧滚转时为正。在前、右、下坐标下，右翼向下为正。
-- 航迹方位角 φ：空速向量（气流系轴向正方向）在地面上的投影与地面坐标轴 Xg 间的夹角。在 Xg 的右侧为正。
-- 航迹倾斜角 μ：空速向量（气流系轴向正方向）与地面的夹角，飞行器向地面上方飞时为正。
-- 航迹滚转角 γ：气流系的法向正方向与通过空速的铅垂面的夹角，飞行器向机体的右侧滚转时为正。它是气流系相对航迹系的滚转，不改变航迹系本身。
-- 迎角 α：空速在飞行器对称面上的投影与机体系轴向正方向的夹角。投影处于机体轴向下方时为正。
-- 侧滑角 β：空速向量与飞行器对称面的夹角，空速在飞行器右侧为正。
+Angles
+- Yaw ψ: the angle between the ground projection of the positive airframe axis and the ground axis Xg. When the nose yaws to the right of the ground, the angle is positive.
+- Pitch θ: the angle between the positive airframe axis and the ground. When the nose pitches above the ground, the angle is positive.
+- Roll Φ: the angle between the positive airframe normal and the vertical plane through the airframe axis. When the aircraft rolls to its right, the angle is positive. In forward-right-down coordinates, the right wing down is positive.
+- Track azimuth φ: the angle between the ground projection of the airspeed vector (the positive airflow axis) and the ground axis Xg. When the projection lies to the right of Xg, the angle is positive.
+- Track inclination μ: the angle between the airspeed vector (the positive airflow axis) and the ground. When the aircraft climbs, the angle is positive.
+- Track roll γ: the angle between the positive airflow normal and the vertical plane through the airspeed. When the aircraft rolls to its right, the angle is positive. It is the roll of the airflow frame relative to the track frame and does not change the track frame itself.
+- Angle of attack α: the angle between the projection of the airspeed onto the aircraft plane of symmetry and the positive airframe axis. When that projection lies below the airframe axis, the angle is positive.
+- Sideslip β: the angle between the airspeed vector and the aircraft plane of symmetry. When the airspeed lies to the right of the aircraft, the angle is positive.
 
-基本旋转矩阵
-令 cη=cos(η)，sη=sin(η)。下列矩阵是绕当前坐标轴的被动变换，正角由该轴的右手定则确定。
-- Cx(η)=[[1, 0, 0], [0, cη, sη], [0, -sη, cη]]，绕轴向 X。
-- Cy(η)=[[cη, 0, -sη], [0, 1, 0], [sη, 0, cη]]，绕侧向 Y。
-- Cz(η)=[[cη, sη, 0], [-sη, cη, 0], [0, 0, 1]]，绕法向 Z。
+Elementary rotation matrices
+Let cη=cos(η) and sη=sin(η). The following matrices are passive transforms about the current coordinate axis. A positive angle follows the right-hand rule about that axis.
+- Cx(η)=[[1, 0, 0], [0, cη, sη], [0, -sη, cη]], about the axial axis X.
+- Cy(η)=[[cη, 0, -sη], [0, 1, 0], [sη, 0, cη]], about the lateral axis Y.
+- Cz(η)=[[cη, sη, 0], [-sη, cη, 0], [0, 0, 1]], about the normal axis Z.
 
-空速方向
-- 空速指飞行器相对空气的速度，大小 V>0。本稿不使用地速，也不引入风速。
-- 航迹系 Xp 和气流系 Xa 都沿空速，所以两系中的单位空速都是 [1, 0, 0]。
+Airspeed direction
+- Airspeed is the velocity of the aircraft relative to the air, with magnitude V>0. This manuscript does not use ground speed and does not introduce a wind.
+- Track Xp and airflow Xa both follow the airspeed, so the unit airspeed in both frames is [1, 0, 0].
 
-## 物理常识
+## Background
 
-地面系 Zg 指向下方。地面法向分量为正表示指向下方，为负表示指向上方。各角绕定义声明里的那根绝对轴，正方向以定义声明为准。坐标变换采用被动变换，姿态、航迹和气流角采用动轴内旋。
+Ground Zg points down. A positive ground normal component points down, and a negative component points up. Each angle is taken about the absolute axis named in the declaration, and its positive sense is the sense in the declaration. Coordinate transforms are passive. Attitude, track, and airflow angles use an intrinsic moving-axis sequence.
 
-## 完整过程
+## Full process
 
-### 子过程一：地面系到机体系
+### Subprocess 1: ground frame to airframe
 
-1. 地面系、机体系和航迹系的法向正方向分别指向{ID:1, 选项:A：上方；B：下方, 输出格式:无, 标签:C1, 答案:B}。
-2. 地面系、机体系和航迹系的侧向正方向分别指向{ID:2, 选项:A：右方；B：左方, 输出格式:无, 标签:C1, 答案:A}。
-3. 机体前方、机体右方、机体下方构成{ID:3, 选项:A：左手系；B：右手系, 输出格式:无, 标签:C1, 答案:B}。
-4. 偏航角为正时，机体前方在地面水平面上的投影向{ID:4, 选项:A：地面右方偏转；B：地面左方偏转, 输出格式:无, 标签:C1, 答案:A}。
-5. 俯仰角为正时，机头指向地面{ID:5, 选项:A：下方；B：上方, 输出格式:无, 标签:C1, 答案:B}。
-6. 滚转角 Φ 绕机体的{ID:6, 选项:A：轴向；B：侧向；C：法向, 输出格式:无, 标签:C1, 答案:A}。
-7. 本题坐标转换采用{ID:7, 选项:A：主动；B：被动, 输出格式:无, 标签:C2, 答案:B}。
-8. 姿态角采用{ID:8, 选项:A：动轴内旋；B：定轴外旋, 输出格式:无, 标签:C2, 答案:A}。
-9. 按偏航、俯仰、滚转构造姿态后，将地面系分量映射到机体系的矩阵写成 bRg=Cx(Φ)*Cy(θ)*Cz(ψ)，其中偏航矩阵位于连乘式的{ID:9, 选项:A：最左侧；B：最右侧, 输出格式:无, 标签:C2, 答案:B}。
-10. 将机体系坐标转换到地面系时，使用矩阵 gRb，该矩阵的物理映射方向是{ID:10, 选项:A：机体系到地面系；B：地面系到机体系, 输出格式:无, 标签:C2, 答案:A}。
-11. 将地面系向量转换到机体系时，应使用 gRb 的{ID:11, 选项:A：本身；B：转置, 输出格式:无, 标签:C2, 答案:B}。
-12. 按定义，gRb 的复合形式为{ID:12, 选项:A：Cz(-ψ)*Cy(-θ)*Cx(-Φ)；B：Cx(Φ)*Cy(θ)*Cz(ψ)；C：Cz(ψ)*Cy(θ)*Cx(Φ)；D：Cy(θ)*Cz(ψ)*Cx(Φ), 输出格式:无, 标签:C2, 答案:A}。
-13. 机体前方单位向量在机体系中的坐标为{ID:13, 选项:无, 输出格式:向量, 标签:C1, 答案:[1, 0, 0]}。
-14. 将机体前方轴映射到地面系，应计算{ID:14, 选项:A：gRb*[1, 0, 0]；B：gRb^T*[1, 0, 0], 输出格式:无, 标签:C2, 答案:A}。
-15. 在 ψ=30°、θ=20°、Φ=15° 时，机体前方轴在地面系中的三个分量为{ID:15, 选项:无, 输出格式:向量, 标签:A2, 答案:[cos(20°)*cos(30°), sin(30°)*cos(20°), -sin(20°)]}。
-16. 由该地面法向分量的符号判断，机头指向地面{ID:16, 选项:A：上方；B：下方, 输出格式:无, 标签:A1, 答案:A}。
-17. 给定完整姿态矩阵时，机体右方轴在地面系中的方向由矩阵的第{ID:17, 选项:A：三列；B：二列；C：一列, 输出格式:无, 标签:C2, 答案:B}。
-18. 机体下方轴在地面系中的方向由矩阵的第{ID:18, 选项:A：三列；B：一列；C：二列, 输出格式:无, 标签:C2, 答案:A}。
-19. 正交姿态矩阵的转置等于其{ID:19, 选项:A：负矩阵；B：行列式；C：逆矩阵, 输出格式:无, 标签:C1, 答案:C}。
-20. 任意合法三维旋转矩阵的行列式为{ID:20, 选项:A：0；B：+1；C：-1, 输出格式:无, 标签:C1, 答案:B}。
+1. The positive normal of the ground frame, the airframe, and the track frame points{ID:1, options:A: upward; B: downward, format:choice, label:C1, answer:B}.
+2. The positive lateral direction of the ground frame, the airframe, and the track frame points{ID:2, options:A: right; B: left, format:choice, label:C1, answer:A}.
+3. Forward, right, and down on the airframe form{ID:3, options:A: left-handed; B: right-handed, format:choice, label:C1, answer:B}.
+4. When yaw is positive, the horizontal projection of the airframe forward axis turns{ID:4, options:A: right on the ground; B: left on the ground, format:choice, label:C1, answer:A}.
+5. When pitch is positive, the nose points{ID:5, options:A: downward; B: upward, format:choice, label:C1, answer:B}.
+6. Roll Φ is taken about the airframe{ID:6, options:A: axial; B: lateral; C: normal, format:choice, label:C1, answer:A}.
+7. Coordinate transforms in this item use{ID:7, options:A: active; B: passive, format:choice, label:C2, answer:B}.
+8. Attitude angles use{ID:8, options:A: intrinsic moving axes; B: extrinsic fixed axes, format:choice, label:C2, answer:A}.
+9. After the yaw-pitch-roll attitude, bRg=Cx(Φ)*Cy(θ)*Cz(ψ) maps ground-frame components into the airframe, and the yaw matrix is{ID:9, options:A: the leftmost factor; B: the rightmost factor, format:choice, label:C2, answer:B}.
+10. gRb converts airframe coordinates into the ground frame, and its mapping is{ID:10, options:A: airframe to ground frame; B: ground frame to airframe, format:choice, label:C2, answer:A}.
+11. A ground-frame vector is converted into the airframe by using gRb's{ID:11, options:A: itself; B: transpose, format:choice, label:C2, answer:B}.
+12. By the declaration, the factored form of gRb is{ID:12, options:A: Cz(-ψ)*Cy(-θ)*Cx(-Φ); B: Cx(Φ)*Cy(θ)*Cz(ψ); C: Cz(ψ)*Cy(θ)*Cx(Φ); D: Cy(θ)*Cz(ψ)*Cx(Φ), format:choice, label:C2, answer:A}.
+13. The airframe coordinates of the airframe forward unit vector are{ID:13, options:none, format:vector, label:C1, answer:[1, 0, 0]}.
+14. Map the airframe forward axis into the ground frame by computing{ID:14, options:A: gRb*[1, 0, 0]; B: gRb^T*[1, 0, 0], format:choice, label:C2, answer:A}.
+15. At ψ=30°, θ=20°, and Φ=15°, the ground-frame components of the airframe forward axis are{ID:15, options:none, format:vector, label:A2, answer:[cos(20°)*cos(30°), sin(30°)*cos(20°), -sin(20°)]}.
+16. From the sign of that ground normal component, the nose points{ID:16, options:A: upward; B: downward, format:choice, label:A1, answer:A}.
+17. In the full attitude matrix, the airframe right axis in the ground frame is column{ID:17, options:A: the third column; B: the second column; C: the first column, format:choice, label:C2, answer:B}.
+18. The airframe down axis in the ground frame is column{ID:18, options:A: the third column; B: the first column; C: the second column, format:choice, label:C2, answer:A}.
+19. The transpose of an orthogonal attitude matrix equals its{ID:19, options:A: negative of the matrix; B: determinant; C: inverse, format:choice, label:C1, answer:C}.
+20. The determinant of any valid three-dimensional rotation matrix is{ID:20, options:A: 0; B: +1; C: -1, format:choice, label:C1, answer:B}.
 
-### 子过程二：地面系到航迹系
+### Subprocess 2: ground frame to track frame
 
-21. 航迹方位角 φ 描述空速水平投影相对{ID:21, 选项:A：Xg；B：Yg；C：Zg, 输出格式:无, 标签:C1, 答案:A}。
-22. 航迹倾斜角 μ 为正表示飞行器向地面{ID:22, 选项:A：上方；B：下方, 输出格式:无, 标签:C1, 答案:A}。
-23. 航迹滚转角 γ 使气流系相对航迹系绕共同的空速轴转动，该轴是航迹系的{ID:23, 选项:A：Zp；B：Xp；C：Yp, 输出格式:无, 标签:C1, 答案:B}。
-24. 地面系看到的航迹系姿态矩阵记作{ID:24, 选项:A：gRp；B：pRg, 输出格式:无, 标签:C1, 答案:A}。
-25. 按当前定义，不含滚转的 gRp 的复合形式为{ID:25, 选项:A：Cz(-φ)*Cy(-μ)；B：Cz(φ)*Cy(μ)；C：Cy(-μ)*Cz(-φ)；D：Cz(-φ)*Cy(μ)；E：Cz(-φ)*Cy(-μ)*Cx(-γ), 输出格式:无, 标签:C2, 答案:A}。
-26. 航迹系单位空速向量为{ID:26, 选项:无, 输出格式:向量, 标签:C1, 答案:[1, 0, 0]}。
-27. 航迹系单位空速向量转换到地面系，应使用{ID:27, 选项:A：gRp^T；B：gRp, 输出格式:无, 标签:C2, 答案:B}。
-取 φ=40°、μ=10° 计算地面系空速。
+21. Track azimuth φ describes the horizontal airspeed projection relative to{ID:21, options:A: Xg; B: Yg; C: Zg, format:choice, label:C1, answer:A}.
+22. Positive track inclination means the aircraft moves{ID:22, options:A: upward; B: downward, format:choice, label:C1, answer:A}.
+23. Track roll γ rotates the airflow frame about the shared airspeed axis of the track frame, which is{ID:23, options:A: Zp; B: Xp; C: Yp, format:choice, label:C1, answer:B}.
+24. The track attitude seen from the ground frame is{ID:24, options:A: gRp; B: pRg, format:choice, label:C1, answer:A}.
+25. By the current declaration, the factored form of gRp without roll is{ID:25, options:A: Cz(-φ)*Cy(-μ); B: Cz(φ)*Cy(μ); C: Cy(-μ)*Cz(-φ); D: Cz(-φ)*Cy(μ); E: Cz(-φ)*Cy(-μ)*Cx(-γ), format:choice, label:C2, answer:A}.
+26. The track-frame unit airspeed vector is{ID:26, options:none, format:vector, label:C1, answer:[1, 0, 0]}.
+27. Convert the track-frame unit airspeed into the ground frame with{ID:27, options:A: gRp^T; B: gRp, format:choice, label:C2, answer:B}.
+Compute the ground-frame airspeed at φ=40° and μ=10°.
 
-28. 空速的地面系法向分量为{ID:28, 选项:A：sin(10°)；B：cos(10°)；C：-sin(10°), 输出格式:无, 标签:A2, 答案:C}。
-29. 由该地面法向分量的符号判断，空速指向地面{ID:29, 选项:A：下方；B：上方, 输出格式:无, 标签:A1, 答案:B}。
-30. 当航迹倾斜角为零时，空速地面系法向分量为{ID:30, 选项:A：0；B：+1；C：-1, 输出格式:无, 标签:A2, 答案:A}。
-31. 在 μ=0 时，航迹方位角改变会使空速水平投影在 Xg、Yg 平面内{ID:31, 选项:A：保持不变；B：转动, 输出格式:无, 标签:A1, 答案:B}。
-32. 航迹滚转角 γ 改变时，空速方向本身{ID:32, 选项:A：不改变；B：改变, 输出格式:无, 标签:A1, 答案:A}。
-33. 航迹滚转会改变{ID:33, 选项:A：气流系 Ya、Za 相对航迹系的方向；B：航迹系 Yp、Zp 轴；C：空速大小, 输出格式:无, 标签:A1, 答案:A}。
-34. 地面系空速向量可由航迹方向写成{ID:34, 选项:无, 输出格式:向量, 标签:A2, 答案:[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]}。
+28. The ground normal component of the airspeed is{ID:28, options:A: sin(10°); B: cos(10°); C: -sin(10°), format:choice, label:A2, answer:C}.
+29. From the sign of that ground normal component, the airspeed points{ID:29, options:A: downward; B: upward, format:choice, label:A1, answer:B}.
+30. When track inclination is zero, the ground normal component of the airspeed is{ID:30, options:A: 0; B: +1; C: -1, format:choice, label:A2, answer:A}.
+31. At μ=0, changing track azimuth makes the horizontal airspeed projection{ID:31, options:A: stays unchanged; B: turns, format:choice, label:A1, answer:B}.
+32. When track roll γ changes, the airspeed direction itself{ID:32, options:A: does not change; B: changes, format:choice, label:A1, answer:A}.
+33. Track roll changes{ID:33, options:A: the directions of airflow Ya and Za relative to the track frame; B: the track axes Yp and Zp; C: the airspeed magnitude, format:choice, label:A1, answer:A}.
+34. The ground-frame airspeed written from the track direction is{ID:34, options:none, format:vector, label:A2, answer:[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]}.
 
-### 子过程三：机体系、稳定性系与气流系
+### Subprocess 3: airframe, stability frame, and airflow frame
 
-35. 稳定性系 Xs 轴沿空速在飞行器{ID:35, 选项:A：机翼展向投影；B：对称面内的投影, 输出格式:无, 标签:C1, 答案:B}。
-36. 迎角 α 为正时，空速在机体对称面内偏向机体{ID:36, 选项:A：下方；B：上方, 输出格式:无, 标签:C1, 答案:A}。
-37. 侧滑角 β 为正时，空速偏向机体{ID:37, 选项:A：左方；B：右方, 输出格式:无, 标签:C1, 答案:B}。
-38. 机体系到稳定性系的姿态差异只由{ID:38, 选项:A：航迹方位角；B：迎角；C：侧滑角, 输出格式:无, 标签:C2, 答案:B}。
-39. 稳定性系到气流系的姿态差异只由{ID:39, 选项:A：侧滑角；B：迎角；C：偏航角, 输出格式:无, 标签:C2, 答案:A}。
-40. 按定义，稳定性系到机体系的矩阵为{ID:40, 选项:A：Cy(-α)；B：Cz(-β)；C：Cy(α), 输出格式:无, 标签:C2, 答案:C}。
-41. 气流系到稳定性系的矩阵为{ID:41, 选项:A：Cy(-α)；B：Cz(-β)；C：Cz(β), 输出格式:无, 标签:C2, 答案:B}。
-42. 气流系到机体系的复合矩阵为{ID:42, 选项:A：Cz(-β)*Cy(-α)；B：Cy(α)*Cz(β)；C：Cy(α)*Cz(-β)；D：Cy(-α)*Cz(-β), 输出格式:无, 标签:C2, 答案:C}。
-43. 空速在气流系中的单位向量为{ID:43, 选项:无, 输出格式:向量, 标签:C1, 答案:[1, 0, 0]}。
-44. 空速从气流系变换到机体系，应使用{ID:44, 选项:A：bRa；B：bRa^T, 输出格式:无, 标签:C2, 答案:A}。
-45. 空速在机体系中的单位向量为{ID:45, 选项:无, 输出格式:向量, 标签:A2, 答案:[cos(α)*cos(β), sin(β), sin(α)*cos(β)]}。
-46. 机体系空速的 yb 分量为正时，空速指向机体{ID:46, 选项:A：右方；B：左方, 输出格式:无, 标签:A1, 答案:A}。
-47. 机体系空速的 zb 分量为正时，空速指向机体{ID:47, 选项:A：上方；B：下方, 输出格式:无, 标签:A1, 答案:B}。
-48. 仅由机体系单位空速向量 [vx, vy, vz] 恢复侧滑角时，可用{ID:48, 选项:A：atan2(vy, sqrt(vx^2+vz^2))；B：atan2(-vy, sqrt(vx^2+vz^2))；C：atan2(vz, sqrt(vx^2+vy^2))；D：atan2(vx, vy), 输出格式:无, 标签:A2, 答案:A}。
-49. 在 vx>0 且 vy>0 时，侧滑角符号为{ID:49, 选项:A：负；B：正, 输出格式:无, 标签:A1, 答案:B}。
-50. 在 vx>0 且 vz>0 时，迎角符号为{ID:50, 选项:A：正；B：负, 输出格式:无, 标签:A1, 答案:A}。
-51. 迎角的稳定表达式为{ID:51, 选项:A：atan2(vz, vx)；B：atan2(-vz, vx)；C：atan2(vy, vx), 输出格式:无, 标签:A2, 答案:A}。
+35. The stability axis Xs follows the airspeed projected onto the aircraft{ID:35, options:A: spanwise wing projection; B: projection in the plane of symmetry, format:choice, label:C1, answer:B}.
+36. When angle of attack α is positive, the airspeed in the plane of symmetry points{ID:36, options:A: downward; B: upward, format:choice, label:C1, answer:A}.
+37. When sideslip β is positive, the airspeed points{ID:37, options:A: left; B: right, format:choice, label:C1, answer:B}.
+38. The attitude difference from the airframe to the stability frame is only{ID:38, options:A: track azimuth; B: angle of attack; C: sideslip, format:choice, label:C2, answer:B}.
+39. The attitude difference from the stability frame to the airflow frame is only{ID:39, options:A: sideslip; B: angle of attack; C: yaw, format:choice, label:C2, answer:A}.
+40. By the declaration, the matrix from the stability frame to the airframe is{ID:40, options:A: Cy(-α); B: Cz(-β); C: Cy(α), format:choice, label:C2, answer:C}.
+41. The matrix from the airflow frame to the stability frame is{ID:41, options:A: Cy(-α); B: Cz(-β); C: Cz(β), format:choice, label:C2, answer:B}.
+42. The composite matrix from the airflow frame to the airframe is{ID:42, options:A: Cz(-β)*Cy(-α); B: Cy(α)*Cz(β); C: Cy(α)*Cz(-β); D: Cy(-α)*Cz(-β), format:choice, label:C2, answer:C}.
+43. The unit airspeed in the airflow frame is{ID:43, options:none, format:vector, label:C1, answer:[1, 0, 0]}.
+44. Transform the airspeed from the airflow frame into the airframe with{ID:44, options:A: bRa; B: bRa^T, format:choice, label:C2, answer:A}.
+45. The unit airspeed in the airframe is{ID:45, options:none, format:vector, label:A2, answer:[cos(α)*cos(β), sin(β), sin(α)*cos(β)]}.
+46. When the airframe airspeed component yb is positive, the airspeed points{ID:46, options:A: right; B: left, format:choice, label:A1, answer:A}.
+47. When the airframe airspeed component zb is positive, the airspeed points{ID:47, options:A: upward; B: downward, format:choice, label:A1, answer:B}.
+48. Recover sideslip from the airframe unit airspeed [vx, vy, vz] with{ID:48, options:A: atan2(vy, sqrt(vx^2+vz^2)); B: atan2(-vy, sqrt(vx^2+vz^2)); C: atan2(vz, sqrt(vx^2+vy^2)); D: atan2(vx, vy), format:choice, label:A2, answer:A}.
+49. When vx>0 and vy>0, the sign of sideslip is{ID:49, options:A: negative; B: positive, format:choice, label:A1, answer:B}.
+50. When vx>0 and vz>0, the sign of angle of attack is{ID:50, options:A: positive; B: negative, format:choice, label:A1, answer:A}.
+51. A stable expression for angle of attack is{ID:51, options:A: atan2(vz, vx); B: atan2(-vz, vx); C: atan2(vy, vx), format:choice, label:A2, answer:A}.
 
-### 子过程四：地面系与机体系闭环
+### Subprocess 4: ground-frame and airframe closure
 
-vg 是由航迹方位角和航迹倾斜角得到的地面系单位空速向量。
-gRb、gRp 分别把机体系、航迹系分量映到地面系。bRa 把气流系分量映到机体系，pRa 把气流系分量映到航迹系。
-gRp 不含航迹滚转。pRa 只含气流系相对航迹系绕共同空速轴的滚转。
-本子过程的姿态角、航迹角、迎角和侧滑角描述同一飞行状态，并忽略数值舍入。这些角不能各自独立取值。
-同一状态下，机体系单位空速经 gRb 映到地面系，等于航迹系单位空速经 gRp 映到地面系。
-完整姿态还满足 gRb*bRa=gRp*pRa。空速向量相等只验证共同的空速轴，不能验证绕该轴的滚转。
+vg is the ground-frame unit airspeed from the track azimuth and the track inclination.
+gRb and gRp map airframe and track-frame components into the ground frame. bRa maps airflow-frame components into the airframe, and pRa maps airflow-frame components into the track frame.
+gRp contains no track roll. pRa contains only the roll of the airflow frame relative to the track frame about their shared airspeed axis.
+The attitude angles, track angles, angle of attack, and sideslip in this subprocess describe one flight state, and numerical rounding is ignored. These angles cannot be chosen independently.
+In that state, the airframe unit airspeed mapped into the ground frame by gRb equals the track-frame unit airspeed mapped into the ground frame by gRp.
+The full attitude also satisfies gRb*bRa=gRp*pRa. Equality of the airspeed vectors checks only the shared airspeed axis, not the roll about that axis.
 
-52. gRb 和 gRp 都把各自子坐标系分量映射到{ID:52, 选项:A：地面系；B：气流系, 输出格式:无, 标签:C1, 答案:A}。
-53. 由航迹角得到地面系空速后，转换到机体系应计算{ID:53, 选项:A：gRb*vg；B：gRb^T*vg, 输出格式:无, 标签:C2, 答案:B}。
-54. 由迎角、侧滑角得到机体系空速时，γ 和 Φ{ID:54, 选项:A：不直接进入机体系空速分量公式；B：必须加入, 输出格式:无, 标签:C2, 答案:A}。
-55. 由航迹角构造的地面系空速为{ID:55, 选项:无, 输出格式:向量, 标签:A2, 答案:[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]}。
-56. 将上述空速转换到机体系后，其结果应与由 α、β 直接构造的机体系空速{ID:56, 选项:A：一般不相关；B：相同；C：相反, 输出格式:无, 标签:A1, 答案:B}。
-57. 在输入角度描述同一飞行状态且忽略数值舍入的条件下，两条路径结果不一致，说明计算或约定使用中{ID:57, 选项:A：必定不存在错误；B：至少存在一处错误, 输出格式:无, 标签:A2, 答案:B}。
-58. γ 不改变空速单位向量的地面系坐标，比较空速向量只能验证共同的空速轴而不能验证绕该轴的滚转，因此验证空速方向时可以{ID:58, 选项:A：忽略空速轴向；B：只比较滚转角；C：只比较空速向量, 输出格式:无, 标签:C2, 答案:C}。
-59. 对两条路径得到的单位向量作闭合验证，要求其差向量的范数为{ID:59, 选项:A：2；B：0；C：1, 输出格式:无, 标签:A2, 答案:B}。
+52. Both gRb and gRp map components of their child frames into{ID:52, options:A: the ground frame; B: the airflow frame, format:choice, label:C1, answer:A}.
+53. After the track angles give the ground-frame airspeed, convert it into the airframe by{ID:53, options:A: gRb*vg; B: gRb^T*vg, format:choice, label:C2, answer:B}.
+54. When angle of attack and sideslip give the airframe airspeed, γ and Φ{ID:54, options:A: do not enter the airframe airspeed formula directly; B: must be included, format:choice, label:C2, answer:A}.
+55. The ground-frame airspeed built from the track angles is{ID:55, options:none, format:vector, label:A2, answer:[cos(φ)*cos(μ), sin(φ)*cos(μ), -sin(μ)]}.
+56. After converting that airspeed into the airframe, it should match the airframe airspeed built directly from α and β{ID:56, options:A: generally unrelated; B: same; C: opposite, format:choice, label:A1, answer:B}.
+57. When the angles describe one flight state and rounding is ignored, disagreement between the two paths means that the calculation or the use of the convention has{ID:57, options:A: certainly no error; B: at least one error, format:choice, label:A2, answer:B}.
+58. Because γ does not change the ground coordinates of the unit airspeed, comparing airspeed vectors checks the shared airspeed axis and not the roll about it, so the airspeed direction can be checked by choosing to{ID:58, options:A: ignore the airspeed axis; B: compare only the roll angle; C: compare only the airspeed vectors, format:choice, label:C2, answer:C}.
+59. Closing the unit vectors from the two paths requires the norm of their difference to be{ID:59, options:A: 2; B: 0; C: 1, format:choice, label:A2, answer:B}.
 
-## 气动力与参考点定义
+## Aerodynamic loads and the reference point
 
-这一节只送给气动力子过程和参考点子过程。
+This section is sent only to the aerodynamic-load subprocess and the reference-point subprocess.
 
-固定约定
-- 向量是列向量，矩阵左乘列向量。
-- T_a←b 把同一物理向量的机体系分量映成气流系分量。反向变换用它的转置。
-- T_s←b 是机体系到稳定性系，T_a←s 是稳定性系到气流系。定义不给出这两个矩阵的元素。
-- 三个坐标系都是右手系。分量按 X、Y、Z 书写。
-- 力是作用在飞行器上的气动力。气动力和气动力矩按有符号分量处理。
-- 同一点上改变坐标表达，和改变力矩参考点，是两件事。力和力矩的坐标转换都从气流系到机体系，参考点保持为 A。
-- 角度进入三角函数时使用同一角度单位。本稿取 -90°<α<90°、-90°<β<90°，所以 cos(α)>0、cos(β)>0。
+Fixed conventions
+- Vectors are column vectors, and a matrix multiplies a column vector on the left.
+- T_a←b maps the airframe components of one physical vector to airflow-frame components. The reverse transform is its transpose.
+- T_s←b goes from the airframe to the stability frame, and T_a←s goes from the stability frame to the airflow frame. The declaration does not give the entries of these two matrices.
+- All three frames are right-handed. Components are written in the order X, Y, Z.
+- A force is an aerodynamic force acting on the aircraft. Aerodynamic forces and moments are signed components.
+- Changing the coordinate expression of one point, and changing the moment reference point, are two different operations. Force and moment transforms both go from the airflow frame to the airframe, and the reference point stays at A.
+- An angle enters a trigonometric function in one angle unit. This manuscript uses -90°<α<90° and -90°<β<90°, so cos(α)>0 and cos(β)>0.
 
-方向和坐标轴
-- 前方、右方、下方分别是轴向、侧向、法向的正方向。前方 × 右方 = 下方。
-- X_b 指向机体前方，Y_b 指向机体右方，Z_b 指向机体下方。机体系原点在气动参考点 A。
-- X_s 是空速在机体对称面内的投影，Y_s 与 Y_b 同向，Z_s 由 X_s×Y_s 确定。原点与 A 重合。
-- X_a 沿飞行器相对空气的速度。Z_a 位于机体对称面内并垂直于 X_a，取与 Z_b 点积为正的分支。Y_a 由 Z_a×X_a 确定。原点与 A 重合。
-- 空速是飞行器相对空气的速度。空气相对飞行器的方向与它相反。
+Directions and axes
+- Forward, right, and down are the positive axial, lateral, and normal directions. Forward × right = down.
+- X_b points forward on the airframe, Y_b points right on the airframe, and Z_b points down on the airframe. The airframe origin is the aerodynamic reference point A.
+- X_s is the projection of the airspeed onto the airframe plane of symmetry, Y_s has the same sense as Y_b, and Z_s is fixed by X_s×Y_s. The origin coincides with A.
+- X_a follows the velocity of the aircraft relative to the air. Z_a lies in the airframe plane of symmetry, is perpendicular to X_a, and is the branch whose dot product with Z_b is positive. Y_a is fixed by Z_a×X_a. The origin coincides with A.
+- Airspeed is the velocity of the aircraft relative to the air. The direction of the air relative to the aircraft is the opposite direction.
 
-气流角
-- 迎角 α：空速在飞行器对称面上的投影与机体系轴向正方向的夹角。投影处于机体轴向下方时为正。
-- 侧滑角 β：空速向量与飞行器对称面的夹角，空速在飞行器右侧为正。
-- 只分析迎角时令 β=0。只分析侧滑时令 α=0。
+Airflow angles
+- Angle of attack α: the angle between the projection of the airspeed onto the aircraft plane of symmetry and the positive airframe axis. When that projection lies below the airframe axis, the angle is positive.
+- Sideslip β: the angle between the airspeed vector and the aircraft plane of symmetry. When the airspeed lies to the right of the aircraft, the angle is positive.
+- Set β=0 when only angle of attack is analyzed. Set α=0 when only sideslip is analyzed.
 
-气动力与力矩
-- D 是阻力大小，D≥0，方向沿 -X_a。Y 是侧力的有符号大小，正方向沿 +Y_a。L 是升力的有符号大小，正方向沿 -Z_a。
-- l_a、m_a、n_a 分别绕 +X_a、+Y_a、+Z_a 按右手定则为正。
-- X、Y_b、Z 分别沿 +X_b、+Y_b、+Z_b 为正。Y 是气流系侧力，Y_b 是机体系侧向力。
-- l_A、m_A、n_A 是关于 A 的力矩，分别绕 +X_b、+Y_b、+Z_b 按右手定则为正。
-- 在前、右、下机体系中，绕 +Y_b 的正俯仰力矩对应抬头，负值对应低头。
+Aerodynamic force and moment
+- D is the drag magnitude, D≥0, along -X_a. Y is the signed side force, positive along +Y_a. L is the signed lift, positive along -Z_a.
+- l_a, m_a, and n_a are positive by the right-hand rule about +X_a, +Y_a, and +Z_a.
+- X, Y_b, and Z are positive along +X_b, +Y_b, and +Z_b. Y is the airflow side force, and Y_b is the airframe lateral force.
+- l_A, m_A, and n_A are moments about A, positive by the right-hand rule about +X_b, +Y_b, and +Z_b.
+- In the forward-right-down airframe, a positive pitch moment about +Y_b is nose-up, and a negative value is nose-down.
 
-动压与系数
-- ρ>0，V>0，动压 q_bar=ρ*V^2/2。S>0 是参考面积，b>0 是参考翼展，c_bar>0 是参考平均气动弦长。
-- D=q_bar*S*C_D，Y=q_bar*S*C_Ya，L=q_bar*S*C_L。
-- l_a=q_bar*S*b*C_la，m_a=q_bar*S*c_bar*C_ma，n_a=q_bar*S*b*C_na。
-- l_A=q_bar*S*b*C_lA，m_A=q_bar*S*c_bar*C_mA，n_A=q_bar*S*b*C_nA。
+Dynamic pressure and coefficients
+- ρ>0, V>0, and the dynamic pressure is q_bar=ρ*V^2/2. S>0 is the reference area, b>0 is the reference span, and c_bar>0 is the reference mean aerodynamic chord.
+- D=q_bar*S*C_D, Y=q_bar*S*C_Ya, and L=q_bar*S*C_L.
+- l_a=q_bar*S*b*C_la, m_a=q_bar*S*c_bar*C_ma, and n_a=q_bar*S*b*C_na.
+- l_A=q_bar*S*b*C_lA, m_A=q_bar*S*c_bar*C_mA, and n_A=q_bar*S*b*C_nA.
 
-参考点
-- A 是原气动数据的力矩参考点，G 是质心，也是换算后的力矩参考点。换算时机体系轴方向不变。
-- 机头参考点是 N。N、A 和一个机尾参考点沿机体轴向共线。L_f 是 N 到机尾参考点的距离，L_A 是 A 到机尾参考点的距离，0<L_A<L_f。
-- X_N 是 A 到 N 的距离，由过程计算。
-- x_Ge 从 N 沿机体后方量到 G 的轴向投影，后方为正。y_Ge、z_Ge 从 A 沿 +Y_b、+Z_b 量取。
-- x_Ge 与 +X_b 相反，y_Ge、z_Ge 与对应的机体系分量同向。定义不直接给出 G 相对 A 的坐标，也不直接给出参考点换算公式。
+Reference point
+- A is the moment reference point of the original aerodynamic data. G is the center of mass and the moment reference point after the transfer. The airframe axes do not change during the transfer.
+- N is the nose reference. N, A, and a tail reference are collinear on the airframe axis. L_f is the distance from N to the tail reference, L_A is the distance from A to the tail reference, and 0<L_A<L_f.
+- X_N is the distance from A to N and is computed in the process.
+- x_Ge is the axial projection from N rearward to G, and rearward is positive. y_Ge and z_Ge are measured from A along +Y_b and +Z_b.
+- x_Ge is opposite +X_b. y_Ge and z_Ge have the same sense as the corresponding airframe components. The declaration does not give the coordinates of G relative to A, and it does not give the reference-point transfer formula.
 
-### 子过程五：气动力和气动力矩从气流系转换到机体系
+### Subprocess 5: aerodynamic force and moment from the airflow frame to the airframe
 
-60. 本子过程的已知气动力分量位于气流系，输出要求采用机体系，因此所需转换方向是{ID:60, 选项:A：气流系向机体系；B：机体系向气流系；C：气流系向稳定性系后停止, 输出格式:无, 标签:C2, 答案:A}。
-61. 本子过程转换前后，力矩参考点{ID:61, 选项:A：由A变为G；B：由G变为A；C：始终为A, 输出格式:无, 标签:C2, 答案:C}。
-62. 机体系绝对轴向正方向对应{ID:62, 选项:A：Z_b；B：X_b；C：Y_b, 输出格式:无, 标签:C1, 答案:B}。
-63. 机体系绝对侧向正方向对应{ID:63, 选项:A：Y_b；B：X_b；C：Z_b, 输出格式:无, 标签:C1, 答案:A}。
-64. 机体系绝对法向正方向对应{ID:64, 选项:A：X_b；B：Y_b；C：Z_b, 输出格式:无, 标签:C1, 答案:C}。
-65. 气流系中的阻力方向为{ID:65, 选项:A：-Z_a；B：-X_a；C：+X_a, 输出格式:无, 标签:C1, 答案:B}。
-66. 气流系中的正升力方向为{ID:66, 选项:A：-Z_a；B：+Z_a；C：+Y_a, 输出格式:无, 标签:C1, 答案:A}。
-67. 气流系中的正侧力方向为{ID:67, 选项:A：-Y_a；B：+Z_a；C：+Y_a, 输出格式:无, 标签:C1, 答案:C}。
-68. 按照 X_a、Y_a、Z_a 的顺序，气流系气动力向量为{ID:68, 选项:无, 输出格式:向量, 标签:A2, 答案:[-D, Y, -L]}。
-69. 气流系滚转力矩 l_a 的正方向绕{ID:69, 选项:A：+X_a；B：+Y_a；C：+Z_a, 输出格式:无, 标签:C1, 答案:A}。
-70. 气流系俯仰力矩 m_a 的正方向绕{ID:70, 选项:A：+X_a；B：+Z_a；C：+Y_a, 输出格式:无, 标签:C1, 答案:C}。
-71. 按照 X_a、Y_a、Z_a 的顺序，气流系力矩向量为{ID:71, 选项:无, 输出格式:向量, 标签:A2, 答案:[l_a, m_a, n_a]}。
-72. 仅有正迎角时，稳定性系前方轴相对机体系前方轴偏向机体{ID:72, 选项:A：下方；B：上方；C：右方, 输出格式:无, 标签:A1, 答案:A}。
-73. 因此该前方轴在机体系中的 Z_b 分量为{ID:73, 选项:A：负；B：零；C：正, 输出格式:无, 标签:A1, 答案:C}。
-74. 由此构造机体系到稳定性系的被动变换矩阵 T_s←b 为{ID:74, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]}。
-75. 仅有正侧滑角时，气流系前方轴相对稳定性系前方轴偏向稳定性系{ID:75, 选项:A：右方；B：左方；C：下方, 输出格式:无, 标签:A1, 答案:A}。
-76. 因此该前方轴在稳定性系中的 Y_s 分量为{ID:76, 选项:A：负；B：零；C：正, 输出格式:无, 标签:A1, 答案:C}。
-77. 由此构造稳定性系到气流系的被动变换矩阵 T_a←s 为{ID:77, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]}。
-78. 机体系到气流系的整体变换 T_a←b 应写为{ID:78, 选项:A：T_a←s*T_s←b；B：T_s←b*T_a←s, 输出格式:无, 标签:C2, 答案:A}。
-在计算总矩阵前，按刚选定的符号写出每个分矩阵的展开式。
+60. The known aerodynamic components are in the airflow frame and the output is required in the airframe, so the transform is{ID:60, options:A: airflow frame to airframe; B: airframe to airflow frame; C: airflow frame to stability frame, then stop, format:choice, label:C2, answer:A}.
+61. Across this subprocess, the moment reference point{ID:61, options:A: changes from A to G; B: changes from G to A; C: remains A, format:choice, label:C2, answer:C}.
+62. The positive absolute airframe axis corresponds to{ID:62, options:A: Z_b; B: X_b; C: Y_b, format:choice, label:C1, answer:B}.
+63. The positive absolute airframe lateral direction corresponds to{ID:63, options:A: Y_b; B: X_b; C: Z_b, format:choice, label:C1, answer:A}.
+64. The positive absolute airframe normal corresponds to{ID:64, options:A: X_b; B: Y_b; C: Z_b, format:choice, label:C1, answer:C}.
+65. Drag in the airflow frame is along{ID:65, options:A: -Z_a; B: -X_a; C: +X_a, format:choice, label:C1, answer:B}.
+66. Positive lift in the airflow frame is along{ID:66, options:A: -Z_a; B: +Z_a; C: +Y_a, format:choice, label:C1, answer:A}.
+67. Positive side force in the airflow frame is along{ID:67, options:A: -Y_a; B: +Z_a; C: +Y_a, format:choice, label:C1, answer:C}.
+68. In the order X_a, Y_a, Z_a, the airflow-frame aerodynamic force is{ID:68, options:none, format:vector, label:A2, answer:[-D, Y, -L]}.
+69. Positive airflow roll moment l_a is about{ID:69, options:A: +X_a; B: +Y_a; C: +Z_a, format:choice, label:C1, answer:A}.
+70. Positive airflow pitch moment m_a is about{ID:70, options:A: +X_a; B: +Z_a; C: +Y_a, format:choice, label:C1, answer:C}.
+71. In the order X_a, Y_a, Z_a, the airflow-frame moment is{ID:71, options:none, format:vector, label:A2, answer:[l_a, m_a, n_a]}.
+72. With only a positive angle of attack, the stability forward axis relative to the airframe forward axis points{ID:72, options:A: downward; B: upward; C: right, format:choice, label:A1, answer:A}.
+73. The Z_b component of that forward axis in the airframe is therefore{ID:73, options:A: negative; B: zero; C: positive, format:choice, label:A1, answer:C}.
+74. The passive matrix T_s←b from the airframe to the stability frame is{ID:74, options:none, format:matrix, label:A2, answer:[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]}.
+75. With only a positive sideslip, the airflow forward axis relative to the stability forward axis points{ID:75, options:A: right; B: left; C: downward, format:choice, label:A1, answer:A}.
+76. The Y_s component of that forward axis in the stability frame is therefore{ID:76, options:A: negative; B: zero; C: positive, format:choice, label:A1, answer:C}.
+77. The passive matrix T_a←s from the stability frame to the airflow frame is{ID:77, options:none, format:matrix, label:A2, answer:[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]}.
+78. The full transform T_a←b from the airframe to the airflow frame is{ID:78, options:A: T_a←s*T_s←b; B: T_s←b*T_a←s, format:choice, label:C2, answer:A}.
+Before the product is formed, write the expansion of each factor in the symbols just chosen.
 
-79. T_a←s的展开式为{ID:79, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]}。
-80. T_s←b的展开式为{ID:80, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]}。
-81. 展开该乘积得到 T_a←b 为{ID:81, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(α)*cos(β), sin(β), sin(α)*cos(β)], [-cos(α)*sin(β), cos(β), -sin(α)*sin(β)], [-sin(α), 0, cos(α)]]}。
-82. 将气流系气动力换成机体系气动力，应使用{ID:82, 选项:A：T_a←b 的转置；B：T_a←b, 输出格式:无, 标签:C2, 答案:A}。
-83. 记该反向矩阵为 B，展开 B 得到{ID:83, 选项:无, 输出格式:矩阵, 标签:A2, 答案:[[cos(α)*cos(β), -cos(α)*sin(β), -sin(α)], [sin(β), cos(β), 0], [sin(α)*cos(β), -sin(α)*sin(β), cos(α)]]}。
-84. 机体系轴向气动力 X 为{ID:84, 选项:无, 输出格式:表达式, 标签:A2, 答案:-D*cos(α)*cos(β) - Y*cos(α)*sin(β) + L*sin(α)}。
-下面只保留升力，取 β=0、Y=0、D=0、L>0，且 0°<α<90°。
+79. The expanded T_a←s is{ID:79, options:none, format:matrix, label:A2, answer:[[cos(β), sin(β), 0], [-sin(β), cos(β), 0], [0, 0, 1]]}.
+80. The expanded T_s←b is{ID:80, options:none, format:matrix, label:A2, answer:[[cos(α), 0, sin(α)], [0, 1, 0], [-sin(α), 0, cos(α)]]}.
+81. Expanding that product gives T_a←b ={ID:81, options:none, format:matrix, label:A2, answer:[[cos(α)*cos(β), sin(β), sin(α)*cos(β)], [-cos(α)*sin(β), cos(β), -sin(α)*sin(β)], [-sin(α), 0, cos(α)]]}.
+82. Convert the airflow-frame force into the airframe force with{ID:82, options:A: the transpose of T_a←b; B: T_a←b, format:choice, label:C2, answer:A}.
+83. Call that reverse matrix B and expand it to{ID:83, options:none, format:matrix, label:A2, answer:[[cos(α)*cos(β), -cos(α)*sin(β), -sin(α)], [sin(β), cos(β), 0], [sin(α)*cos(β), -sin(α)*sin(β), cos(α)]]}.
+84. The airframe axial force X is{ID:84, options:none, format:expression, label:A2, answer:-D*cos(α)*cos(β) - Y*cos(α)*sin(β) + L*sin(α)}.
+Keep only lift. Set β=0, Y=0, D=0, L>0, and 0°<α<90°.
 
-85. 机体系侧向气动力 Y_b 为{ID:85, 选项:无, 输出格式:表达式, 标签:A2, 答案:-D*sin(β) + Y*cos(β)}。
-86. 机体系法向气动力 Z 为{ID:86, 选项:无, 输出格式:表达式, 标签:A2, 答案:-D*sin(α)*cos(β) - Y*sin(α)*sin(β) - L*cos(α)}。
-87. 升力产生的机体系轴向分量为{ID:87, 选项:A：正；B：负；C：零, 输出格式:无, 标签:A1, 答案:A}。
-88. 升力产生的机体系法向分量为{ID:88, 选项:A：正；B：零；C：负, 输出格式:无, 标签:A1, 答案:C}。
-89. 当 β=0、Y=0 且 D>0、L>0 时，仅凭这些条件，机体系轴向合力 X 的符号{ID:89, 选项:A：一定为负；B：不能确定；C：一定为正, 输出格式:无, 标签:A1, 答案:B}。
-90. 取 α=30°、β=0°、D=2、Y=0、L=2*sqrt(3)，机体系气动力向量为{ID:90, 选项:无, 输出格式:向量, 标签:A2, 答案:[0, 0, -4]}。
-91. 坐标转换后，气动力的欧氏长度与转换前{ID:91, 选项:A：一般增大；B：一般减小；C：相同, 输出格式:无, 标签:A1, 答案:C}。
-92. 同一参考点 A 处的气动力矩从气流系变到机体系时，应使用{ID:92, 选项:A：额外加入力臂平移；B：同一个矩阵 B；C：B 的负矩阵, 输出格式:无, 标签:C2, 答案:B}。
-93. 机体系滚转力矩 l_A 为{ID:93, 选项:无, 输出格式:表达式, 标签:A2, 答案:l_a*cos(α)*cos(β) - m_a*cos(α)*sin(β) - n_a*sin(α)}。
-94. 机体系俯仰力矩 m_A 为{ID:94, 选项:无, 输出格式:表达式, 标签:A2, 答案:l_a*sin(β) + m_a*cos(β)}。
-95. 机体系偏航力矩 n_A 为{ID:95, 选项:无, 输出格式:表达式, 标签:A2, 答案:l_a*sin(α)*cos(β) - m_a*sin(α)*sin(β) + n_a*cos(α)}。
-96. 当 β=0 时，气流系正俯仰力矩的旋转轴与机体系侧向轴{ID:96, 选项:A：重合；B：相互垂直；C：方向无法确定, 输出格式:无, 标签:A1, 答案:A}。
-97. 当 α=0、0°<β<90°、l_a>0 且 m_a=n_a=0 时，机体系俯仰力矩 m_A 为{ID:97, 选项:A：负；B：零；C：正, 输出格式:无, 标签:A1, 答案:C}。
-98. 由 ρ 和 V 计算动压 q_bar 得到{ID:98, 选项:无, 输出格式:表达式, 标签:A2, 答案:ρ*V^2/2}。
-99. 将气动力系数换成气流系有量纲力向量，结果为{ID:99, 选项:无, 输出格式:向量, 标签:A2, 答案:[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]}。
-100. 三个力分量采用相同归一化尺度，因此有符号分量系数向量 [-C_D, C_Ya, -C_L] 可以{ID:100, 选项:A：使用同一矩阵 B 直接转换；B：必须分别乘不同参考长度后才能转换, 输出格式:无, 标签:C2, 答案:A}。
-本子过程直接给出机体系中的合力 F_b=[X, Y_b, Z]，以及关于 A 点的力矩 M_A=[l_A, m_A, n_A]。
-所有分量都已经在同一个机体系里。本子过程只改变力矩参考点，不再改变坐标轴方向。
+85. The airframe lateral force Y_b is{ID:85, options:none, format:expression, label:A2, answer:-D*sin(β) + Y*cos(β)}.
+86. The airframe normal force Z is{ID:86, options:none, format:expression, label:A2, answer:-D*sin(α)*cos(β) - Y*sin(α)*sin(β) - L*cos(α)}.
+87. The airframe axial component produced by lift is{ID:87, options:A: positive; B: negative; C: zero, format:choice, label:A1, answer:A}.
+88. The airframe normal component produced by lift is{ID:88, options:A: positive; B: zero; C: negative, format:choice, label:A1, answer:C}.
+89. When β=0, Y=0, D>0, and L>0, these conditions alone make the sign of the airframe axial force X{ID:89, options:A: certainly negative; B: indeterminate; C: certainly positive, format:choice, label:A1, answer:B}.
+90. At α=30°, β=0°, D=2, Y=0, and L=2*sqrt(3), the airframe aerodynamic force is{ID:90, options:none, format:vector, label:A2, answer:[0, 0, -4]}.
+91. After the coordinate transform, the Euclidean length of the aerodynamic force is{ID:91, options:A: generally increases; B: generally decreases; C: same, format:choice, label:A1, answer:C}.
+92. At the same reference point A, the aerodynamic moment is moved from the airflow frame to the airframe with{ID:92, options:A: an extra moment-arm translation; B: the same matrix B; C: the negative of B, format:choice, label:C2, answer:B}.
+93. The airframe roll moment l_A is{ID:93, options:none, format:expression, label:A2, answer:l_a*cos(α)*cos(β) - m_a*cos(α)*sin(β) - n_a*sin(α)}.
+94. The airframe pitch moment m_A is{ID:94, options:none, format:expression, label:A2, answer:l_a*sin(β) + m_a*cos(β)}.
+95. The airframe yaw moment n_A is{ID:95, options:none, format:expression, label:A2, answer:l_a*sin(α)*cos(β) - m_a*sin(α)*sin(β) + n_a*cos(α)}.
+96. At β=0, the axis of the positive airflow pitch moment and the airframe lateral axis are{ID:96, options:A: aligned; B: perpendicular; C: direction indeterminate, format:choice, label:A1, answer:A}.
+97. When α=0, 0°<β<90°, l_a>0, and m_a=n_a=0, the airframe pitch moment m_A is{ID:97, options:A: negative; B: zero; C: positive, format:choice, label:A1, answer:C}.
+98. Dynamic pressure q_bar from ρ and V is{ID:98, options:none, format:expression, label:A2, answer:ρ*V^2/2}.
+99. The dimensional airflow-frame force from the aerodynamic coefficients is{ID:99, options:none, format:vector, label:A2, answer:[-q_bar*S*C_D, q_bar*S*C_Ya, -q_bar*S*C_L]}.
+100. The three force components share one scale, so the signed coefficient vector [-C_D, C_Ya, -C_L] can{ID:100, options:A: convert directly with the same matrix B; B: must be multiplied by different reference lengths before conversion, format:choice, label:C2, answer:A}.
+This subprocess gives the resultant F_b=[X, Y_b, Z] in the airframe and the moment M_A=[l_A, m_A, n_A] about A.
+Every component is already in the same airframe. This subprocess changes only the moment reference point and does not change the axis directions.
 
-101. 三个力矩系数采用 b、c_bar、b 三个参考长度，当 b 不等于 c_bar 时，应当{ID:101, 选项:A：直接将 B 乘 [C_la, C_ma, C_na]；B：先恢复有量纲力矩，旋转后按输出轴参考长度归一化, 输出格式:无, 标签:C2, 答案:B}。
-102. 按照当前归一化定义，机体系俯仰力矩系数 C_mA 为{ID:102, 选项:无, 输出格式:表达式, 标签:A2, 答案:(b/c_bar)*C_la*sin(β) + C_ma*cos(β)}。
+101. When the three moment coefficients use reference lengths b, c_bar, and b, and b is not equal to c_bar,{ID:101, options:A: multiply B directly by [C_la, C_ma, C_na]; B: recover the dimensional moment, rotate it, then normalize by the output-axis reference length, format:choice, label:C2, answer:B}.
+102. Under the current normalization, the airframe pitch-moment coefficient C_mA is{ID:102, options:none, format:expression, label:A2, answer:(b/c_bar)*C_la*sin(β) + C_ma*cos(β)}.
 
-### 子过程六：力矩从气动参考点换算到质心
+### Subprocess 6: moment transfer from the aerodynamic reference point to the center of mass
 
-103. 换算前的力矩参考点是{ID:103, 选项:A：G；B：N；C：A, 输出格式:无, 标签:C1, 答案:C}。
-104. 换算后的力矩参考点是{ID:104, 选项:A：N；B：G；C：A, 输出格式:无, 标签:C1, 答案:B}。
-105. 由共线距离关系，A 到机头参考点 N 的距离 X_N 为{ID:105, 选项:无, 输出格式:表达式, 标签:A2, 答案:L_f - L_A}。
-106. 工程轴向位置 x_Ge 的正方向是机体{ID:106, 选项:A：后方；B：前方, 输出格式:无, 标签:C1, 答案:A}。
-107. 该方向与机体系 +X_b 方向{ID:107, 选项:A：相同；B：相反, 输出格式:无, 标签:A1, 答案:B}。
-108. 因此质心 G 在以 A 为原点的机体系中的轴向坐标为{ID:108, 选项:无, 输出格式:表达式, 标签:A2, 答案:X_N - x_Ge}。
-109. 按 X_b、Y_b、Z_b 的顺序，从 A 指向 G 的向量 r_AG 为{ID:109, 选项:无, 输出格式:向量, 标签:A2, 答案:[X_N - x_Ge, y_Ge, z_Ge]}。
-110. 从 G 指向 A 的向量 r_GA 为{ID:110, 选项:无, 输出格式:向量, 标签:A2, 答案:[x_Ge - X_N, -y_Ge, -z_Ge]}。
-111. 参考点由 A 换到 G 后，同一气动力系的合力{ID:111, 选项:A：保持不变；B：必须取反；C：必须增加一个力臂项, 输出格式:无, 标签:C2, 答案:A}。
-以下将 r_AG 简记为 [x, y, z]。
-本段只考察附加力矩的方向，令 x>0、y>0、z>0，并逐次单独保留一个正力分量。未提到的力分量都是零。
+103. Before the transfer, the moment reference point is{ID:103, options:A: G; B: N; C: A, format:choice, label:C1, answer:C}.
+104. After the transfer, the moment reference point is{ID:104, options:A: N; B: G; C: A, format:choice, label:C1, answer:B}.
+105. From the collinear lengths, the distance X_N from A to the nose reference N is{ID:105, options:none, format:expression, label:A2, answer:L_f - L_A}.
+106. The positive engineering axial position x_Ge points{ID:106, options:A: rearward; B: forward, format:choice, label:C1, answer:A}.
+107. That direction and the airframe +X_b direction are{ID:107, options:A: same; B: opposite, format:choice, label:A1, answer:B}.
+108. The axial coordinate of the center of mass G in the airframe with origin A is therefore{ID:108, options:none, format:expression, label:A2, answer:X_N - x_Ge}.
+109. In the order X_b, Y_b, Z_b, the vector r_AG from A to G is{ID:109, options:none, format:vector, label:A2, answer:[X_N - x_Ge, y_Ge, z_Ge]}.
+110. The vector r_GA from G to A is{ID:110, options:none, format:vector, label:A2, answer:[x_Ge - X_N, -y_Ge, -z_Ge]}.
+111. After the reference point moves from A to G, the resultant force of the same aerodynamic system{ID:111, options:A: stays unchanged; B: must be reversed; C: must gain a moment-arm term, format:choice, label:C2, answer:A}.
+Below, r_AG is written [x, y, z].
+This part checks only the direction of the added moment. Set x>0, y>0, and z>0, and keep one positive force component at a time. Every force component that is not named is zero.
 
-112. 为把关于 A 的力矩换成关于 G 的力矩，附加力矩可用{ID:112, 选项:A：r_AG×F_b；B：r_GA×M_A；C：r_GA×F_b, 输出格式:无, 标签:C2, 答案:C}。
-113. 若统一使用从 A 指向 G 的向量 r_AG，换算关系应写为{ID:113, 选项:A：M_G=F_b-r_AG×M_A；B：M_G=M_A-r_AG×F_b；C：M_G=M_A+r_AG×F_b, 输出格式:无, 标签:A2, 答案:B}。
-114. 仅有正轴向力 X 时，该力对 G 产生的附加俯仰力矩为{ID:114, 选项:A：负；B：正；C：零, 输出格式:无, 标签:A1, 答案:A}。
-115. 仅有正轴向力 X 时，该力对 G 产生的附加偏航力矩为{ID:115, 选项:A：负；B：零；C：正, 输出格式:无, 标签:A1, 答案:C}。
-116. 仅有正侧向力 Y_b 时，该力对 G 产生的附加滚转力矩为{ID:116, 选项:A：零；B：正；C：负, 输出格式:无, 标签:A1, 答案:B}。
-117. 仅有正侧向力 Y_b 时，该力对 G 产生的附加偏航力矩为{ID:117, 选项:A：负；B：正；C：零, 输出格式:无, 标签:A1, 答案:A}。
-下面恢复所有有符号力分量，不再假设它们为正。
+112. To transfer the moment about A to the moment about G, the added moment is{ID:112, options:A: r_AG×F_b; B: r_GA×M_A; C: r_GA×F_b, format:choice, label:C2, answer:C}.
+113. Using the vector r_AG from A to G, the transfer is{ID:113, options:A: M_G=F_b-r_AG×M_A; B: M_G=M_A-r_AG×F_b; C: M_G=M_A+r_AG×F_b, format:choice, label:A2, answer:B}.
+114. With only a positive axial force X, the added pitch moment at G is{ID:114, options:A: negative; B: positive; C: zero, format:choice, label:A1, answer:A}.
+115. With only a positive axial force X, the added yaw moment at G is{ID:115, options:A: negative; B: zero; C: positive, format:choice, label:A1, answer:C}.
+116. With only a positive lateral force Y_b, the added roll moment at G is{ID:116, options:A: zero; B: positive; C: negative, format:choice, label:A1, answer:B}.
+117. With only a positive lateral force Y_b, the added yaw moment at G is{ID:117, options:A: negative; B: positive; C: zero, format:choice, label:A1, answer:A}.
+Restore every signed force component. Do not assume that they are positive.
 
-118. 仅有正法向力 Z 时，该力对 G 产生的附加滚转力矩为{ID:118, 选项:A：正；B：零；C：负, 输出格式:无, 标签:A1, 答案:C}。
-119. 仅有正法向力 Z 时，该力对 G 产生的附加俯仰力矩为{ID:119, 选项:A：零；B：正；C：负, 输出格式:无, 标签:A1, 答案:B}。
-120. 换算到质心后的滚转力矩 l_G 为{ID:120, 选项:无, 输出格式:表达式, 标签:A2, 答案:l_A + z*Y_b - y*Z}。
-121. 换算到质心后的俯仰力矩 m_G 为{ID:121, 选项:无, 输出格式:表达式, 标签:A2, 答案:m_A + x*Z - z*X}。
-122. 换算到质心后的偏航力矩 n_G 为{ID:122, 选项:无, 输出格式:表达式, 标签:A2, 答案:n_A + y*X - x*Y_b}。
-123. 代入工程位置定义，质心处的俯仰力矩 m_G 为{ID:123, 选项:无, 输出格式:表达式, 标签:A2, 答案:m_A + (X_N - x_Ge)*Z - z_Ge*X}。
-124. 若 G 相对 A 仅沿机体前方偏移，即 x>0、y=z=0，且合力仅沿机体上方，那么附加俯仰力矩为{ID:124, 选项:A：抬头方向；B：零；C：低头方向, 输出格式:无, 标签:A1, 答案:C}。
-125. 若 r_AG 与 F_b 平行，参考点换算产生的附加力矩为{ID:125, 选项:A：一定为负；B：零；C：一定为正, 输出格式:无, 标签:A1, 答案:B}。
-126. 若 G 相对 A 仅沿机体轴向移动，滚转力矩 l_G 与 l_A{ID:126, 选项:A：相同；B：必定相反；C：不能建立关系, 输出格式:无, 标签:A1, 答案:A}。
-127. 若所有参考长度、参考面积和动压均保持不变，定义机体系力系数为 [X, Y_b, Z]=q_bar*S*[C_X, C_Yb, C_Z]，则质心处的滚转力矩系数 C_lG 为{ID:127, 选项:无, 输出格式:表达式, 标签:A2, 答案:C_lA + (z/b)*C_Yb - (y/b)*C_Z}。
-128. 采用相同约定，质心处的俯仰力矩系数 C_mG 为{ID:128, 选项:无, 输出格式:表达式, 标签:A2, 答案:C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X}。
-129. 采用相同约定，质心处的偏航力矩系数 C_nG 为{ID:129, 选项:无, 输出格式:表达式, 标签:A2, 答案:C_nA + (y/b)*C_X - (x/b)*C_Yb}。
-130. 若同一气动力系从气流系转换到机体系并同时从 A 换算到 G，允许先在气流系完成参考点换算，但必须把同一个力臂向量也表达在{ID:130, 选项:A：机体系而不作转换；B：任意坐标系；C：气流系, 输出格式:无, 标签:C2, 答案:C}。
-131. 在本稿右手正交坐标系条件下，若两条路径的力、力矩和力臂均保持一致，则先旋转后换参考点与先换参考点后旋转的最终机体系质心力矩{ID:131, 选项:A：一般没有关系；B：相同；C：互为相反数, 输出格式:无, 标签:A2, 答案:B}。
+118. With only a positive normal force Z, the added roll moment at G is{ID:118, options:A: positive; B: zero; C: negative, format:choice, label:A1, answer:C}.
+119. With only a positive normal force Z, the added pitch moment at G is{ID:119, options:A: zero; B: positive; C: negative, format:choice, label:A1, answer:B}.
+120. The roll moment l_G transferred to the center of mass is{ID:120, options:none, format:expression, label:A2, answer:l_A + z*Y_b - y*Z}.
+121. The pitch moment m_G transferred to the center of mass is{ID:121, options:none, format:expression, label:A2, answer:m_A + x*Z - z*X}.
+122. The yaw moment n_G transferred to the center of mass is{ID:122, options:none, format:expression, label:A2, answer:n_A + y*X - x*Y_b}.
+123. After substituting the engineering position, the pitch moment m_G at the center of mass is{ID:123, options:none, format:expression, label:A2, answer:m_A + (X_N - x_Ge)*Z - z_Ge*X}.
+124. If G is offset from A only forward on the airframe, so x>0 and y=z=0, and the force is only upward on the airframe, the added pitch moment is{ID:124, options:A: nose-up; B: zero; C: nose-down, format:choice, label:A1, answer:C}.
+125. If r_AG is parallel to F_b, the moment added by the reference-point transfer is{ID:125, options:A: certainly negative; B: zero; C: certainly positive, format:choice, label:A1, answer:B}.
+126. If G moves from A only along the airframe axis, the roll moments l_G and l_A are{ID:126, options:A: same; B: necessarily opposite; C: no relation can be formed, format:choice, label:A1, answer:A}.
+127. If every reference length, reference area, and dynamic pressure stays fixed, and [X, Y_b, Z]=q_bar*S*[C_X, C_Yb, C_Z], the roll-moment coefficient C_lG at the center of mass is{ID:127, options:none, format:expression, label:A2, answer:C_lA + (z/b)*C_Yb - (y/b)*C_Z}.
+128. Under the same convention, the pitch-moment coefficient C_mG at the center of mass is{ID:128, options:none, format:expression, label:A2, answer:C_mA + (x/c_bar)*C_Z - (z/c_bar)*C_X}.
+129. Under the same convention, the yaw-moment coefficient C_nG at the center of mass is{ID:129, options:none, format:expression, label:A2, answer:C_nA + (y/b)*C_X - (x/b)*C_Yb}.
+130. If one aerodynamic system is both rotated from the airflow frame into the airframe and transferred from A to G, the reference-point transfer may be done first in the airflow frame, but the same moment arm must also be expressed in{ID:130, options:A: the airframe without converting it; B: an arbitrary frame; C: the airflow frame, format:choice, label:C2, answer:C}.
+131. In this right-handed orthogonal frame, if the force, moment, and arm agree on both paths, the final airframe moment at the center of mass from rotating first and from transferring the point first is{ID:131, options:A: generally unrelated; B: same; C: negatives of each other, format:choice, label:A2, answer:B}.
 
-# 生成注记
+# Generation notes
 
-这一节不送入模型。基本旋转矩阵使用被动形式。gRb 把机体系分量映到地面系，等于 bRg 的转置。本条 gRb=Cz(-ψ)*Cy(-θ)*Cx(-Φ)，bRg=Cx(Φ)*Cy(θ)*Cz(ψ)。航迹系不含滚转，gRp=Cz(-φ)*Cy(-μ)，pRa=Cx(-γ)，gRa=gRp*pRa。bRs=Cy(α)，bRa=Cy(α)*Cz(-β)。角度符号改变后，这些因子、空速分量和气动力矩阵一起重算。定义声明不写入 gRb、gRp、bRs、bRa 和单位空速分量，避免直接抄写派生结果。
+This section is not sent to the model. The elementary rotations are passive. gRb maps airframe components into the ground frame and equals the transpose of bRg. For this item gRb=Cz(-ψ)*Cy(-θ)*Cx(-Φ), bRg=Cx(Φ)*Cy(θ)*Cz(ψ). The track frame has no roll, gRp=Cz(-φ)*Cy(-μ), pRa=Cx(-γ), and gRa=gRp*pRa. bRs=Cy(α), bRa=Cy(α)*Cz(-β). After an angle sign changes, these factors, the airspeed components, and the aerodynamic matrices are recomputed together. The declaration does not write gRb, gRp, bRs, bRa, or the unit-airspeed components, so a derived result cannot be copied from it.
 
-气动力用同一套正交基。T_i←j 把 j 系分量映到 i 系，它的行是 i 系坐标轴在 j 系中的分量。定义不写 T_s←b 和 T_a←s 的元素。标准迎角下，机体系法向力里的侧力项是 -Y*sin(α)*sin(β)。参考点换算在右手分量下使用 M_G=M_A-r_AG×F_b，定义里不写这个公式。
+The aerodynamic loads use one orthogonal basis. T_i←j maps components of frame j into frame i, and its rows are the axes of frame i written in frame j. The declaration does not write the entries of T_s←b or T_a←s. At the standard angle of attack, the side-force term in the airframe normal force is -Y*sin(α)*sin(β). The reference-point transfer in right-handed components uses M_G=M_A-r_AG×F_b, and the declaration does not write that formula.
 
-校验包括：同一飞行状态下空速轴闭合，并且存在一个航迹滚转使 gRb*bRa=gRp*pRa；气流基正交且为右手系；两段变换乘积等于整体变换；力和同点力矩的长度不变；力矩系数的参考长度尺度与有量纲力矩一致；参考点换算可以换回；先旋转后换参考点与先换点后旋转一致。
+The checks are: the airspeed axes close in one flight state, and one track roll makes gRb*bRa=gRp*pRa; the airflow basis is orthogonal and right-handed; the product of the two stages equals the full transform; the force and the moment at one point keep their lengths; the reference-length scale of a moment coefficient agrees with the dimensional moment; the reference-point transfer can be reversed; rotating first and transferring the point first agree.
+

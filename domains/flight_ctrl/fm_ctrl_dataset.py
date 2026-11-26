@@ -7,42 +7,64 @@ import re
 from cloze_score import format_choices, resolve_choice
 from domains.wind_tunnel.dataset_generate import FORMAT_EXAMPLE, FORMAT_TEXT
 
-PROCESS = "机体系相对地面系"
+PROCESS = "body relative to ground"
 PRIOR = ""
 N_BLANKS = 81
 SLOT_MARK = re.compile(r"@@(\d+)@@")
 
-# 与风洞「风轴系到体轴系」1–81 同构。风轴系写成地面系，体轴系写成机体系，天平系写成气流系。
-# 句号隔开的空分次作答；同一句里没有句号隔开的空一次答完。
-PROCESS_TEXT = """1.初始状态，体轴保持平正，为了计算机构角α_M、β_M、γ_M对理论迎角α、β和滚转角的影响，应当进行@@1@@转换。
+# Parallel to wind-tunnel "wind frame to body-axis frame" blanks 1-81.
+# The wind frame is written as the ground frame, the body-axis frame as the body frame,
+# and the balance frame as the airflow frame.
+# Blanks separated by a sentence period are answered in separate steps.
+# Blanks in the same sentence, with no period between them, are answered together.
+PROCESS_TEXT = """1. In the initial state the body axes stay level. To compute the effect of the mechanism angles α_M, β_M, and γ_M on the theoretical angle of attack α, sideslip β, and roll, the required transform is @@1@@.
 
-2.由于地面系的绝对法向正方向（上方）、绝对轴向正方向（前方）、绝对侧向正方向（右侧）分别对应@@2@@、@@3@@、@@4@@。机体系的绝对法向正方向（上方）、绝对轴向正方向（前方）、绝对侧向正方向（右侧）分别对应@@5@@、@@6@@、@@7@@。所以有地面系向机体系平正位置处的前置变换矩阵RP1为@@8@@。该矩阵能够使@@9@@的坐标轴与自身绝对方向的关系与@@10@@的坐标轴与自身绝对方向的关系一致。此外，模型安装方式为@@11@@。此时模型的绝对法向正方向（上方）和绝对侧向正方向（右侧）与地面的绝对法向正方向和绝对侧向正方向@@12@@。所以还需要另一个前置变换矩阵RP2为@@13@@。该矩阵使得@@14@@的坐标轴方向与@@15@@的坐标方向相同。
+2. The positive absolute normal (upward), positive absolute axial (forward), and positive absolute lateral (right) of the ground frame correspond to @@2@@, @@3@@, and @@4@@. The same three directions of the body frame correspond to @@5@@, @@6@@, and @@7@@. The pre-transform from the ground frame to the body frame at the level pose, RP1, is @@8@@. That matrix makes the relation between the axes of @@9@@ and its own absolute directions the same as the relation between the axes of @@10@@ and its own absolute directions. The model installation is @@11@@. At this installation the positive absolute normal (upward) and positive absolute lateral (right) of the model are @@12@@ the positive absolute normal and positive absolute lateral of the ground. Another pre-transform, RP2, is therefore @@13@@. That matrix makes the axis directions of @@14@@ the same as the coordinate directions of @@15@@.
 
-3.根据机构结构，推断第一个旋转角为@@16@@。第二个旋转角为@@17@@。第三个旋转角为@@18@@。
+3. From the mechanism layout, the first rotation angle is @@16@@. The second rotation angle is @@17@@. The third rotation angle is @@18@@.
 
-4.当α_M>0时，模型采用@@19@@。α_M>0时，空速偏机体的@@20@@。理论迎角>0时，空速偏机体的@@21@@。α_M>0时，理论迎角的符号为@@22@@。这相当于@@23@@平正时，绕@@24@@旋转。绕该轴旋转方向为@@25@@，旋转α_M角度。对应的旋转矩阵R_α_M为@@26@@。
+4. When α_M > 0 the model uses @@19@@. When α_M > 0 the airspeed points @@20@@ on the body. When the theoretical angle of attack is positive the airspeed points @@21@@ on the body. When α_M > 0 the sign of the theoretical angle of attack is @@22@@. This is the level pose of @@23@@, rotating about @@24@@. The sense about that axis is @@25@@, through the angle α_M, and the rotation matrix R_α_M is @@26@@.
 
-5.当β_M>0时，模型采用@@27@@。β_M>0时，空速偏机体的@@28@@。理论侧滑角>0时，空速偏机体的@@29@@。β_M>0时，理论侧滑角的符号为@@30@@。这相当于@@31@@平正时，绕@@32@@旋转。绕该轴旋转方向为@@33@@，旋转β_M角度。对应的旋转矩阵R_β_M为@@34@@。
+5. When β_M > 0 the model uses @@27@@. When β_M > 0 the airspeed points @@28@@ on the body. When the theoretical sideslip is positive the airspeed points @@29@@ on the body. When β_M > 0 the sign of the theoretical sideslip is @@30@@. This is the level pose of @@31@@, rotating about @@32@@. The sense about that axis is @@33@@, through the angle β_M, and the rotation matrix R_β_M is @@34@@.
 
-6.当γ_M>0时，以模型绝对轴向正方向（前方）为旋转轴，与右手定则@@35@@。此时右翼偏机体的@@36@@。由于理论滚转角>0时，以机体绝对轴向正方向（前方）为旋转轴，与右手定则@@37@@。此时右翼偏机体的@@38@@。γ_M>0时，理论滚转角的符号为@@39@@。这相当于@@40@@平正时，绕坐标轴@@41@@旋转。绕该轴旋转方向为@@42@@，旋转γ_M角度。对应的旋转矩阵R_γ_M为@@43@@。
+6. When γ_M > 0 the rotation axis is the positive absolute model axis (forward) and the sense is @@35@@ the right-hand rule. The right wing then points @@36@@ on the body. When the theoretical roll is positive the rotation axis is the positive absolute body axis (forward) and the sense is @@37@@ the right-hand rule. The right wing then points @@38@@ on the body. When γ_M > 0 the sign of the theoretical roll is @@39@@. This is the level pose of @@40@@, rotating about the coordinate axis @@41@@. The sense about that axis is @@42@@, through the angle γ_M, and the rotation matrix R_γ_M is @@43@@.
 
-7.此过程涉及到坐标系转换，应当采用坐标系的@@44@@。此外由于机体系是@@45@@，故应当在旋转时采用@@46@@。必须先变换坐标轴对应关系，之后再变换姿态。写出[xb,yb,zb]^T=R1*R2*R3*R4*R5*[Xg,Yg,Zg]^T。R1到R5从前面得到的矩阵代号中选择。公式中对应的R1矩阵为@@47@@。对应的R2矩阵为@@48@@。对应的R3矩阵为@@49@@。对应的R4矩阵为@@50@@。对应的R5矩阵为@@51@@。
+7. This step changes coordinates, so the coordinate transform is @@44@@. The body frame is @@45@@, so the rotation uses @@46@@. The axis correspondence is transformed before the attitude. Write [xb,yb,zb]^T=R1*R2*R3*R4*R5*[Xg,Yg,Zg]^T. Choose R1 through R5 from the matrix names already obtained. In the formula, R1 is @@47@@. R2 is @@48@@. R3 is @@49@@. R4 is @@50@@. R5 is @@51@@.
 
-8.在计算总矩阵前，按刚选定的符号写出每个分矩阵的展开式。R1的展开式为@@52@@。R2的展开式为@@53@@。R3的展开式为@@54@@。写出R1*R2*R3符号化简后的总矩阵R_t，R_t=@@55@@。
+8. Before the total matrix, write each factor in the symbols just chosen. The expansion of R1 is @@52@@. The expansion of R2 is @@53@@. The expansion of R3 is @@54@@. The symbolically simplified total matrix R_t = R1*R2*R3 is @@55@@.
 
-9.由于空速矢量在平置机体系中的坐标与地面系的坐标无关，故可以确定，RP2*RP1乘地面系中的空速单位向量，结果一定是@@56@@。因此只需要研究@@57@@中的空速坐标到姿态角变化后的机体系的坐标映射即可。
+9. The airspeed coordinates in the level body frame do not depend on the ground-frame coordinates, so RP2*RP1 times the ground-frame airspeed unit vector is @@56@@. It is therefore enough to map the airspeed coordinates in @@57@@ into the body frame after the attitude change.
 
-10.计算[xb,yb,zb]^T=R_t*[X_V,Y_V,Z_V]^T。此时平置坐标系中的空速单位向量[X_V,Y_V,Z_V]是@@58@@。代入公式计算得到的xb=@@59@@。计算得到的yb=@@60@@。计算得到的zb=@@61@@。
+10. Compute [xb,yb,zb]^T=R_t*[X_V,Y_V,Z_V]^T. The airspeed unit vector [X_V,Y_V,Z_V] in the level frame is @@58@@. Substitution gives xb = @@59@@. It gives yb = @@60@@. It gives zb = @@61@@.
 
-11.当仅α_M>0时，推断xb为@@62@@。推断yb为@@63@@。推断zb为@@64@@。
+11. When only α_M > 0, xb is @@62@@. yb is @@63@@. zb is @@64@@.
 
-12.当仅β_M>0时，推断xb为@@65@@。推断yb为@@66@@。推断zb为@@67@@。
+12. When only β_M > 0, xb is @@65@@. yb is @@66@@. zb is @@67@@.
 
-13.此时α的计算公式模板为[角度符号][反三角函数符号]([分子]/[分母])。要求分子和分母都必须为正。该正值只表示角度大小的绝对值；角度正负必须单独判断，并且只能写在反三角函数外面。禁止把正负号放进反三角函数内部来代替外层符号。其中α的角度符号为@@68@@。α的反三角函数符号为@@69@@。α分子的符号为@@70@@。α的分子分量为@@71@@。α分母的符号为@@72@@。α的分母分量为@@73@@。
+13. The template for α is [angle sign][inverse trigonometric function]([numerator]/[denominator]). The numerator and the denominator must both be positive. That positive value is only the absolute size of the angle; the sign is judged separately and may be written only outside the inverse function. Do not put the sign inside the inverse function in place of the outer sign. The angle sign of α is @@68@@. The inverse function of α is @@69@@. The numerator sign of α is @@70@@. The numerator component of α is @@71@@. The denominator sign of α is @@72@@. The denominator component of α is @@73@@.
 
-14.此时β的计算公式模板为[角度符号][反三角函数符号]([分子]/[分母])。要求分子和分母都必须为正。该正值只表示角度大小的绝对值；角度正负必须单独判断，并且只能写在反三角函数外面。禁止把正负号放进反三角函数内部来代替外层符号。其中β的角度符号为@@74@@。β的反三角函数符号为@@75@@。β分子的符号为@@76@@。β的分子分量为@@77@@。β分母的符号为@@78@@。β的分母分量为@@79@@。
+14. The template for β is [angle sign][inverse trigonometric function]([numerator]/[denominator]). The numerator and the denominator must both be positive. That positive value is only the absolute size of the angle; the sign is judged separately and may be written only outside the inverse function. Do not put the sign inside the inverse function in place of the outer sign. The angle sign of β is @@74@@. The inverse function of β is @@75@@. The numerator sign of β is @@76@@. The numerator component of β is @@77@@. The denominator sign of β is @@78@@. The denominator component of β is @@79@@.
 
-15.初始状态，体轴保持平正，已知来流在与地面系轴向重合，吹向机头。当机构产生α_M、β_M、γ_M变化之后，机体处于一个新的姿态位置。现在需要根据已知量α_M、β_M、γ_M，推导新姿态位置下，机体的理论气流角α、β的表达式。这里给出公式模版：理论迎角α的计算公式模板为[角度符号][反三角函数符号]([分子]/[分母])，β的计算公式模板为[角度符号][反三角函数符号]([分子]/[分母])。要求分子和分母都必须为正。该正值只表示角度大小的绝对值；角度正负必须单独判断，并且只能写在反三角函数外面。禁止把正负号放进反三角函数内部来代替外层符号。要求分子和分母都必须为正。该正值只表示角度大小的绝对值；角度正负必须单独判断，并且只能写在反三角函数外面。禁止把正负号放进反三角函数内部来代替外层符号。求得理论迎角α=@@80@@。求得理论侧滑角β=@@81@@。"""
+15. In the initial state the body axes stay level, and the freestream is aligned with the ground-frame axis and blows toward the nose. After the mechanism changes α_M, β_M, and γ_M, the body is in a new attitude. From the known α_M, β_M, and γ_M, derive the theoretical flow angles α and β at that attitude. The template given here is: the template for the theoretical angle of attack α is [angle sign][inverse trigonometric function]([numerator]/[denominator]), and the template for β is [angle sign][inverse trigonometric function]([numerator]/[denominator]). The numerator and the denominator must both be positive. That positive value is only the absolute size of the angle; the sign is judged separately and may be written only outside the inverse function. Do not put the sign inside the inverse function in place of the outer sign. The numerator and the denominator must both be positive. That positive value is only the absolute size of the angle; the sign is judged separately and may be written only outside the inverse function. Do not put the sign inside the inverse function in place of the outer sign. The theoretical angle of attack is α = @@80@@. The theoretical sideslip is β = @@81@@."""
+
+
+def _period_index(tail: str) -> int:
+    """Index of the sentence-ending period, or -1.
+
+    An ASCII period followed by whitespace or the end of the tail closes a
+    sentence. A period inside a token does not.
+    """
+    for index, char in enumerate(tail):
+        if char != ".":
+            continue
+        nxt = tail[index + 1] if index + 1 < len(tail) else ""
+        if nxt in ("", " ", "\n", "\t"):
+            return index
+    return -1
+
+
+def _sentence_break(chunk: str) -> bool:
+    return _period_index(chunk) != -1
 
 
 def _sentence_groups() -> list[list[str]]:
@@ -50,7 +72,7 @@ def _sentence_groups() -> list[list[str]]:
     current: list[str] = []
     cursor = 0
     for match in SLOT_MARK.finditer(PROCESS_TEXT):
-        if "。" in PROCESS_TEXT[cursor:match.start()] and current:
+        if _sentence_break(PROCESS_TEXT[cursor:match.start()]) and current:
             groups.append(current)
             current = []
         current.append(match.group(1))
@@ -75,22 +97,22 @@ def _gold_text(item: dict) -> str:
 
 def _review_slot(item: dict) -> str:
     return (
-        f"{{ID:{item['id']}, 选项:{_options_text(item)}, 输出格式:{item['format_code']}, "
-        f"标签:{item['label']}, 答案:{_gold_text(item)}}}"
+        f"{{ID:{item['id']}, options:{_options_text(item)}, format:{item['format_code']}, "
+        f"label:{item['label']}, answer:{_gold_text(item)}}}"
     )
 
 
 def _open_slot(item: dict) -> str:
-    return f"{{ID:{item['id']}, 选项:{_options_text(item)}, 输出格式:{item['format_code']}}}"
+    return f"{{ID:{item['id']}, options:{_options_text(item)}, format:{item['format_code']}}}"
 
 
 def _json_field(item: dict, example: bool, letter: str) -> str:
     blank_id = item["id"]
     if item.get("options"):
-        return f"{blank_id}:{letter if example else '字母'}"
+        return f"{blank_id}:{letter if example else 'letter'}"
     if example:
         return f'{blank_id}:"{FORMAT_EXAMPLE[item["format_code"]]}"'
-    return f'{blank_id}:"答案"'
+    return f'{blank_id}:"answer"'
 
 
 def _json_object(items: list[dict], example: bool = False) -> str:
@@ -107,26 +129,33 @@ def _json_object(items: list[dict], example: bool = False) -> str:
 
 def _output_preamble() -> list[str]:
     return [
-        "【输出】",
-        "所有答案都放在 JSON 对象中。键是空的编号，值是答案，例如 {1:A}。",
-        "本次是分步问答：一个问题句只输出一个 JSON 对象，这一句里的全部空都写在这个对象中。",
-        "端到端问答才把整条过程的全部答案放进同一个 JSON 对象。本次只写当前这一句。",
-        "选择题的值只写字母，不加引号。公式、矩阵、向量、表达式和距离必须用英文双引号包成字符串。",
+        "[Output]",
+        "Put every answer in one JSON object. The key is the blank id and the value is the answer, for example {1:A}.",
+        "This is a step-by-step question: one sentence produces one JSON object, and every blank in that sentence is written in that object.",
+        "Only an end-to-end question puts every answer of the whole subprocess in one JSON object. Here, write only the current sentence.",
+        "For a multiple-choice blank, write only the letter, with no quotation marks. A formula, matrix, vector, expression, or distance must be a string in English double quotes.",
     ]
+
+
+def _angle_symbol_note() -> str:
+    return (
+        "Angle symbols in a formula are the symbols of this item: α_M, β_M, and γ_M. "
+        "The symbol θ appears only in format examples; do not write θ in an answer."
+    )
 
 
 def _output_block(item: dict) -> str:
     lines = _output_preamble()
-    lines.append(f"只输出一行 {_json_object([item])}。")
+    lines.append(f"Write only one line {_json_object([item])}.")
     if item.get("options"):
-        lines.append("不要写选项原文、句号、解释、Markdown或LaTeX。")
+        lines.append("Do not write the option text, a period, an explanation, Markdown, or LaTeX.")
     else:
         lines.extend([
-            "双引号只表示 JSON 字符串，不是答案的一部分。不要输出引号以外的解释、Markdown或LaTeX。",
-            "公式里的角度符号使用本题的α_M、β_M、γ_M。示例中的θ只展示格式，答案里不要写θ。",
+            "The double quotes only mark a JSON string; they are not part of the answer. Do not add an explanation, Markdown, or LaTeX outside the quotes.",
+            _angle_symbol_note(),
             FORMAT_TEXT[item["format_code"]],
         ])
-    lines.append(f"格式示例（不是本题答案）：{_json_object([item], example=True)}")
+    lines.append(f"Format example (not the answer to this blank): {_json_object([item], example=True)}")
     return "\n".join(lines)
 
 
@@ -134,17 +163,19 @@ def _output_block_many(by_id: dict, blank_ids: list[str]) -> str:
     items = [by_id[blank_id] for blank_id in blank_ids]
     lines = _output_preamble()
     lines.extend([
-        f"只输出一行 {_json_object(items)}。按编号顺序写在同一个对象里，不要拆成多个 JSON 对象。",
-        "不要输出句子原文。",
-        "公式里的角度符号使用本题的α_M、β_M、γ_M。示例中的θ只展示格式，答案里不要写θ。",
+        f"Write only one line {_json_object(items)}. Keep the blanks in id order inside the same object, and do not split them into several JSON objects.",
+        "Do not write the sentence text.",
+        _angle_symbol_note(),
     ])
     for item in items:
         if item.get("options"):
-            lines.append(f"ID {item['id']} 的值是选项字母。")
+            lines.append(f"The value of ID {item['id']} is an option letter.")
         else:
             code = item["format_code"]
-            lines.append(f"ID {item['id']} 的值是{code}，必须用英文双引号包成字符串。{FORMAT_TEXT[code]}")
-    lines.append(f"格式示例（不是本题答案）：{_json_object(items, example=True)}")
+            lines.append(
+                f"The value of ID {item['id']} is a {code} and must be a string in English double quotes. {FORMAT_TEXT[code]}"
+            )
+    lines.append(f"Format example (not the answer to these blanks): {_json_object(items, example=True)}")
     return "\n".join(lines)
 
 
@@ -159,7 +190,7 @@ def _render_process(by_id: dict, targets: list[str] | None = None, keep_suffix: 
     for match in SLOT_MARK.finditer(PROCESS_TEXT):
         blank_id = match.group(1)
         if blank_id not in by_id:
-            raise KeyError(f"机体系相对地面系没有 ID {blank_id}。")
+            raise KeyError(f"body relative to ground has no answer for ID {blank_id}.")
         seen.append(blank_id)
         pieces.append(PROCESS_TEXT[cursor:match.start()])
         item = by_id[blank_id]
@@ -170,25 +201,29 @@ def _render_process(by_id: dict, targets: list[str] | None = None, keep_suffix: 
             pieces.append(_open_slot(item))
             if blank_id == last_open and not keep_suffix:
                 tail = PROCESS_TEXT[match.end():]
-                period = tail.find("。")
+                period = _period_index(tail)
                 if period == -1:
-                    raise RuntimeError(f"ID {blank_id} 所在句没有句号。")
+                    raise RuntimeError(f"body relative to ground ID {blank_id} has no sentence period.")
                 if SLOT_MARK.search(tail[:period]):
-                    raise RuntimeError(f"ID {blank_id} 的句子里还有未纳入的空。")
+                    raise RuntimeError(
+                        f"body relative to ground ID {blank_id} still has a blank before the sentence period."
+                    )
                 pieces.append(tail[: period + 1])
                 return "".join(pieces).strip()
         elif seen_open:
             if not keep_suffix:
-                raise RuntimeError(f"ID {blank_id} 出现在当前句的待填槽之后。")
+                raise RuntimeError(
+                    f"body relative to ground ID {blank_id} appears after the blanks of the current sentence."
+                )
             pieces.append(_open_slot(item))
         else:
             pieces.append(_gold_text(item) if memory is None else str(memory.get(item["id"], "")))
         cursor = match.end()
     if open_ids and not seen_open:
-        raise KeyError(f"过程里没有当前句 {open_ids}。")
+        raise KeyError(f"body relative to ground has no sentence for {open_ids}.")
     pieces.append(PROCESS_TEXT[cursor:])
     if not open_ids and seen != [str(number) for number in range(1, N_BLANKS + 1)]:
-        raise RuntimeError(f"过程空的顺序是 {seen}。")
+        raise RuntimeError(f"The process blanks are in the order {seen}.")
     return "".join(pieces).strip()
 
 
@@ -197,33 +232,33 @@ def _injection(declaration: str, by_id: dict, target: str, memory=None, keep_suf
     items = [by_id[blank_id] for blank_id in group]
     if len(group) == 1:
         lead = (
-            f"只填写当前这一句。本次是分步问答，只输出一个 JSON 对象 {_json_object(items)}。"
-            "不要解释，不要填写其他空。"
+            f"Fill only the current sentence. This is a step-by-step question. Write one JSON object {_json_object(items)}. "
+            "Do not explain, and do not fill any other blank."
         )
         output = _output_block(items[0])
     else:
-        listed = "、".join(group)
+        listed = ", ".join(group)
         lead = (
-            f"填写这一句里的全部待填槽，ID 为 {listed}。"
-            "这些槽属于同一句话，一次把这句话答完。"
-            f"本次是分步问答，只输出一个 JSON 对象 {_json_object(items)}。"
-            "这一句的全部空都放在这一个对象里，不要拆成多个对象。"
-            "选择题的值是字母，不加引号。公式、矩阵、向量、表达式和距离的值用英文双引号包成字符串。"
-            "不要输出句子原文，不要解释。"
+            f"Fill every blank in this sentence. The ids are {listed}. "
+            "These blanks belong to one sentence, so answer the whole sentence at once. "
+            f"This is a step-by-step question. Write one JSON object {_json_object(items)}. "
+            "Put every blank of this sentence in that one object. Do not split them into several objects. "
+            "A multiple-choice value is a letter, with no quotation marks. A formula, matrix, vector, expression, or distance is a string in English double quotes. "
+            "Do not write the sentence text, and do not explain."
         )
         output = _output_block_many(by_id, group)
     if keep_suffix:
-        lead += "句号之后的后续正文只供参考，不要填写那些空。"
+        lead += " Text after the period is context only. Do not fill those blanks."
     return "\n".join([
         lead,
         "",
-        "【定义声明】",
+        "[Declaration]",
         declaration.strip(),
         "",
-        "【子过程】",
+        "[Subprocess]",
         PROCESS,
         "",
-        "【过程】",
+        "[Process]",
         _render_process(by_id, targets=group, memory=memory, keep_suffix=keep_suffix),
         "",
         output,
@@ -234,21 +269,21 @@ def _cv_end_to_end(chain: dict) -> str:
     by_id = chain["by_id"]
     local_ids = [blank_id for group in _sentence_groups() for blank_id in group]
     lead = (
-        "本次是端到端问答。填写这个子过程里的全部待填槽，只调用这一次。"
-        "只输出一个 JSON 对象，键是空的编号，值是答案。"
-        "这个对象要包含本子过程的每一个编号，不要拆成多个对象，不要按句子分开作答。"
-        "选择题的值是字母，不加引号。公式、矩阵、向量、表达式和距离的值用英文双引号包成字符串。"
-        "不要输出句子原文，不要解释。"
+        "This is an end-to-end question. Fill every blank in this subprocess, in one call. "
+        "Write one JSON object. The key is the blank id and the value is the answer. "
+        "The object must contain every id of this subprocess. Do not split it into several objects, and do not answer sentence by sentence. "
+        "A multiple-choice value is a letter, with no quotation marks. A formula, matrix, vector, expression, or distance is a string in English double quotes. "
+        "Do not write the sentence text, and do not explain."
     )
     output = "\n".join([
-        "【输出】",
-        "所有答案放在同一个 JSON 对象中。键是空的编号，值是答案。",
-        '例如 {1:A, 2:C, 11:"[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"}。示例不是本题答案。',
-        "选择题的值只写字母，不加引号。公式、矩阵、向量、表达式和距离必须用英文双引号包成字符串。",
-        "只输出这一行 JSON，不要解释、Markdown或LaTeX。",
+        "[Output]",
+        "Put every answer in the same JSON object. The key is the blank id and the value is the answer.",
+        'For example {1:A, 2:C, 11:"[[1, 0, 0], [0, 1, 0], [0, 0, 1]]"}. The example is not the answer to this item.',
+        "For a multiple-choice blank, write only the letter, with no quotation marks. A formula, matrix, vector, expression, or distance must be a string in English double quotes.",
+        "Write only that one line of JSON. Do not add an explanation, Markdown, or LaTeX.",
     ])
     return "\n".join([
-        lead, "", "【定义声明】", chain["declaration"].strip(), "",
-        "【子过程】", PROCESS, "", "【过程】",
+        lead, "", "[Declaration]", chain["declaration"].strip(), "",
+        "[Subprocess]", PROCESS, "", "[Process]",
         _render_process(by_id, targets=local_ids, keep_suffix=True), "", output,
     ])

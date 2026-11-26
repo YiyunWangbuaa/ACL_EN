@@ -59,14 +59,14 @@ def main() -> None:
     kernel = tuple(minimal_fixes(target)[0])
     expected = _EXPECTED.get(target)
     if expected is not None and kernel != expected:
-        raise RuntimeError(f"ID{target} 核应为 {expected}，得到 {kernel}")
+        raise RuntimeError(f"ID{target} kernel should be {expected}, got {kernel}")
     for node in kernel:
         _ = gold_scored()[node]
         _ = questions()[node]
     out = args.out or (ROOT / "results" / f"fork_scene_id{target}" / "sample_01")
-    report = args.report or (ROOT / "analysis" / f"会话分叉_机器视觉scene_ID{target}.md")
+    report = args.report or (ROOT / "doc" / f"session_fork_vision_scene_ID{target}.md")
     control_only = False if args.allow_fork else True
-    print(f"形状检查通过：scene ID{target} 核 {kernel}", flush=True)
+    print(f"shape check passed: scene ID{target} kernel {kernel}", flush=True)
     if args.check:
         return
     load_env_file(ROOT / ".env")
@@ -74,7 +74,7 @@ def main() -> None:
     # Reuse vision slot-split loader on scene manuscript (same multi-blank periods).
     spec, sample = load_basic(SCENE, section="scene")
     sample["sample_id"] = "scene-01"
-    sample["title"] = "物体与双目"
+    sample["title"] = "Object and stereo"
     sample["group"] = "vision-scene"
     max_tokens = _resolve_max_tokens(0, args.thinking, announce=False)
     client = make_client(timeout=1800.0 if args.thinking == "enabled" else 600.0)
@@ -93,11 +93,11 @@ def main() -> None:
         saved = _load(meta_path)
         keys = ("sample", "model", "thinking", "effort", "kernel", "target")
         if {key: saved.get(key) for key in keys} != {key: meta[key] for key in keys}:
-            raise SystemExit("已有结果的条件与这次不一致")
+            raise SystemExit("saved results were run under different conditions")
     _save(meta_path, meta)
     print(
-        f"样本 scene 模型 {model} 思考 {args.thinking} 强度 {args.effort} "
-        f"核 {kernel} 趟数 {args.runs} {'只跑对照' if control_only else '对照后分叉'}",
+        f"sample scene model {model} thinking {args.thinking} effort {args.effort} "
+        f"kernel {kernel} runs {args.runs} {'control only' if control_only else 'fork after control'}",
         flush=True,
     )
     try:
@@ -107,7 +107,7 @@ def main() -> None:
                 run, 20261102 + run, max_tokens, out, control_only, target, kernel,
             )
     except RunStop as exc:
-        print(f"调用中断：{exc}", flush=True)
+        print(f"call interrupted: {exc}", flush=True)
     rows = collect(out, args.runs)
     text = render(args.model, args.thinking, args.effort, args.runs, rows, target, kernel)
     text = text.replace("basic/sample_01", "scene/sample_01")

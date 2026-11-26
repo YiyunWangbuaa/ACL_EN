@@ -93,7 +93,7 @@ def _t_cw2_from_r(r_text: str) -> str:
 def derive(_model, node_id: str, texts: dict[str, str]) -> Execution:
     node_id = str(node_id)
     if node_id not in NODE_IDS:
-        return Execution("contradictory", reason=f"ID{node_id} 不在 1–165")
+        return Execution("contradictory", reason=f"ID{node_id} not in 1-165")
     if node_id in DECLARATION_ROOTS or not input_ids(node_id):
         return Execution("derived", gold_texts()[node_id])
     try:
@@ -123,7 +123,7 @@ def derive(_model, node_id: str, texts: dict[str, str]) -> Execution:
             return Execution("derived", _t_cw2_from_r(texts["84"]))
     except Exception as exc:
         return Execution("contradictory", reason=str(exc))
-    return Execution("contradictory", reason=f"ID{node_id} 没有计算器")
+    return Execution("contradictory", reason=f"ID{node_id} no calculator")
 
 
 def reference_phi(node_id: str, assignment: dict[str, str], sample_id: str = "01"):
@@ -145,41 +145,41 @@ def check_verifiers() -> None:
     gold = gold_texts()
     rows = questions()
     if set(DECLARATION_ROOTS) | DERIVED_NODES != set(NODE_IDS):
-        raise RuntimeError("声明根与派生节点没有覆盖 1–165")
+        raise RuntimeError("declaration roots and derived nodes do not cover 1-165")
     if input_ids("165"):
-        raise RuntimeError("ID165 应是声明终点")
+        raise RuntimeError("ID165 should be a declaration terminal")
     for node in DERIVED_NODES:
         if not input_ids(node):
-            raise RuntimeError(f"ID{node} 缺少派生输入")
+            raise RuntimeError(f"ID{node} is missing a derived input")
     for node in NODE_IDS:
         got = derive(None, node, gold)
         if not got.ok:
-            raise RuntimeError(f"ID{node} 金标回归失败：{got.reason}")
-        fmt = rows[node]["format"] if not rows[node]["options"] else "表达式"
+            raise RuntimeError(f"ID{node} gold regression failed: {got.reason}")
+        fmt = rows[node]["format"] if not rows[node]["options"] else "expression"
         if not answers_equal(got.matrix, gold[node], fmt):
-            raise RuntimeError(f"ID{node} 金标回归值不一致：{got.matrix!r} vs {gold[node]!r}")
+            raise RuntimeError(f"ID{node} gold regression value differs: {got.matrix!r} vs {gold[node]!r}")
         if node in DERIVED_NODES and not rows[node]["options"] and not sympy_equal(got.matrix, gold[node]):
-            raise RuntimeError(f"ID{node} sympy 金标回归不一致：{got.matrix!r} vs {gold[node]!r}")
+            raise RuntimeError(f"ID{node} sympy gold regression differs: {got.matrix!r} vs {gold[node]!r}")
     changed = answer_under("41", {"37": gold["20"]})
-    if changed is None or answers_equal(changed, gold["41"], "矩阵"):
-        raise RuntimeError("改写 ID37 后 ID41 没有变化")
+    if changed is None or answers_equal(changed, gold["41"], "matrix"):
+        raise RuntimeError("rewriting ID37 did not change ID41")
     changed_cam2 = answer_under("84", {"80": gold["63"]})
-    if changed_cam2 is None or answers_equal(changed_cam2, gold["84"], "矩阵"):
-        raise RuntimeError("改写 ID80 后 ID84 没有变化")
+    if changed_cam2 is None or answers_equal(changed_cam2, gold["84"], "matrix"):
+        raise RuntimeError("rewriting ID80 did not change ID84")
     bad = derive(None, "41", {**gold, "37": "not-a-matrix"})
     if bad.ok:
-        raise RuntimeError("非法上游仍推出了 ID41")
+        raise RuntimeError("an illegal upstream still produced ID41")
     bad_cam2 = derive(None, "86", {**gold, "84": "not-a-matrix"})
     if bad_cam2.ok:
-        raise RuntimeError("非法上游仍推出了 ID86")
+        raise RuntimeError("an illegal upstream still produced ID86")
     if DERIVED_EXCEPTIONS:
-        raise RuntimeError(f"派生例外未清空：{DERIVED_EXCEPTIONS}")
+        raise RuntimeError(f"derived exceptions are not empty: {DERIVED_EXCEPTIONS}")
     for node in T_FINAL:
         if node not in NODE_IDS:
-            raise RuntimeError(f"终点 {node} 不在 1–165")
+            raise RuntimeError(f"terminal {node} not in 1-165")
     print(
-        f"阶段3 计算器：1–165 金标回归通过，声明根 {len(DECLARATION_ROOTS)}，"
-        f"派生边 {sum(1 for n in NODE_IDS if input_ids(n))}。",
+        f"stage 3 calculator: 1-165 gold regression passed, declaration roots {len(DECLARATION_ROOTS)}, "
+        f"derived edges {sum(1 for n in NODE_IDS if input_ids(n))}.",
         flush=True,
     )
 

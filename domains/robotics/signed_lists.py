@@ -23,7 +23,7 @@ EQUIVALENT_PAIRS = (
     ("arctan(1/2), arcsin(1/4), arcsin(1/2)", "arctan(1/2),arcsin(1/4),arcsin(1/2)"),
 )
 INEQUIVALENT_PAIRS = (
-    ("正", "负"),
+    ("positive", "negative"),
     ("[1, 0, 0]", "[0, 1, 0]"),
     ("A", "B"),
     ("[0, 30, -60]", "[0, -30, 60]"),

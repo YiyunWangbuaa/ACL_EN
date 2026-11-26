@@ -44,8 +44,8 @@ def _samples() -> list[dict]:
         spec[BETA] = {"sign": "negative"}
         samples.append({
             "id": f"{index:02d}",
-            "title": f"全因子偏离 {index:02d}",
-            "change": "迎角和侧滑角的符号都离开默认，机体系、稳定性坐标系和气流系都换成另一套合法坐标轴。",
+            "title": f"full-factor departure {index:02d}",
+            "change": "The signs of angle of attack and sideslip both leave the standard definition, and the airframe, the stability frame, and the airflow frame are each replaced by another legal set of axes.",
             "spec": spec,
         })
     return samples
@@ -56,18 +56,18 @@ def main() -> None:
     samples = _samples()
     standard = build_record({
         "id": "00",
-        "title": "统一默认",
+        "title": "common default",
         "change": "",
         "spec": deepcopy(STANDARD_SPEC),
     })
     standard_answers = {item["id"]: item["answer"] for item in standard["questions"]}
     records = []
     lines = [
-        "# 空气动力学强扰动样本",
+        "# Flight-mechanics stress samples",
         "",
-        "子过程：体轴系到气流系。每条同时改掉迎角、侧滑角、机体系、稳定性坐标系和气流系。地面系、航迹系以及姿态角、航迹角保持当前默认，因为这一子过程的空不读取它们。",
+        "Subprocess: body to airflow. Each sample changes angle of attack, sideslip, the airframe, the stability frame, and the airflow frame together. The ground frame, the track frame, and the attitude angles and track angles stay on the current standard definition, because the blanks of this subprocess do not read them.",
         "",
-        "| 编号 | 与默认不同的空 |",
+        "| id | blanks that differ from the standard |",
         "| --- | --- |",
     ]
     for sample in samples:
@@ -79,7 +79,7 @@ def main() -> None:
         records.append(record)
         print(f"sample {sample['id']}: {differ}/35 answers differ from the standard")
     lines.append("")
-    (OUT_DIR / "00_索引.md").write_text("\n".join(lines), encoding="utf-8")
+    (OUT_DIR / "00_index.md").write_text("\n".join(lines), encoding="utf-8")
     (OUT_DIR / "samples.json").write_text(
         json.dumps(records, ensure_ascii=False, indent=2),
         encoding="utf-8",

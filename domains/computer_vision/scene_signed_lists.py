@@ -25,11 +25,11 @@ EQUIVALENT_PAIRS = (
     ("X_w = X_c1", "X_w=X_c1"),
 )
 INEQUIVALENT_PAIRS = (
-    ("主动", "被动"),
+    ("active", "passive"),
     ("[0, L, 0]", "[L, 0, 0]"),
     ("A", "B"),
     ("[[1, 0, 0], [0, 1, 0], [0, 0, 1]]", "[[0, 1, 0], [1, 0, 0], [0, 0, 1]]"),
-    ("正向安置", "反向安置"),
+    ("upright", "reversed"),
 )
 
 DERIVED_EXCEPTIONS: tuple[tuple[str, str], ...] = ()

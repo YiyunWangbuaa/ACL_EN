@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Injection module for the computer-vision stereo-schlieren task.
 
-One subprocess ("计算机视觉双目姿态估计") with 165 local slots. The
+One subprocess ("stereo pose") with 165 local slots. The
 reconstruction process uses the same final-question format. Intermediate
 slots stay self-contained. Slots that are also final-e2e answers share that
 question text and are preceded by the earlier steps filled with gold.
@@ -10,15 +10,15 @@ from __future__ import annotations
 
 import json
 
-PROCESS = "计算机视觉双目姿态估计"
-# 重构稿只改说法，终态题的输出格式与交叉稿共用。
-RECON_PROCESS = "纯机器视觉双目姿态估计"
+PROCESS = "stereo pose"
+# The reconstruction draft changes wording only. Final items share the cross-draft output format.
+RECON_PROCESS = "pure stereo pose"
 _VISION_PROCESSES = {PROCESS, RECON_PROCESS}
 
 PRIOR = (
-    "针孔相机成像 x = (K·S)·[R|t]·X；图像直线 l = (K·S)^(-T)·n，n 为光心与空间直线张成平面的法向。\n"
-    "极线约束 x2^T·F·x1 = 0，F = (K2·S2)^(-T)·E·(K1·S1)^(-1)，E = [t21]_×·R21。\n"
-    "旋转矩阵用被动变换、动轴内旋；矩阵元素写全，不展开连乘。"
+    "Pinhole imaging is x = (K·S)·[R|t]·X. An image line is l = (K·S)^(-T)·n, where n is the normal of the plane spanned by the optical center and the spatial line.\n"
+    "The epipolar constraint is x2^T·F·x1 = 0, with F = (K2·S2)^(-T)·E·(K1·S1)^(-1) and E = [t21]_×·R21.\n"
+    "Rotation matrices use a passive transform and an intrinsic moving-axis sequence. Write every matrix element; do not expand a product."
 )
 
 N_BLANKS = 165
@@ -28,7 +28,7 @@ def _span(start: int, stop: int) -> list[str]:
     return [str(index) for index in range(start, stop)]
 
 
-# 与 final-e2e 同一次调用的终态空。键是这组的第一个局部编号。
+# Final blanks that share one final-e2e call. The key is the group's first local id.
 _FINAL_GROUP = {
     "41": ["41"],
     "84": ["84"],
@@ -40,7 +40,7 @@ _FINAL_GROUP = {
     "153": ["153", "154"],
     "158": ["158", "159"],
 }
-# 终态之前已经做完的步骤。分矩阵展开式算在该总矩阵的前缀里。
+# Steps already completed before the final item. Factor expansions belong in that product's prefix.
 _CHAIN = {
     "41": _span(1, 41),
     "84": _span(44, 84),
@@ -54,43 +54,43 @@ _CHAIN = {
 }
 _FINAL_QUESTION = {
     "41": (
-        "相机1的方位角、俯仰角、滚转角为 ψ1、θ1、φ1。"
-        "现在需要根据这些角度和当前坐标轴定义，推导风轴系到相机1系的旋转矩阵。"
-        "给出 R_cw1。"
+        "Camera 1 has azimuth, pitch, and roll ψ1, θ1, φ1. "
+        "From these angles and the current axis definitions, derive the rotation from the world frame to camera 1. "
+        "Give R_cw1."
     ),
     "84": (
-        "相机2的方位角、俯仰角、滚转角为 ψ2、θ2、φ2。"
-        "现在需要根据这些角度和当前坐标轴定义，推导风轴系到相机2系的旋转矩阵。"
-        "给出 R_cw2。"
+        "Camera 2 has azimuth, pitch, and roll ψ2, θ2, φ2. "
+        "From these angles and the current axis definitions, derive the rotation from the world frame to camera 2. "
+        "Give R_cw2."
     ),
-    "138": "给出直线公式中 (K1·S1)^(-T) 的展开式。不要与 [P_c1]_×、R_cw1、d_w 相乘。",
-    "139": "给出直线公式中 (K2·S2)^(-T) 的展开式。不要与 [P_c2]_×、R_cw2、d_w 相乘。",
-    "146": "给出直线公式中 [P_c1]_× 的展开式。不要与 (K1·S1)^(-T)、R_cw1、d_w 相乘。",
-    "147": "给出直线公式中 [P_c2]_× 的展开式。不要与 (K2·S2)^(-T)、R_cw2、d_w 相乘。",
+    "138": "Expand (K1·S1)^(-T) in the line formula by itself. Do not multiply it by [P_c1]_×, R_cw1, or d_w.",
+    "139": "Expand (K2·S2)^(-T) in the line formula by itself. Do not multiply it by [P_c2]_×, R_cw2, or d_w.",
+    "146": "Expand [P_c1]_× in the line formula by itself. Do not multiply it by (K1·S1)^(-T), R_cw1, or d_w.",
+    "147": "Expand [P_c2]_× in the line formula by itself. Do not multiply it by (K2·S2)^(-T), R_cw2, or d_w.",
     "148": (
-        "空速在风轴系中的方向向量d_wV。"
-        "空速在相机1图像直线为 l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wV，"
-        "相机2图像直线为 l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wV。"
-        "机体纵轴在机体系的单位向量为 e。它在风轴系中的方向向量为 d_wL。"
-        "机体纵轴在相机1图像直线为 l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wL，"
-        "相机2图像直线为 l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wL。"
-        "机体法向轴在机体系的单位向量为 e。它在风轴系中的方向向量为d_wN。"
-        "机体法向轴在相机1图像直线为 l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wN，"
-        "相机2图像直线为 l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wN。"
-        "写出 d_wV、d_wL、d_wN。"
+        "The reference direction in the world frame is d_wV. "
+        "Its image line in camera 1 is l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wV, "
+        "and in camera 2 is l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wV. "
+        "The unit vector of the object longitudinal axis in the object frame is e. Its direction in the world frame is d_wL. "
+        "Its image line in camera 1 is l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wL, "
+        "and in camera 2 is l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wL. "
+        "The unit vector of the object normal in the object frame is e. Its direction in the world frame is d_wN. "
+        "Its image line in camera 1 is l=(K1·S1)^(-T)·[P_c1]_×·R_cw1·d_wN, "
+        "and in camera 2 is l=(K2·S2)^(-T)·[P_c2]_×·R_cw2·d_wN. "
+        "Write d_wV, d_wL, and d_wN."
     ),
     "153": (
-        "相机1、相机2的光心在风轴系中的坐标分别为 C1=(x1,y1,z1)、C2=(x2,y2,z2)，"
-        "姿态角为 ψ1、θ1、φ1 与 ψ2、θ2、φ2。"
-        "现在需要推导相机1系到相机2系的旋转 R21 和平移 t21。"
-        "给出 R21 和 t21。"
+        "The optical centers of camera 1 and camera 2 in the world frame are C1=(x1,y1,z1) and C2=(x2,y2,z2), "
+        "with attitude angles ψ1, θ1, φ1 and ψ2, θ2, φ2. "
+        "Derive the rotation R21 and the translation t21 from camera 1 to camera 2. "
+        "Give R21 and t21."
     ),
     "158": (
-        "相机1、相机2图像上激波点的齐次坐标分别为 [u1,v1,1]、[u2,v2,1]。"
-        "相机1系射线方向 d1=(K1·S1)^(-1)·[u1,v1,1]^T，"
-        "相机2系射线方向 d2=(K2·S2)^(-1)·[u2,v2,1]^T。"
-        "现在需要给出这两个射线方向各自的展开式,写成向量形式。"
-        "给出 d1、d2。"
+        "The homogeneous coordinates of the reference point in the camera-1 and camera-2 images are [u1,v1,1] and [u2,v2,1]. "
+        "The ray direction in camera 1 is d1=(K1·S1)^(-1)·[u1,v1,1]^T, "
+        "and in camera 2 is d2=(K2·S2)^(-1)·[u2,v2,1]^T. "
+        "Expand both ray directions as vectors. "
+        "Give d1 and d2."
     ),
 }
 
@@ -119,7 +119,7 @@ def _render_prompt(item: dict) -> str:
     text = item["prompt"]
     options = item.get("options") or []
     if options:
-        text += "\n选项：" + " ".join(f"{chr(65 + i)}.{opt}" for i, opt in enumerate(options))
+        text += "\nOptions: " + " ".join(f"{chr(65 + i)}.{opt}" for i, opt in enumerate(options))
     return text
 
 
@@ -152,42 +152,42 @@ def _chain_text(by_id: dict, local_ids: list[str], memory: dict | None) -> str:
             flush()
         previous = key
         lead = item.get("lead") or item.get("prompt") or ""
-        tail = item.get("tail") or ("" if item.get("lead") else "。")
+        tail = item.get("tail") or ("" if item.get("lead") else ".")
         buffer.append(f"{lead}{_filled(item, memory)}{tail}")
     flush()
     return "\n".join(part for part in parts if part)
 
 
-# 值的字符与标准答案一致：整数和本题已出现的符号，不用 LaTeX。
+# Value characters match the gold: integers and symbols already in the item, not LaTeX.
 _PLAIN_VALUE = (
-    "值里只使用标准数据的写法：整数，以及本题已经出现的符号。"
-    "乘号写*，除号写/。sin、cos、tan 必须带圆括号，写成 sin(θ1) 这种形式。"
-    "不要使用 LaTeX，不要写反斜杠、\\frac、下标花括号或 $。"
-    "不要写等号。"
+    "Use only the notation of the gold data: integers and symbols that already appear in this item. "
+    "Write multiplication as * and division as /. sin, cos, and tan must take parentheses, as in sin(θ1). "
+    "Do not use LaTeX, backslashes, \\frac, subscript braces, or $. "
+    "Do not write an equals sign."
 )
 
 
 def _value_shape(code: str) -> str:
-    if code == "无":
-        return "值只写选项字母，不加引号，不写选项原文。"
-    if code == "矩阵":
+    if code == "choice":
+        return "The value is only the option letter, without quotes and without the option text."
+    if code == "matrix":
         return (
-            "值是一行 3×3 矩阵 [[a, b, c], [d, e, f], [g, h, i]]，用英文双引号包成字符串，元素写全。"
-            "每个元素写成整数或已给出量的表达式。"
-            "不要留下 P_c1x、P_c1y、P_c1z 或带下标花括号的未代入记号。"
+            "The value is one 3×3 matrix [[a, b, c], [d, e, f], [g, h, i]], wrapped in English double quotes, with every element written. "
+            "Each element is an integer or an expression in the given quantities. "
+            "Do not leave P_c1x, P_c1y, P_c1z, or an unsubstituted braced subscript."
         )
-    if code == "向量":
-        return "值是一行三个分量 [a, b, c]，用英文双引号包成字符串，不要写成矩阵。"
-    return "值是一行表达式，用英文双引号包成字符串。"
+    if code == "vector":
+        return "The value is one row of three components [a, b, c], wrapped in English double quotes, not written as a matrix."
+    return "The value is one expression, wrapped in English double quotes."
 
 
 def _json_ask(items: list[dict]) -> str:
     fields = []
     for item in items:
-        if item["format_code"] == "无":
-            fields.append(f"{item['id']}:字母")
+        if item["format_code"] == "choice":
+            fields.append(f"{item['id']}:letter")
         else:
-            fields.append(f'{item["id"]}:"答案"')
+            fields.append(f'{item["id"]}:"answer"')
     return "{" + ", ".join(fields) + "}"
 
 
@@ -200,14 +200,14 @@ def _requirement(items: list[dict], keep_steps: bool = False) -> str:
             seen.add(code)
             shapes.append(_value_shape(code))
     text = (
-        f"只输出一个 JSON 对象 {_json_ask(items)}。"
-        "键必须使用给出的空号，一个空号对应一个值。"
-        "这一句有多个空时，不要合成一个没有空号的式子。"
+        f"Output only one JSON object {_json_ask(items)}. "
+        "Every key must be one of the given blank ids, and each blank id has one value. "
+        "When this sentence has several blanks, do not merge them into one expression without blank ids. "
         + "".join(shapes)
         + _PLAIN_VALUE
     )
     if keep_steps:
-        text += "不要复述已完成步骤。"
+        text += "Do not repeat the completed steps."
     return text
 
 
@@ -227,7 +227,7 @@ def _injection(declaration: str, by_id: dict, target: str, memory=None, keep_suf
     final_ids = {local_id for group in _FINAL_GROUP.values() for local_id in group}
     if process not in _VISION_PROCESSES or str(target) not in final_ids:
         prompt = _render_prompt(item)
-        return f"{declaration.strip()}\n\n【问题】{prompt}\n【要求】{_requirement([item])}"
+        return f"{declaration.strip()}\n\n[Question]{prompt}\n[Requirement] {_requirement([item])}"
     group = _group_of(target)
     head = group[0]
     chain = _chain_text(by_id, _CHAIN[head], memory)
@@ -235,15 +235,15 @@ def _injection(declaration: str, by_id: dict, target: str, memory=None, keep_suf
     blocks = [declaration.strip(), ""]
     if chain:
         blocks.extend([
-            "【已完成步骤】",
-            "下面这些步骤已经按标准答案填好，用来完成本次终态。不要改写这些步骤，也不要再次填写它们。",
+            "[Completed steps]",
+            "The steps below are already filled with the gold answers for this final item. Do not rewrite them and do not fill them again.",
             chain,
             "",
         ])
     blocks.extend([
-        "【问题】",
+        "[Question]",
         _final_question(process, head),
-        "【要求】",
+        "[Requirement]",
         _requirement(asked, keep_steps=True),
     ])
     return "\n".join(blocks)
@@ -255,7 +255,7 @@ def _render_process(by_id: dict, targets: list[str], keep_suffix=False) -> str:
 
 def _json_object(items: list[dict], example: bool = False) -> str:
     if example:
-        return json.dumps({item["id"]: "示例" for item in items}, ensure_ascii=False)
+        return json.dumps({item["id"]: "example" for item in items}, ensure_ascii=False)
     return json.dumps({item["id"]: "?" for item in items}, ensure_ascii=False)
 
 
@@ -264,35 +264,35 @@ def _cv_end_to_end(chain: dict) -> str:
     local_ids = [str(index) for index in range(1, N_BLANKS + 1)]
     items = [by_id[lid] for lid in local_ids]
     lead = (
-        "本次是端到端问答。填写这个子过程里的全部待填槽，只调用这一次。"
-        "只输出一个 JSON 对象，键是空的编号，值是答案。"
-        "选择题的值是字母，不加引号。矩阵和向量的值用英文双引号包成字符串。"
-        "每个空号各写一个值，不要把多个空合成一个没有空号的式子。"
-        "不要输出句子原文，不要解释。"
+        "This is an end-to-end question. Fill every blank in this subprocess, and call the model only once. "
+        "Output only one JSON object. Each key is a blank id and each value is the answer. "
+        "A choice value is a letter, without quotes. Matrix and vector values are strings in English double quotes. "
+        "Write one value for each blank id. Do not merge several blanks into one expression without blank ids. "
+        "Do not output the original sentence and do not explain. "
         + _PLAIN_VALUE
     )
     output = "\n".join([
-        "【输出】",
-        "所有答案放在同一个 JSON 对象中。键是空的编号，值是答案。",
-        "选择题的值只写字母，不加引号。矩阵和向量必须用英文双引号包成字符串。",
-        "每个空号各写一个值，不要把多个空合成一个没有空号的式子。",
+        "[Output]",
+        "Put every answer in one JSON object. Each key is a blank id and each value is the answer.",
+        "A choice value is only a letter, without quotes. Matrix and vector values must be strings in English double quotes.",
+        "Write one value for each blank id. Do not merge several blanks into one expression without blank ids.",
         _PLAIN_VALUE,
-        f"只输出一行 {_json_object(items)}。",
-        f"格式示例（不是本题答案）：{_json_object(items, example=True)}",
+        f"Output only one line {_json_object(items)}.",
+        f"Format example (not the answer to this item): {_json_object(items, example=True)}",
     ])
     return "\n".join([
         lead,
         "",
-        "【定义声明】",
+        "[Declaration]",
         chain["declaration"].strip(),
         "",
-        "【物理常识】",
+        "[Background]",
         PRIOR,
         "",
-        "【子过程】",
+        "[Subprocess]",
         PROCESS,
         "",
-        "【过程】",
+        "[Process]",
         _render_process(by_id, targets=local_ids, keep_suffix=True),
         "",
         output,

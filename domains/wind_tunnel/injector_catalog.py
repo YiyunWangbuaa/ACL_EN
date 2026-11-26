@@ -31,26 +31,26 @@ _ROOT = Path(__file__).resolve().parents[2]
 _SAMPLES = _ROOT / "data" / "wind_tunnel" / "pair" / "samples.jsonl"
 _DEFAULT = "standard-default"
 _SPECIALS = frozenset({"24", "32", "41", "26", "34", "43", "88"})
-# 分量正负。题面只问符号，故障写在符号空上，不改写被读取的表达式。
+# Component sign. The problem asks only for the sign. The fault is written on the sign blank and does not rewrite the expression that is read.
 _COMPONENT_SIGNS = frozenset({"62", "63", "64", "65", "66", "67", "161", "162", "163"})
-# 等效力矩符号。路径必须是模板值，换路径会被计算器拒绝，不进入正负判定。
-# 故障写在符号空上，不改 ID184，也不改 ID185–ID188。
+# Equivalent-moment sign. The path must be the template value. A different path is rejected by the calculator and does not enter the sign judgment.
+# The fault is written on the sign blank. It does not change ID184 or ID185-ID188.
 _MOMENT_SIGNS = frozenset({"189", "190", "191", "192", "193", "194"})
-# 力矩分子力系数、分子坐标、分母力臂。故障写在这道选择题上，注入另一个选项，不重算上游。
+# Moment numerator force coefficient, numerator coordinate, and denominator arm. The fault is written on this choice and injects another option. It does not recompute upstream.
 _MOMENT_PARTS = frozenset(str(number) for number in range(201, 214))
 _SIGN_BLANKS = _COMPONENT_SIGNS | _MOMENT_SIGNS | _MOMENT_PARTS
-# 右翼偏向由右手定则推出，与 ID35、ID37 的识别故障是同一条，不再单列。
+# The right-wing direction is derived from the right-hand rule. It is the same recognition fault as ID35 and ID37 and is not listed again.
 _HAND_RULE_WING = frozenset({"36", "38"})
-_SUFFIX = {"choice": "选择故障", "sign": "判断故障", "matrix": "执行故障",
-           "vector": "执行故障", "expression": "执行故障"}
+_SUFFIX = {"choice": " choice fault", "sign": " judgment fault", "matrix": " execution fault",
+           "vector": " execution fault", "expression": " execution fault"}
 
 
 @dataclass(frozen=True)
 class Row:
     id: str
     klass: str                      # DIR | RSN | EXE | ALG
-    label: str                      # 语义行标
-    question: tuple[str, ...]       # 该行所属题目的全部空
+    label: str                      # semantic row label
+    question: tuple[str, ...]       # every blank of the question this row belongs to
     injector: tuple                 # ((blank, alt), ...)
     variant: str                    # std | all-swap | single:<blank> | branch | chain
 
@@ -59,7 +59,7 @@ class Row:
         return len(self.injector)
 
 
-# ---------------------------------------------------------------- 题目与依赖
+# ---------------------------------------------------------------- questions and dependencies
 
 @lru_cache(maxsize=1)
 def _questions() -> dict[str, dict]:
@@ -68,7 +68,7 @@ def _questions() -> dict[str, dict]:
         if row.get("id") != _DEFAULT:
             continue
         return {str(q["id"]): q for q in row["questions"]}
-    raise RuntimeError("找不到 standard-default")
+    raise RuntimeError("standard-default was not found")
 
 
 def _bare(x) -> str:
@@ -82,14 +82,14 @@ def _kind(node: str) -> str:
 
 @lru_cache(maxsize=None)
 def calc_inputs(node: str) -> tuple[str, ...]:
-    """计算器真正读的输入（不是图上的父节点）。"""
+    """The inputs the calculator actually reads. These are not the parents on the graph."""
     node = _bare(node)
     return tuple(_bare(i) for i in SS._inputs(node))
 
 
 @lru_cache(maxsize=None)
 def calc_ancestors(node: str) -> frozenset[str]:
-    """沿**计算器输入**向上闭包——判断注入能否被感知。"""
+    """Closure upward along calculator inputs, to judge whether an injection can be seen."""
     seen: set[str] = set()
     pending = list(calc_inputs(node))
     while pending:
@@ -103,7 +103,7 @@ def calc_ancestors(node: str) -> frozenset[str]:
 
 @lru_cache(maxsize=None)
 def graph_ancestors(node: str) -> frozenset[str]:
-    """沿**图上依赖**向上闭包——判断结构上是否可达。"""
+    """Closure upward along graph dependencies, to judge whether it is structurally reachable."""
     seen: set[str] = set()
     pending = list(NODE_BY_ID[_bare(node)].depends_on)
     while pending:
@@ -115,18 +115,18 @@ def graph_ancestors(node: str) -> frozenset[str]:
     return frozenset(seen)
 
 
-# ---------------------------------------------------------------- 行构造
+# ---------------------------------------------------------------- row construction
 
 def _label(prompt: str) -> str:
-    text = re.sub(r"[？?。\s]+$", "", str(prompt)).strip()
-    text = re.sub(r"^为计算[^，]*，", "", text)
+    text = re.sub(r"[?.\s]+$", "", str(prompt)).strip()
+    text = re.sub(r"^To compute[^,]*,\s*", "", text)
     if len(text) > 40:
-        text = text.split("。")[0]
-    return text + "契约识别失败"
+        text = text.split(".")[0]
+    return text + " contract recognition failed"
 
 
 def e1_rows() -> tuple[Row, ...]:
-    """DIR = 去重后的直接识别入口。一个题干一行，注入该题的全部空。"""
+    """DIR is the deduplicated direct-recognition entry. One stem is one row, and the row injects every blank of that question."""
     from domains.wind_tunnel.fault_instance import e1_instances
 
     std = _manuscript(_DEFAULT)
@@ -145,7 +145,7 @@ def e1_rows() -> tuple[Row, ...]:
 
 
 def application_questions() -> dict[str, dict]:
-    """执行题：有计算器、且不是 DIR 直接识别空。"""
+    """Execution questions: they have a calculator and are not DIR direct-recognition blanks."""
     e1_blanks = {b for row in e1_rows() for b in row.question}
     found = {}
     for node, q in _questions().items():
@@ -157,16 +157,16 @@ def application_questions() -> dict[str, dict]:
 
 
 def e3_rows(sample: str, scope: str = "core") -> tuple[Row, ...]:
-    """EXE = 执行题。每题给：单槽行（full 模式）+ 一条「全换」行。
+    """EXE is an execution question. Each question gets a single-slot row (full mode) and one all-swap row.
 
-    符号空、以及力矩的力系数、坐标分量和分母，只写这道题自己的另一侧，不走全换。
+    A sign blank, and a moment force coefficient, coordinate component, or denominator, write only the other side of that question. They do not use the all-swap row.
     """
     std = _manuscript(_DEFAULT)
     gold = _manuscript(sample)
     rows: list[Row] = []
     for node in sorted(application_questions(), key=int):
         q = _questions()[node]
-        label = f"{q['role']}{_SUFFIX.get(str(q['answer_type']), '执行故障')}"
+        label = f"{q['role']}{_SUFFIX.get(str(q['answer_type']), ' execution fault')}"
         if node in _HAND_RULE_WING:
             continue
         if node in _SIGN_BLANKS:
@@ -188,7 +188,7 @@ def e3_rows(sample: str, scope: str = "core") -> tuple[Row, ...]:
                     digest = hashlib.sha1(f"{node}|{blank}|{alt}".encode("utf-8")).hexdigest()[:8]
                     rows.append(Row(f"{EXE}:{node}|{blank}|{digest}", EXE, label,
                                     (node,), ((blank, alt),), f"single:{blank}"))
-        # 全换：所有输入同时取"另一侧"
+        # All-swap: every input takes the other side at once.
         swapped = []
         for blank in inputs:
             alt = _other_side(blank, gold.get(blank, ""), sample)
@@ -204,7 +204,7 @@ def e3_rows(sample: str, scope: str = "core") -> tuple[Row, ...]:
 
 
 def _alternatives(blank: str, sample: str) -> tuple[str, ...]:
-    """该空的可替换值：优先同族兄弟的答案，否则取 standard 值。"""
+    """A replaceable value for this blank. Prefer a sibling answer in the same family, otherwise the standard value."""
     std = _manuscript(_DEFAULT)
     gold = _manuscript(sample)
     found = []
@@ -239,13 +239,13 @@ def e2_rows(sample: str) -> tuple[Row, ...]:
     for name, assignment in branch_table(sample).items():
         if not assignment.slots:
             continue
-        rows.append(Row(f"{RSN}:{name}", RSN, f"{name} 推理识别",
+        rows.append(Row(f"{RSN}:{name}", RSN, f"{name} reasoning recognition",
                         (), tuple(assignment.slots), "branch"))
     return tuple(rows)
 
 
 def e4_rows(sample: str) -> tuple[Row, ...]:
-    """ALG = 矩阵、向量、公式题。行名停在「角色数理错误」。分量符号不在这里。"""
+    """ALG is a matrix, vector, or formula question. The row name stops at the role algebra error. Component signs are not here."""
     from domains.wind_tunnel.fault_instance import instances
 
     rows = []
@@ -262,4 +262,4 @@ def rows(sample: str, scope: str = "core") -> tuple[Row, ...]:
 
 
 if __name__ == "__main__":
-    print("这里不是 D 矩阵。阶段4入口是 domains.wind_tunnel.dmatrix。")
+    print("This is not the D matrix. The stage-4 entry is domains.wind_tunnel.dmatrix.")

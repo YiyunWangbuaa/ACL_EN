@@ -38,10 +38,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OUT_PATH = ROOT / "data" / "wind_tunnel" / "dependency_graph.json"
 
-WIND_TO_BODY = "风轴系到体轴系"
-BALANCE_TO_BODY = "天平系到体轴系"
-BALANCE_TO_WIND = "天平系到风轴系"
-REFERENCE_POINT = "力矩参考点"
+WIND_TO_BODY = "wind frame to body-axis frame"
+BALANCE_TO_BODY = "balance frame to body-axis frame"
+BALANCE_TO_WIND = "balance frame to wind frame"
+REFERENCE_POINT = "moment reference point"
 
 PROCESS_OFFSET = {
     WIND_TO_BODY: 0,
@@ -55,7 +55,7 @@ PROCESS_SIZE = {
     BALANCE_TO_WIND: 64,
     REFERENCE_POINT: 33,
 }
-# 与 dataset_generate.REMOVED_SLOTS 相同。展开式已删除，空号不前移。
+# Same as dataset_generate.REMOVED_SLOTS. The expansions were removed and later blank numbers were not shifted.
 REMOVED_SLOTS = {
     WIND_TO_BODY: frozenset({52, 53, 54}),
     BALANCE_TO_BODY: frozenset({101, 102, 103}),
@@ -69,11 +69,11 @@ ANSWER_TYPE = {
     "vector": "vector",
 }
 FORMAT_OF_ANSWER = {
-    "choice": {"无"},
-    "sign": {"无"},
-    "matrix": {"矩阵"},
-    "vector": {"向量"},
-    "expression": {"表达式", "arctan", "arcsin", "距离", "力臂"},
+    "choice": {"choice"},
+    "sign": {"choice"},
+    "matrix": {"matrix"},
+    "vector": {"vector"},
+    "expression": {"expression", "arctan", "arcsin", "distance", "moment-arm"},
 }
 PUBLIC_KEYS = (
     "depends_on",
@@ -97,219 +97,219 @@ _SENTENCE_OF: dict[str, dict[str, int]] = {}
 # id, label, error type, target, role, then optional "| parent parent".
 _TABLES = {
     WIND_TO_BODY: """
-1 C2 semantic frame_conversion 坐标系转换方向
-2 C1 semantic wind_normal_axis 风轴绝对法向
-3 C1 semantic wind_axial_axis 风轴绝对轴向
-4 C1 semantic wind_lateral_axis 风轴绝对侧向
-5 C1 semantic body_normal_axis 机体绝对法向
-6 C1 semantic body_axial_axis 机体绝对轴向
-7 C1 semantic body_lateral_axis 机体绝对侧向
-8 A2 matrix rp1 风轴到体轴的前置矩阵RP1 | 2 3 4 5 6 7
-9 C2 semantic rp1_aligned_frame RP1所对齐的坐标系
-10 C2 semantic rp1_source_frame RP1所对照的坐标系
-11 C1 semantic placement 模型安装方式
-12 A1 sign mount_relation 安装后法向与侧向是否同向 | 11
-13 A2 matrix rp2 安装前置矩阵RP2 | 5 6 7 12
-14 C2 semantic rp2_aligned_frame RP2所对齐的坐标系
-15 C2 semantic rp2_source_frame RP2所对照的坐标系
-16 A1 semantic euler_first 内旋顺序的第1项
-17 A1 semantic euler_second 内旋顺序的第2项
-18 A1 semantic euler_third 内旋顺序的第3项
-19 C1 semantic placement_alpha 迎角段重读的安装方式
-20 A1 semantic alpha_m_airspeed 正机构迎角时空速偏向 | 19
-21 C1 semantic alpha_airspeed 正理论迎角时空速偏向
-22 A1 sign alpha_m_sign 正机构迎角下理论迎角的符号 | 20 21
-23 C2 semantic alpha_frame 迎角旋转所在坐标系
-24 C1 semantic alpha_axis 迎角绕过的机体坐标轴 | 5 6 7 23
-25 A1 sign alpha_turn 迎角绕该坐标轴的转向 | 5 6 7 20 24
-26 A2 matrix r_alpha 迎角旋转矩阵 | 24 25
-27 C1 semantic placement_beta 侧滑段重读的安装方式
-28 A1 semantic beta_m_airspeed 正机构侧滑时空速偏向 | 27
-29 C1 semantic beta_airspeed 正理论侧滑时空速偏向
-30 A1 sign beta_m_sign 正机构侧滑下理论侧滑的符号 | 28 29
-31 C2 semantic beta_frame 侧滑旋转所在坐标系
-32 C1 semantic beta_axis 侧滑绕过的机体坐标轴 | 5 6 7 31
-33 A1 sign beta_turn 侧滑绕该坐标轴的转向 | 5 6 7 28 32
-34 A2 matrix r_beta 侧滑旋转矩阵 | 32 33
-35 C1 sign gamma_m_hand 机构滚转与右手定则的关系
-36 A1 semantic gamma_m_wing 正机构滚转时右翼偏向 | 35
-37 C1 sign gamma_hand 理论滚转与右手定则的关系
-38 A1 semantic gamma_wing 正理论滚转时右翼偏向 | 37
-39 A1 sign gamma_sign 正机构滚转下理论滚转的符号 | 36 38
-40 C2 semantic gamma_frame 滚转旋转所在坐标系
-41 C1 semantic gamma_axis 滚转绕过的机体坐标轴 | 6 40
-42 A1 sign gamma_turn 滚转绕该坐标轴的转向 | 6 35 41
-43 A2 matrix r_gamma 滚转旋转矩阵 | 41 42
-44 C2 semantic passive_transform 主动或被动变换
-45 C2 semantic moving_axes 体轴系是动轴或定轴
-46 C2 semantic intrinsic_rotation 内旋或外旋 | 45
-47 A2 semantic product_r1 姿态连乘式中的R1 | 16 17 18 44 46
-48 A2 semantic product_r2 姿态连乘式中的R2 | 16 17 18 44 46
-49 A2 semantic product_r3 姿态连乘式中的R3 | 16 17 18 44 46
-50 A2 semantic product_r4 姿态连乘式中的R4 | 44 46
-51 A2 semantic product_r5 姿态连乘式中的R5 | 44 46
-55 A2 matrix r_t 三次姿态旋转的总矩阵 | 26 34 43 47 48 49
-56 A1 vector level_airspeed 平置机体系中的空速坐标 | 3 8 13
-57 C2 semantic level_frame 随后只需研究的坐标系 | 56
-58 A1 vector level_airspeed_vector 代入用的平置空速单位向量 | 56
-59 A2 expression xtz_component 空速在体轴的XTZ分量 | 55 58
-60 A2 expression ytz_component 空速在体轴的YTZ分量 | 55 58
-61 A2 expression ztz_component 空速在体轴的ZTZ分量 | 55 58
-62 A1 sign xtz_sign_alpha 仅正迎角时XTZ的符号 | 59
-63 A1 sign ytz_sign_alpha 仅正迎角时YTZ的符号 | 60
-64 A1 sign ztz_sign_alpha 仅正迎角时ZTZ的符号 | 61
-65 A1 sign xtz_sign_beta 仅正侧滑时XTZ的符号 | 59
-66 A1 sign ytz_sign_beta 仅正侧滑时YTZ的符号 | 60
-67 A1 sign ztz_sign_beta 仅正侧滑时ZTZ的符号 | 61
-68 A1 sign alpha_t_sign 理论迎角公式的外层符号 | 22
-69 A1 semantic alpha_inverse 理论迎角使用的反三角函数
-70 A1 sign alpha_num_sign 理论迎角分子的符号 | 62 63 64 71
-71 A1 semantic alpha_num_axis 理论迎角的分子分量 | 5 6 7 21
-72 A1 sign alpha_den_sign 理论迎角分母的符号 | 62 63 64 73
-73 A1 semantic alpha_den_axis 理论迎角的分母分量 | 6
-74 A1 sign beta_t_sign 理论侧滑公式的外层符号 | 30
-75 A1 semantic beta_inverse 理论侧滑使用的反三角函数
-76 A1 sign beta_num_sign 理论侧滑分子的符号 | 65 66 67 77
-77 A1 semantic beta_num_axis 理论侧滑的分子分量 | 5 6 7 29
-78 A1 sign beta_den_sign 理论侧滑分母的符号 | 75
-79 A1 semantic beta_den_axis 理论侧滑的分母分量 | 75
-80 A2 expression alpha_t 理论迎角公式 | 59 60 61 68 69 70 71 72 73
-81 A2 expression beta_t 理论侧滑公式 | 59 60 61 74 75 76 77 78 79
+1 C2 semantic frame_conversion frame conversion direction
+2 C1 semantic wind_normal_axis wind-frame absolute normal
+3 C1 semantic wind_axial_axis wind-frame absolute axial
+4 C1 semantic wind_lateral_axis wind-frame absolute lateral
+5 C1 semantic body_normal_axis airframe absolute normal
+6 C1 semantic body_axial_axis airframe absolute axial
+7 C1 semantic body_lateral_axis airframe absolute lateral
+8 A2 matrix rp1 pre-matrix RP1 from wind frame to body-axis frame | 2 3 4 5 6 7
+9 C2 semantic rp1_aligned_frame frame aligned by RP1
+10 C2 semantic rp1_source_frame frame compared by RP1
+11 C1 semantic placement model installation
+12 A1 sign mount_relation whether normal and lateral agree after installation | 11
+13 A2 matrix rp2 mounting pre-matrix RP2 | 5 6 7 12
+14 C2 semantic rp2_aligned_frame frame aligned by RP2
+15 C2 semantic rp2_source_frame frame compared by RP2
+16 A1 semantic euler_first first item of the intrinsic order
+17 A1 semantic euler_second second item of the intrinsic order
+18 A1 semantic euler_third third item of the intrinsic order
+19 C1 semantic placement_alpha installation reread for the angle of attack
+20 A1 semantic alpha_m_airspeed airspeed side at a positive mechanism angle of attack | 19
+21 C1 semantic alpha_airspeed airspeed side at a positive theoretical angle of attack
+22 A1 sign alpha_m_sign sign of the theoretical angle of attack under a positive mechanism angle of attack | 20 21
+23 C2 semantic alpha_frame frame of the angle of attack rotation
+24 C1 semantic alpha_axis airframe coordinate axis of the angle of attack | 5 6 7 23
+25 A1 sign alpha_turn turning sense of the angle of attack about that coordinate axis | 5 6 7 20 24
+26 A2 matrix r_alpha angle of attack rotation matrix | 24 25
+27 C1 semantic placement_beta installation reread for sideslip
+28 A1 semantic beta_m_airspeed airspeed side at positive mechanism sideslip | 27
+29 C1 semantic beta_airspeed airspeed side at positive theoretical sideslip
+30 A1 sign beta_m_sign sign of the theoretical sideslip under positive mechanism sideslip | 28 29
+31 C2 semantic beta_frame frame of the sideslip rotation
+32 C1 semantic beta_axis airframe coordinate axis of the sideslip | 5 6 7 31
+33 A1 sign beta_turn turning sense of the sideslip about that coordinate axis | 5 6 7 28 32
+34 A2 matrix r_beta sideslip rotation matrix | 32 33
+35 C1 sign gamma_m_hand relation of mechanism roll to the right-hand rule
+36 A1 semantic gamma_m_wing right-wing side at positive mechanism roll | 35
+37 C1 sign gamma_hand relation of theoretical roll to the right-hand rule
+38 A1 semantic gamma_wing right-wing side at positive theoretical roll | 37
+39 A1 sign gamma_sign sign of the theoretical roll under positive mechanism roll | 36 38
+40 C2 semantic gamma_frame frame of the roll rotation
+41 C1 semantic gamma_axis airframe coordinate axis of the roll | 6 40
+42 A1 sign gamma_turn turning sense of the roll about that coordinate axis | 6 35 41
+43 A2 matrix r_gamma roll rotation matrix | 41 42
+44 C2 semantic passive_transform active or passive transform
+45 C2 semantic moving_axes moving axes or fixed axes for the body-axis frame
+46 C2 semantic intrinsic_rotation intrinsic or extrinsic rotation | 45
+47 A2 semantic product_r1 R1 in the attitude product | 16 17 18 44 46
+48 A2 semantic product_r2 R2 in the attitude product | 16 17 18 44 46
+49 A2 semantic product_r3 R3 in the attitude product | 16 17 18 44 46
+50 A2 semantic product_r4 R4 in the attitude product | 44 46
+51 A2 semantic product_r5 R5 in the attitude product | 44 46
+55 A2 matrix r_t total matrix of the three attitude rotations | 26 34 43 47 48 49
+56 A1 vector level_airspeed airspeed coordinates in the level airframe | 3 8 13
+57 C2 semantic level_frame frame studied next | 56
+58 A1 vector level_airspeed_vector level airspeed unit vector used in the substitution | 56
+59 A2 expression xtz_component XTZ component of airspeed in body axes | 55 58
+60 A2 expression ytz_component YTZ component of airspeed in body axes | 55 58
+61 A2 expression ztz_component ZTZ component of airspeed in body axes | 55 58
+62 A1 sign xtz_sign_alpha sign of XTZ when only the angle of attack is positive | 59
+63 A1 sign ytz_sign_alpha sign of YTZ when only the angle of attack is positive | 60
+64 A1 sign ztz_sign_alpha sign of ZTZ when only the angle of attack is positive | 61
+65 A1 sign xtz_sign_beta sign of XTZ when only sideslip is positive | 59
+66 A1 sign ytz_sign_beta sign of YTZ when only sideslip is positive | 60
+67 A1 sign ztz_sign_beta sign of ZTZ when only sideslip is positive | 61
+68 A1 sign alpha_t_sign outer sign of the theoretical angle of attack formula | 22
+69 A1 semantic alpha_inverse inverse function used by the theoretical angle of attack
+70 A1 sign alpha_num_sign numerator sign of the theoretical angle of attack | 62 63 64 71
+71 A1 semantic alpha_num_axis numerator component of the theoretical angle of attack | 5 6 7 21
+72 A1 sign alpha_den_sign denominator sign of the theoretical angle of attack | 62 63 64 73
+73 A1 semantic alpha_den_axis denominator component of the theoretical angle of attack | 6
+74 A1 sign beta_t_sign outer sign of the theoretical sideslip formula | 30
+75 A1 semantic beta_inverse inverse function used by the theoretical sideslip
+76 A1 sign beta_num_sign numerator sign of the theoretical sideslip | 65 66 67 77
+77 A1 semantic beta_num_axis numerator component of the theoretical sideslip | 5 6 7 29
+78 A1 sign beta_den_sign denominator sign of the theoretical sideslip | 75
+79 A1 semantic beta_den_axis denominator component of the theoretical sideslip | 75
+80 A2 expression alpha_t theoretical angle of attack formula | 59 60 61 68 69 70 71 72 73
+81 A2 expression beta_t theoretical sideslip formula | 59 60 61 74 75 76 77 78 79
 """,
     BALANCE_TO_BODY: """
-82 C2 semantic load_conversion 力和力矩的转换方向
-83 C1 sign gamma_tp_hand 天平安装角相对右手定则的符号
-84 C1 sign gamma_body_hand 机体滚转相对右手定则的符号
-85 A1 expression roll_difference 天平系与机体系的滚转角差 | 83 84 90
-86 A1 semantic balance_roll_axis 该滚转使用的天平坐标轴 | 90
-87 A1 sign balance_roll_turn 该滚转相对坐标轴正方向的转向 | 85
-88 A2 matrix balance_roll_matrix 安装滚转矩阵 | 83 84 86 87
-89 C1 semantic balance_normal_axis 天平绝对法向
-90 C1 semantic balance_axial_axis 天平绝对轴向
-91 C1 semantic balance_lateral_axis 天平绝对侧向
-92 C1 semantic body_normal_axis_load 机体绝对法向
-93 C1 semantic body_axial_axis_load 机体绝对轴向
-94 C1 semantic body_lateral_axis_load 机体绝对侧向
-95 A2 matrix rtp_tz1 坐标轴与绝对方向的对齐矩阵 | 89 90 91 92 93 94
-96 C1 semantic placement_load 模型正装或倒装
-97 A2 matrix rtp_tz2 正装或倒装的前置矩阵 | 92 93 94 96
-98 A2 semantic load_r1 载荷连乘式中的R1
-99 A2 semantic load_r2 载荷连乘式中的R2
-100 A2 semantic load_r3 载荷连乘式中的R3
-104 A2 matrix load_matrix 载荷变换总矩阵 | 88 95 97 98 99 100
-105 C1 semantic xtz_load XTZ对应的体轴载荷 | 92 93 94
-106 C1 semantic ytz_load YTZ对应的体轴载荷 | 92 93 94
-107 C1 semantic ztz_load ZTZ对应的体轴载荷 | 92 93 94
-108 C1 semantic xtp_load XTP对应的天平载荷 | 89 90 91
-109 C1 semantic ytp_load YTP对应的天平载荷 | 89 90 91
-110 C1 semantic zyp_load ZYP对应的天平载荷 | 89 90 91
-111 A2 expression cn_tz 体轴法向力 | 104 105 106 107 108 109 110
-112 A2 expression ca_tz 体轴轴向力 | 104 105 106 107 108 109 110
-113 A2 expression cz_tz 体轴侧向力 | 104 105 106 107 108 109 110
-114 A2 expression mn_tz 体轴法向力矩 | 104 105 106 107 108 109 110
-115 A2 expression ma_tz 体轴轴向力矩 | 104 105 106 107 108 109 110
-116 A2 expression mz_tz 体轴侧向力矩 | 104 105 106 107 108 109 110
+82 C2 semantic load_conversion force and moment conversion direction
+83 C1 sign gamma_tp_hand sign of the balance installation angle relative to the right-hand rule
+84 C1 sign gamma_body_hand sign of airframe roll relative to the right-hand rule
+85 A1 expression roll_difference roll difference between the balance frame and the airframe | 83 84 90
+86 A1 semantic balance_roll_axis balance coordinate axis for that roll | 90
+87 A1 sign balance_roll_turn turning sense of that roll about the positive coordinate direction | 85
+88 A2 matrix balance_roll_matrix installation roll matrix | 83 84 86 87
+89 C1 semantic balance_normal_axis balance absolute normal
+90 C1 semantic balance_axial_axis balance absolute axial
+91 C1 semantic balance_lateral_axis balance absolute lateral
+92 C1 semantic body_normal_axis_load airframe absolute normal
+93 C1 semantic body_axial_axis_load airframe absolute axial
+94 C1 semantic body_lateral_axis_load airframe absolute lateral
+95 A2 matrix rtp_tz1 alignment matrix of axes and absolute directions | 89 90 91 92 93 94
+96 C1 semantic placement_load upright or inverted model installation
+97 A2 matrix rtp_tz2 pre-matrix for upright or inverted installation | 92 93 94 96
+98 A2 semantic load_r1 R1 in the load product
+99 A2 semantic load_r2 R2 in the load product
+100 A2 semantic load_r3 R3 in the load product
+104 A2 matrix load_matrix total load-transform matrix | 88 95 97 98 99 100
+105 C1 semantic xtz_load body-axis load associated with XTZ | 92 93 94
+106 C1 semantic ytz_load body-axis load associated with YTZ | 92 93 94
+107 C1 semantic ztz_load body-axis load associated with ZTZ | 92 93 94
+108 C1 semantic xtp_load balance load associated with XTP | 89 90 91
+109 C1 semantic ytp_load balance load associated with YTP | 89 90 91
+110 C1 semantic zyp_load balance load associated with ZYP | 89 90 91
+111 A2 expression cn_tz body-axis normal force | 104 105 106 107 108 109 110
+112 A2 expression ca_tz body-axis axial force | 104 105 106 107 108 109 110
+113 A2 expression cz_tz body-axis lateral force | 104 105 106 107 108 109 110
+114 A2 expression mn_tz body-axis normal moment | 104 105 106 107 108 109 110
+115 A2 expression ma_tz body-axis axial moment | 104 105 106 107 108 109 110
+116 A2 expression mz_tz body-axis lateral moment | 104 105 106 107 108 109 110
 """,
     BALANCE_TO_WIND: """
-117 C2 semantic elastic_conversion 弹性角增量的转换方向
-118 C1 semantic wind_axial_forward 风洞绝对轴向
-119 C1 semantic balance_axial_forward 天平绝对轴向
-120 C1 semantic wind_normal_fd 风轴绝对法向
-121 C1 semantic wind_lateral_fd 风轴绝对侧向
-122 C1 semantic wind_axial_fd 风轴绝对轴向
-123 C1 semantic balance_normal_fd 天平绝对法向
-124 C1 semantic balance_lateral_fd 天平绝对侧向
-125 C1 semantic balance_axial_fd 天平绝对轴向
-126 A2 matrix rp_tp_fd 天平坐标到风轴坐标的对齐矩阵 | 120 121 122 123 124 125
-127 C2 semantic rp_aligned_frame 对齐矩阵所作用的坐标系
-128 C1 semantic rp_matched_frame 与之坐标方向相同的坐标系
-129 A1 semantic install_absolute_axis 正安装角绕行的绝对轴
-130 C1 semantic install_axis 正安装角对应的坐标轴 | 123 124 125
-131 A1 sign install_turn 安装角绕该坐标轴的转向 | 123 124 125 130
-132 A2 matrix r_gamma_tp 安装角旋转矩阵 | 130 131
-133 A2 semantic elastic_r1 弹性角连乘式中的R1
-134 A2 semantic elastic_r2 弹性角连乘式中的R2
-135 A1 vector balance_forward_vector 未变形的天平轴向单位向量 | 123 124 125
-136 C1 semantic alpha_e_bend 正弹性迎角的弯曲方向
-137 C1 semantic beta_e_bend 正弹性侧滑的弯曲方向
-138 A1 semantic gamma_e_clock 正弹性滚转的扭转方向
-139 C1 semantic alpha_e_axis 弹性迎角的旋转轴 | 123 124 125
-140 C1 semantic beta_e_axis 弹性侧滑的旋转轴 | 123 124 125
-141 C1 semantic gamma_e_axis 弹性滚转的旋转轴 | 123 124 125
-142 A1 sign xtp_e_sign 变形后XTP分量的符号 | 135 136 137 139 140
-143 A1 sign ytp_e_sign 变形后YTP分量的符号 | 135 136 137 139 140
-144 A1 sign ztp_e_sign 变形后ZTP分量的符号 | 135 136 137 139 140
-145 A1 vector deformed_axis 小角度近似后的天平轴向向量 | 135 136 137 139 140
-146 A2 expression xfd_elastic 变形轴向在风轴的XFD | 126 132 133 134 145
-147 A2 expression yfd_elastic 变形轴向在风轴的YFD | 126 132 133 134 145
-148 A2 expression zfd_elastic 变形轴向在风轴的ZFD | 126 132 133 134 145
-149 A1 semantic delta_alpha_component 表示弹性迎角增量的风轴分量 | 120 121 122 155
-150 A1 semantic delta_beta_component 表示弹性侧滑增量的风轴分量 | 120 121 122 156
-151 C1 semantic placement_elastic 弹性角段的安装方式
-152 A1 semantic alpha_e_airspeed 正弹性迎角使空速位于机体的上下 | 136 151
-153 A1 semantic beta_e_airspeed 正弹性侧滑使空速位于机体的左右 | 137 151
-154 A1 sign gamma_e_hand 弹性滚转与右手定则的关系
-155 C1 semantic theory_alpha_dir 正理论迎角时空速方向
-156 C1 semantic theory_beta_dir 正理论侧滑时空速方向
-157 C1 sign theory_gamma_hand 理论滚转相对右手定则的符号
-158 A1 sign delta_alpha_sign 弹性迎角增量的符号 | 152 155
-159 A1 sign delta_beta_sign 弹性侧滑增量的符号 | 153 156
-160 A1 sign delta_gamma_sign 弹性滚转增量的符号 | 154 157
-161 A1 sign xfd_sign 安装角为零时XFD的符号 | 146
-162 A1 sign yfd_sign 安装角为零时YFD的符号 | 147
-163 A1 sign zfd_sign 安装角为零时ZFD的符号 | 148
-164 A1 sign delta_alpha_outer 弹性迎角增量公式的外层符号 | 158
-165 A1 sign delta_alpha_num_sign 弹性迎角增量的分子符号 | 161 162 163 166
-166 A1 semantic delta_alpha_num_axis 弹性迎角增量的分子分量 | 149
-167 A1 sign delta_alpha_den_sign 弹性迎角增量的分母符号 | 161 162 163 168
-168 A1 semantic delta_alpha_den_axis 弹性迎角增量的分母分量 | 120 121 122
-169 A1 sign delta_beta_outer 弹性侧滑增量公式的外层符号 | 159
-170 A1 sign delta_beta_num_sign 弹性侧滑增量的分子符号 | 161 162 163 171
-171 A1 semantic delta_beta_num_axis 弹性侧滑增量的分子分量 | 150
-172 A1 sign delta_beta_den_sign 弹性侧滑增量的分母符号 | 161 162 163 173
-173 A1 semantic delta_beta_den_axis 弹性侧滑增量的分母分量 | 120 121 122
-174 A2 expression delta_alpha_formula 用风轴分量写成的弹性迎角增量 | 146 147 148 164 165 166 167 168
-175 A2 expression delta_beta_formula 用风轴分量写成的弹性侧滑增量 | 146 147 148 169 170 171 172 173
-176 A2 expression delta_alpha_elastic 用弹性角写成的弹性迎角增量 | 146 147 148 174
-177 A2 expression delta_beta_elastic 用弹性角写成的弹性侧滑增量 | 146 147 148 175
-178 A1 expression delta_gamma 弹性滚转增量 | 160
-179 A1 sign delta_alpha_v 气流偏角迎角补偿的符号 | 155
-180 A1 sign delta_beta_v 气流偏角侧滑补偿的符号 | 156
+117 C2 semantic elastic_conversion conversion direction of the elastic increment
+118 C1 semantic wind_axial_forward tunnel absolute axial
+119 C1 semantic balance_axial_forward balance absolute axial
+120 C1 semantic wind_normal_fd wind-frame absolute normal
+121 C1 semantic wind_lateral_fd wind-frame absolute lateral
+122 C1 semantic wind_axial_fd wind-frame absolute axial
+123 C1 semantic balance_normal_fd balance absolute normal
+124 C1 semantic balance_lateral_fd balance absolute lateral
+125 C1 semantic balance_axial_fd balance absolute axial
+126 A2 matrix rp_tp_fd alignment matrix from balance coordinates to wind coordinates | 120 121 122 123 124 125
+127 C2 semantic rp_aligned_frame frame the alignment matrix acts on
+128 C1 semantic rp_matched_frame frame whose coordinate directions match it
+129 A1 semantic install_absolute_axis absolute axis of a positive installation angle
+130 C1 semantic install_axis coordinate axis of a positive installation angle | 123 124 125
+131 A1 sign install_turn turning sense of the installation angle about that coordinate axis | 123 124 125 130
+132 A2 matrix r_gamma_tp installation-angle rotation matrix | 130 131
+133 A2 semantic elastic_r1 R1 in the elastic product
+134 A2 semantic elastic_r2 R2 in the elastic product
+135 A1 vector balance_forward_vector undeformed balance axial unit vector | 123 124 125
+136 C1 semantic alpha_e_bend bend direction of a positive elastic angle of attack
+137 C1 semantic beta_e_bend bend direction of a positive elastic sideslip
+138 A1 semantic gamma_e_clock twist direction of a positive elastic roll
+139 C1 semantic alpha_e_axis rotation axis of the elastic angle of attack | 123 124 125
+140 C1 semantic beta_e_axis rotation axis of the elastic sideslip | 123 124 125
+141 C1 semantic gamma_e_axis rotation axis of the elastic roll | 123 124 125
+142 A1 sign xtp_e_sign sign of the deformed XTP component | 135 136 137 139 140
+143 A1 sign ytp_e_sign sign of the deformed YTP component | 135 136 137 139 140
+144 A1 sign ztp_e_sign sign of the deformed ZTP component | 135 136 137 139 140
+145 A1 vector deformed_axis balance axial vector after the small-angle approximation | 135 136 137 139 140
+146 A2 expression xfd_elastic XFD of the deformed axis in the wind frame | 126 132 133 134 145
+147 A2 expression yfd_elastic YFD of the deformed axis in the wind frame | 126 132 133 134 145
+148 A2 expression zfd_elastic ZFD of the deformed axis in the wind frame | 126 132 133 134 145
+149 A1 semantic delta_alpha_component wind-frame component for the elastic angle of attack increment | 120 121 122 155
+150 A1 semantic delta_beta_component wind-frame component for the elastic sideslip increment | 120 121 122 156
+151 C1 semantic placement_elastic installation reread in the elastic section
+152 A1 semantic alpha_e_airspeed whether a positive elastic angle of attack places airspeed above or below the airframe | 136 151
+153 A1 semantic beta_e_airspeed whether a positive elastic sideslip places airspeed left or right of the airframe | 137 151
+154 A1 sign gamma_e_hand relation of elastic roll to the right-hand rule
+155 C1 semantic theory_alpha_dir airspeed direction at a positive theoretical angle of attack
+156 C1 semantic theory_beta_dir airspeed direction at a positive theoretical sideslip
+157 C1 sign theory_gamma_hand sign of theoretical roll relative to the right-hand rule
+158 A1 sign delta_alpha_sign sign of the elastic angle of attack increment | 152 155
+159 A1 sign delta_beta_sign sign of the elastic sideslip increment | 153 156
+160 A1 sign delta_gamma_sign sign of the elastic roll increment | 154 157
+161 A1 sign xfd_sign sign of XFD when the installation angle is zero | 146
+162 A1 sign yfd_sign sign of YFD when the installation angle is zero | 147
+163 A1 sign zfd_sign sign of ZFD when the installation angle is zero | 148
+164 A1 sign delta_alpha_outer outer sign of the elastic angle of attack increment formula | 158
+165 A1 sign delta_alpha_num_sign numerator sign of the elastic angle of attack increment | 161 162 163 166
+166 A1 semantic delta_alpha_num_axis numerator component of the elastic angle of attack increment | 149
+167 A1 sign delta_alpha_den_sign denominator sign of the elastic angle of attack increment | 161 162 163 168
+168 A1 semantic delta_alpha_den_axis denominator component of the elastic angle of attack increment | 120 121 122
+169 A1 sign delta_beta_outer outer sign of the elastic sideslip increment formula | 159
+170 A1 sign delta_beta_num_sign numerator sign of the elastic sideslip increment | 161 162 163 171
+171 A1 semantic delta_beta_num_axis numerator component of the elastic sideslip increment | 150
+172 A1 sign delta_beta_den_sign denominator sign of the elastic sideslip increment | 161 162 163 173
+173 A1 semantic delta_beta_den_axis denominator component of the elastic sideslip increment | 120 121 122
+174 A2 expression delta_alpha_formula elastic angle of attack increment written with wind-frame components | 146 147 148 164 165 166 167 168
+175 A2 expression delta_beta_formula elastic sideslip increment written with wind-frame components | 146 147 148 169 170 171 172 173
+176 A2 expression delta_alpha_elastic elastic angle of attack increment written with elastic angles | 146 147 148 174
+177 A2 expression delta_beta_elastic elastic sideslip increment written with elastic angles | 146 147 148 175
+178 A1 expression delta_gamma elastic roll increment | 160
+179 A1 sign delta_alpha_v sign of the flow compensation for angle of attack | 155
+180 A1 sign delta_beta_v sign of the flow compensation for sideslip | 156
 """,
     REFERENCE_POINT: """
-181 C2 semantic moment_origin 体轴系原点位置
-182 A1 expression xr 校心到模型顶点的距离
-183 C1 semantic engineering_slot 与数学坐标正方向不同的工程分量
-184 A1 vector reference_coordinate 力矩参考点的体轴数学坐标 | 182 183
-185 C2 semantic moment_from 力矩等效的起点
-186 C2 semantic moment_to 力矩等效的终点
-187 C2 semantic force_place 产生额外力矩的力所在位置
-188 C2 semantic moment_place 额外力矩的作用位置
-189 A1 sign sign_mcn_ca 等效力矩MCN_CA的符号 | 184 185 186
-190 A1 sign sign_mcz_ca 等效力矩MCZ_CA的符号 | 184 185 186
-191 A1 sign sign_mca_cz 等效力矩MCA_CZ的符号 | 184 185 186
-192 A1 sign sign_mcn_cz 等效力矩MCN_CZ的符号 | 184 185 186
-193 A1 sign sign_mca_cn 等效力矩MCA_CN的符号 | 184 185 186
-194 A1 sign sign_mcz_cn 等效力矩MCZ_CN的符号 | 184 185 186
-195 A2 expression mcn_ca 等效力矩MCN_CA | 189 201 207 213
-196 A2 expression mcz_ca 等效力矩MCZ_CA | 190 202 208 213
-197 A2 expression mca_cz 等效力矩MCA_CZ | 191 203 209 213
-198 A2 expression mcn_cz 等效力矩MCN_CZ | 192 204 210 213
-199 A2 expression mca_cn 等效力矩MCA_CN | 193 205 211 213
-200 A2 expression mcz_cn 等效力矩MCZ_CN | 194 206 212 213
-201 A1 semantic moment_force_mcn_ca 等效力矩MCN_CA的分子力系数
-202 A1 semantic moment_force_mcz_ca 等效力矩MCZ_CA的分子力系数
-203 A1 semantic moment_force_mca_cz 等效力矩MCA_CZ的分子力系数
-204 A1 semantic moment_force_mcn_cz 等效力矩MCN_CZ的分子力系数
-205 A1 semantic moment_force_mca_cn 等效力矩MCA_CN的分子力系数
-206 A1 semantic moment_force_mcz_cn 等效力矩MCZ_CN的分子力系数
-207 A1 semantic moment_arm_mcn_ca 等效力矩MCN_CA的分子坐标分量 | 184
-208 A1 semantic moment_arm_mcz_ca 等效力矩MCZ_CA的分子坐标分量 | 184
-209 A1 semantic moment_arm_mca_cz 等效力矩MCA_CZ的分子坐标分量 | 184
-210 A1 semantic moment_arm_mcn_cz 等效力矩MCN_CZ的分子坐标分量 | 184
-211 A1 semantic moment_arm_mca_cn 等效力矩MCA_CN的分子坐标分量 | 184
-212 A1 semantic moment_arm_mcz_cn 等效力矩MCZ_CN的分子坐标分量 | 184
-213 A1 semantic moment_denominator 等效力矩系数的分母力臂 | 182
+181 C2 semantic moment_origin location of the body-axis origin
+182 A1 expression xr distance from the balance center to the model nose
+183 C1 semantic engineering_slot engineering component whose positive direction differs from the mathematical coordinate
+184 A1 vector reference_coordinate mathematical body-axis coordinates of the moment reference point | 182 183
+185 C2 semantic moment_from start of the moment transfer
+186 C2 semantic moment_to end of the moment transfer
+187 C2 semantic force_place location of the force that produces the extra moment
+188 C2 semantic moment_place location where the extra moment acts
+189 A1 sign sign_mcn_ca sign of equivalent moment MCN_CA | 184 185 186
+190 A1 sign sign_mcz_ca sign of equivalent moment MCZ_CA | 184 185 186
+191 A1 sign sign_mca_cz sign of equivalent moment MCA_CZ | 184 185 186
+192 A1 sign sign_mcn_cz sign of equivalent moment MCN_CZ | 184 185 186
+193 A1 sign sign_mca_cn sign of equivalent moment MCA_CN | 184 185 186
+194 A1 sign sign_mcz_cn sign of equivalent moment MCZ_CN | 184 185 186
+195 A2 expression mcn_ca equivalent moment MCN_CA | 189 201 207 213
+196 A2 expression mcz_ca equivalent moment MCZ_CA | 190 202 208 213
+197 A2 expression mca_cz equivalent moment MCA_CZ | 191 203 209 213
+198 A2 expression mcn_cz equivalent moment MCN_CZ | 192 204 210 213
+199 A2 expression mca_cn equivalent moment MCA_CN | 193 205 211 213
+200 A2 expression mcz_cn equivalent moment MCZ_CN | 194 206 212 213
+201 A1 semantic moment_force_mcn_ca numerator force coefficient of equivalent moment MCN_CA
+202 A1 semantic moment_force_mcz_ca numerator force coefficient of equivalent moment MCZ_CA
+203 A1 semantic moment_force_mca_cz numerator force coefficient of equivalent moment MCA_CZ
+204 A1 semantic moment_force_mcn_cz numerator force coefficient of equivalent moment MCN_CZ
+205 A1 semantic moment_force_mca_cn numerator force coefficient of equivalent moment MCA_CN
+206 A1 semantic moment_force_mcz_cn numerator force coefficient of equivalent moment MCZ_CN
+207 A1 semantic moment_arm_mcn_ca numerator coordinate component of equivalent moment MCN_CA | 184
+208 A1 semantic moment_arm_mcz_ca numerator coordinate component of equivalent moment MCZ_CA | 184
+209 A1 semantic moment_arm_mca_cz numerator coordinate component of equivalent moment MCA_CZ | 184
+210 A1 semantic moment_arm_mcn_cz numerator coordinate component of equivalent moment MCN_CZ | 184
+211 A1 semantic moment_arm_mca_cn numerator coordinate component of equivalent moment MCA_CN | 184
+212 A1 semantic moment_arm_mcz_cn numerator coordinate component of equivalent moment MCZ_CN | 184
+213 A1 semantic moment_denominator denominator arm of the equivalent moment coefficient | 182
 """,
 }
 
@@ -377,14 +377,14 @@ def _parse_table(process: str, text: str) -> dict[str, dict]:
             continue
         left, _, right = line.partition("|")
         blank_id, label, error_type, target, *role_words = left.split()
-        role = "".join(role_words)
+        role = " ".join(role_words)
         depends_on = tuple(right.split())
         if blank_id in rows:
-            raise RuntimeError(f"{process} ID{blank_id} 重复。")
+            raise RuntimeError(f"{process} ID{blank_id} is duplicated.")
         if error_type not in ANSWER_TYPE:
-            raise RuntimeError(f"{process} ID{blank_id} 的错误类型 {error_type} 无法识别。")
+            raise RuntimeError(f"{process} ID{blank_id} has an unrecognized error type {error_type}.")
         if label not in {"C1", "C2", "A1", "A2"}:
-            raise RuntimeError(f"{process} ID{blank_id} 的标签 {label} 无法识别。")
+            raise RuntimeError(f"{process} ID{blank_id} has an unrecognized label {label}.")
         rows[blank_id] = {
             "process": process,
             "blank_id": blank_id,
@@ -401,7 +401,7 @@ def _parse_table(process: str, text: str) -> dict[str, dict]:
     if list(rows) != expected:
         missing = [item for item in expected if item not in rows]
         extra = [item for item in rows if item not in expected]
-        raise RuntimeError(f"{process} 编号不连续，缺 {missing}，多 {extra}。")
+        raise RuntimeError(f"{process} ids are not contiguous; missing {missing}, extra {extra}.")
     return rows
 
 
@@ -409,9 +409,9 @@ def _closure(process: str, rows: dict[str, dict]) -> dict[str, BlankNode]:
     for blank_id, row in rows.items():
         for parent in row["depends_on"]:
             if parent not in rows:
-                raise RuntimeError(f"{process} ID{blank_id} 依赖不存在的 ID{parent}。")
+                raise RuntimeError(f"{process} ID{blank_id} depends on missing ID{parent}.")
             if parent == blank_id:
-                raise RuntimeError(f"{process} ID{blank_id} 依赖自己。")
+                raise RuntimeError(f"{process} ID{blank_id} depends on itself.")
 
     visiting: set[str] = set()
     depth: dict[str, int] = {}
@@ -421,7 +421,7 @@ def _closure(process: str, rows: dict[str, dict]) -> dict[str, BlankNode]:
         if blank_id in depth:
             return depth[blank_id]
         if blank_id in visiting:
-            raise RuntimeError(f"{process} 的依赖图有环，经过 ID{blank_id}。")
+            raise RuntimeError(f"The {process} dependency graph has a cycle through ID{blank_id}.")
         visiting.add(blank_id)
         parents = rows[blank_id]["depends_on"]
         if parents:
@@ -488,13 +488,26 @@ def build_graph() -> dict[str, dict[str, BlankNode]]:
     }
 
 
+def _sentence_break(chunk: str) -> bool:
+    """A Chinese period, or an ASCII period before whitespace, closes a sentence."""
+    if "。" in chunk:
+        return True
+    for index, char in enumerate(chunk):
+        if char != ".":
+            continue
+        nxt = chunk[index + 1] if index + 1 < len(chunk) else ""
+        if nxt in ("", " ", "\n", "\t"):
+            return True
+    return False
+
+
 def _sentence_index(text: str, offset: int) -> dict[str, int]:
     """Public id to sentence index, using the same period rule as the cloze."""
     groups: list[list[str]] = []
     current: list[str] = []
     cursor = 0
     for match in _SLOT.finditer(text):
-        if "。" in text[cursor:match.start()] and current:
+        if _sentence_break(text[cursor:match.start()]) and current:
             groups.append(current)
             current = []
         current.append(match.group(1))
@@ -506,7 +519,7 @@ def _sentence_index(text: str, offset: int) -> dict[str, int]:
         for local in group:
             public = str(int(local) + offset)
             if public in located:
-                raise RuntimeError(f"题面重复出现 ID{public}。")
+                raise RuntimeError(f"The problem text repeats ID{public}.")
             located[public] = index
     return located
 
@@ -538,11 +551,11 @@ def bind_reading_order(process_text: dict[str, str], offsets: dict[str, int]) ->
     for process, nodes in GRAPH.items():
         sentences = located.get(process)
         if sentences is None:
-            raise RuntimeError(f"题面缺少子过程 {process}。")
+            raise RuntimeError(f"The problem text is missing the subprocess {process}.")
         if set(sentences) != set(nodes):
             missing = sorted(set(nodes) - set(sentences), key=int)
             extra = sorted(set(sentences) - set(nodes), key=int)
-            raise RuntimeError(f"{process} 题面空与依赖图不一致，缺 {missing}，多 {extra}。")
+            raise RuntimeError(f"The {process} blanks do not match the dependency graph; missing {missing}, extra {extra}.")
         for item in nodes.values():
             here = sentences[item.blank_id]
             for parent in item.depends_on:
@@ -554,10 +567,10 @@ def bind_reading_order(process_text: dict[str, str], offsets: dict[str, int]) ->
     if late or same:
         parts = []
         if late:
-            parts.append("后文才出现：" + "，".join(late))
+            parts.append("appears later: " + ", ".join(late))
         if same:
-            parts.append("同一句里：" + "，".join(same))
-        raise RuntimeError("题面仍有不能进入前缀的依赖。" + " ".join(parts))
+            parts.append("in the same sentence: " + ", ".join(same))
+        raise RuntimeError("The problem text still has a dependency that cannot enter the prefix. " + " ".join(parts))
     _SENTENCE_OF = located
 
 
@@ -614,7 +627,7 @@ def diagnosis_descendants(node_id: str) -> tuple[str, ...]:
 
 
 if len(NODE_BY_ID) != sum(len(nodes) for nodes in GRAPH.values()):
-    raise RuntimeError("题目编号跨子过程重复，定义图无法按编号回溯。")
+    raise RuntimeError("Blank ids repeat across subprocesses, so the definition graph cannot be traced by id.")
 
 
 # Reads are the blanks that ask the definition itself. Scope guards are blanks
@@ -628,175 +641,175 @@ _FRAME_AXES = {
 _DEFINITIONS = (
     {
         "key": "theory_alpha",
-        "name": "理论迎角正方向",
-        "standard": "空速指向机体下方为正",
-        "perturbed": "空速指向机体上方为正",
+        "name": "positive direction of the theoretical angle of attack",
+        "standard": "positive when airspeed points downward on the airframe",
+        "perturbed": "positive when airspeed points upward on the airframe",
         "reads": ("21", "155"),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "theory_beta",
-        "name": "理论侧滑正方向",
-        "standard": "空速指向机体右侧为正",
-        "perturbed": "空速指向机体左侧为正",
+        "name": "positive direction of the theoretical sideslip",
+        "standard": "positive when airspeed points right on the airframe",
+        "perturbed": "positive when airspeed points left on the airframe",
         "reads": ("29", "156"),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "theory_gamma",
-        "name": "理论滚转正方向",
-        "standard": "右翼向下与右手定则相同",
-        "perturbed": "右翼向上与右手定则相同",
+        "name": "positive direction of the theoretical roll",
+        "standard": "right wing downward agrees with the right-hand rule",
+        "perturbed": "right wing upward agrees with the right-hand rule",
         "reads": ("37", "157"),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "mechanism_alpha",
-        "name": "机构迎角正方向",
-        "standard": "空速指向机体下方为正",
-        "perturbed": "空速指向机体上方为正",
+        "name": "positive direction of the mechanism angle of attack",
+        "standard": "positive when airspeed points downward on the airframe",
+        "perturbed": "positive when airspeed points upward on the airframe",
         "reads": ("20",),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "mechanism_beta",
-        "name": "机构侧滑正方向",
-        "standard": "空速指向机体右侧为正",
-        "perturbed": "空速指向机体左侧为正",
+        "name": "positive direction of the mechanism sideslip",
+        "standard": "positive when airspeed points right on the airframe",
+        "perturbed": "positive when airspeed points left on the airframe",
         "reads": ("28",),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "mechanism_roll",
-        "name": "机构滚转正方向",
-        "standard": "右翼向下与绕机体轴向的右手定则相同",
-        "perturbed": "右翼向上与绕机体轴向的右手定则相同",
+        "name": "positive direction of the mechanism roll",
+        "standard": "right wing downward agrees with the right-hand rule about the airframe axis",
+        "perturbed": "right wing upward agrees with the right-hand rule about the airframe axis",
         "reads": ("35", "84"),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "placement",
-        "name": "正反装",
-        "standard": "正装",
-        "perturbed": "反装",
+        "name": "upright or inverted installation",
+        "standard": "upright",
+        "perturbed": "inverted",
         "reads": ("11", "19", "27", "96", "151"),
         "guard_frames": ("wind", "balance"),
         "alignment_guards": ("8", "95", "126"),
     },
     {
         "key": "body_handedness",
-        "name": "体轴系手性",
-        "standard": "右手系，XTZ 指向机体前方，YTZ 指向机体上方",
-        "perturbed": "左手系，XTZ 仍指向机体前方，YTZ 仍指向机体上方",
+        "name": "handedness of the body-axis frame",
+        "standard": "right-handed; XTZ points forward on the airframe and YTZ points upward on the airframe",
+        "perturbed": "left-handed; XTZ still points forward on the airframe and YTZ still points upward on the airframe",
         "reads": ("5", "6", "7", "92", "93", "94"),
         "guard_frames": ("wind", "balance"),
         "alignment_guards": (),
     },
     {
         "key": "euler_order",
-        "name": "机构角顺序",
-        "standard": "迎角、侧滑、滚转",
-        "perturbed": "侧滑、迎角、滚转",
+        "name": "order of the mechanism angles",
+        "standard": "angle of attack, sideslip, roll",
+        "perturbed": "sideslip, angle of attack, roll",
         "reads": ("16", "17", "18"),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "balance_install",
-        "name": "天平安装角正方向",
-        "standard": "与绕天平轴向的右手定则相同",
-        "perturbed": "与绕天平轴向的右手定则相反",
+        "name": "positive direction of the balance installation angle",
+        "standard": "same as the right-hand rule about the balance axis",
+        "perturbed": "opposite the right-hand rule about the balance axis",
         "reads": ("83",),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "wind_axes",
-        "name": "风轴系坐标轴",
-        "standard": "YFD 沿风洞法向指向上方",
-        "perturbed": "YFD 沿风洞侧向指向右侧",
+        "name": "wind-frame coordinate axes",
+        "standard": "YFD points upward along the tunnel normal",
+        "perturbed": "YFD points right along the tunnel lateral",
         "reads": ("2", "3", "4", "120", "121", "122"),
         "guard_frames": ("body", "balance"),
         "alignment_guards": (),
     },
     {
         "key": "balance_handedness",
-        "name": "天平系手性",
-        "standard": "右手系，XTP 指向天平前方，YTP 指向天平上方",
-        "perturbed": "左手系，XTP 仍指向天平前方，YTP 仍指向天平上方",
+        "name": "handedness of the balance frame",
+        "standard": "right-handed; XTP points forward on the balance and YTP points upward on the balance",
+        "perturbed": "left-handed; XTP still points forward on the balance and YTP still points upward on the balance",
         "reads": ("89", "90", "91", "123", "124", "125"),
         "guard_frames": ("wind", "body"),
         "alignment_guards": (),
     },
     {
         "key": "elastic_alpha",
-        "name": "弹性迎角正方向",
-        "standard": "天平轴向向上弯曲为正",
-        "perturbed": "天平轴向向下弯曲为正",
+        "name": "positive direction of the elastic angle of attack",
+        "standard": "positive when the balance axis bends upward",
+        "perturbed": "positive when the balance axis bends downward",
         "reads": ("136",),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "elastic_beta",
-        "name": "弹性侧滑正方向",
-        "standard": "天平轴向向左弯曲为正",
-        "perturbed": "天平轴向向右弯曲为正",
+        "name": "positive direction of the elastic sideslip",
+        "standard": "positive when the balance axis bends left",
+        "perturbed": "positive when the balance axis bends right",
         "reads": ("137",),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "elastic_gamma",
-        "name": "弹性滚转正方向",
-        "standard": "沿天平轴向看去顺时针为正",
-        "perturbed": "沿天平轴向看去逆时针为正",
+        "name": "positive direction of the elastic roll",
+        "standard": "positive when clockwise looking along the balance axis",
+        "perturbed": "positive when counterclockwise looking along the balance axis",
         "reads": ("138",),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "flow_alpha",
-        "name": "气流偏角迎角正方向",
-        "standard": "空速指向机体下方为正",
-        "perturbed": "空速指向机体上方为正",
+        "name": "positive direction of the flow-offset angle of attack",
+        "standard": "positive when airspeed points downward on the airframe",
+        "perturbed": "positive when airspeed points upward on the airframe",
         "reads": ("179",),
         "guard_frames": (),
         "alignment_guards": (),
     },
     {
         "key": "flow_beta",
-        "name": "气流偏角侧滑正方向",
-        "standard": "空速指向机体右侧为正",
-        "perturbed": "空速指向机体左侧为正",
+        "name": "positive direction of the flow-offset sideslip",
+        "standard": "positive when airspeed points right on the airframe",
+        "perturbed": "positive when airspeed points left on the airframe",
         "reads": ("180",),
         "guard_frames": (),
         "alignment_guards": (),
     },
 )
-# 固定约定。定义声明里保留，过程里的回忆题可以按类取消。
+# Fixed conventions. They stay in the declaration. Recall blanks in the process can be dropped by class.
 _CONVENTIONS = (
-    {"key": "transform_convention", "name": "变换约定"},
-    {"key": "attitude_frame", "name": "旋转所在坐标系"},
-    {"key": "rotation_axis", "name": "滚转旋转轴"},
-    {"key": "coordinate_axis", "name": "旋转对应的坐标轴"},
-    {"key": "level_frame", "name": "中间空速坐标系"},
-    {"key": "alpha_quotient", "name": "理论迎角公式模板"},
-    {"key": "beta_quotient", "name": "理论侧滑公式模板"},
-    {"key": "delta_alpha_quotient", "name": "弹性迎角增量公式模板"},
-    {"key": "delta_beta_quotient", "name": "弹性侧滑增量公式模板"},
-    {"key": "load_mapping", "name": "力与力矩分量对应"},
-    {"key": "engineering_coordinate", "name": "工程坐标正方向"},
-    {"key": "moment_transfer", "name": "力矩平移"},
+    {"key": "transform_convention", "name": "transform convention"},
+    {"key": "attitude_frame", "name": "frame of the rotation"},
+    {"key": "rotation_axis", "name": "roll rotation axis"},
+    {"key": "coordinate_axis", "name": "coordinate axis of the rotation"},
+    {"key": "level_frame", "name": "intermediate airspeed frame"},
+    {"key": "alpha_quotient", "name": "template of the theoretical angle of attack"},
+    {"key": "beta_quotient", "name": "template of the theoretical sideslip"},
+    {"key": "delta_alpha_quotient", "name": "template of the elastic angle of attack increment"},
+    {"key": "delta_beta_quotient", "name": "template of the elastic sideslip increment"},
+    {"key": "load_mapping", "name": "correspondence of force and moment components"},
+    {"key": "engineering_coordinate", "name": "positive direction of the engineering coordinates"},
+    {"key": "moment_transfer", "name": "moment transfer"},
 )
-# 回忆：问法本身是确认或复述规则，无规则提及版按定义取消这些空。
-# 方法提示：题干额外写出做法，空仍是评测目标，默认保留。
+# Recall: the question only confirms or restates a rule. The no-rule-mention build drops these blanks by definition.
+# Method hint: the stem states the method. The blank stays a scored target and is kept by default.
 _RULE_MENTION_GROUPS = (
     (("16", "17", "18"), "recall", "euler_order"),
     (("11", "19", "27", "96", "151"), "recall", "placement"),
@@ -843,14 +856,14 @@ def _rule_mentions() -> dict[str, tuple[str, str]]:
     found: dict[str, tuple[str, str]] = {}
     for blank_ids, kind, key in _RULE_MENTION_GROUPS:
         if kind not in {"recall", "method"}:
-            raise RuntimeError(f"规则提及类型 {kind} 无法识别。")
+            raise RuntimeError(f"Unrecognized rule-mention kind {kind}.")
         if key not in names:
-            raise RuntimeError(f"规则提及定义 {key} 没有名称。")
+            raise RuntimeError(f"Rule-mention definition {key} has no name.")
         for blank_id in blank_ids:
             if blank_id in found:
-                raise RuntimeError(f"ID{blank_id} 的规则提及标了两次。")
+                raise RuntimeError(f"ID{blank_id} is marked as a rule mention twice.")
             if blank_id not in NODE_BY_ID:
-                raise RuntimeError(f"规则提及 ID{blank_id} 不在依赖图里。")
+                raise RuntimeError(f"Rule-mention ID{blank_id} is not in the dependency graph.")
             found[blank_id] = (kind, key)
     kept = {
         "36", "38", "39", "43", "47", "48", "49", "50", "51", "55",
@@ -867,7 +880,7 @@ def _rule_mentions() -> dict[str, tuple[str, str]]:
     recalled = {blank_id for blank_id, (kind, _key) in found.items() if kind == "recall"}
     overlap = sorted(kept & recalled, key=int)
     if overlap:
-        raise RuntimeError(f"这些推导空被标成了回忆题：{', '.join(overlap)}")
+        raise RuntimeError(f"These derivation blanks were marked as recall questions: {', '.join(overlap)}")
     return found
 
 
@@ -904,11 +917,11 @@ def _rule_mention_catalog() -> dict[str, dict]:
 
 
 def mentions_to_drop(definitions: tuple[str, ...] | list[str] | None = None) -> tuple[str, ...]:
-    """回忆题编号。给定定义键时只取消这些定义的确认和回忆问法。"""
+    """Recall-question ids. Given definition keys, drop only the confirm and recall questions of those definitions."""
     selected = None if definitions is None else set(definitions)
     unknown = [] if selected is None else sorted(selected - set(RULE_DEFINITION_NAMES))
     if unknown:
-        raise KeyError(f"没有这些定义分类：{', '.join(unknown)}")
+        raise KeyError(f"No such definition classes: {', '.join(unknown)}")
     found = [
         blank_id
         for blank_id, (kind, key) in RULE_MENTIONS.items()
@@ -1109,7 +1122,7 @@ def _changed_path(blank_id: str, changed: set[str], seeds: set[str]) -> list[str
         if current in memo:
             return memo[current]
         if current in visiting:
-            raise RuntimeError(f"定义回溯在 ID{current} 处成环。")
+            raise RuntimeError(f"Definition traceback cycles at ID{current}.")
         if current in seeds:
             memo[current] = [current]
             return memo[current]
@@ -1118,7 +1131,7 @@ def _changed_path(blank_id: str, changed: set[str], seeds: set[str]) -> list[str
             parent for parent in NODE_BY_ID[current].depends_on if parent in changed
         ]
         if not parents:
-            raise RuntimeError(f"ID{current} 的标准答案变了，但没有变过的前置题可回溯。")
+            raise RuntimeError(f"The gold answer of ID{current} changed, but no changed upstream question can be traced.")
         best = None
         for parent in parents:
             candidate = walk(parent) + [current]
@@ -1154,10 +1167,10 @@ def _build_effects() -> dict:
         changed = changed_of[key]
         missing = [blank_id for blank_id in spec["reads"] if blank_id not in NODE_BY_ID]
         if missing:
-            raise RuntimeError(f"{definition_id} 的入口题不存在：{missing}")
+            raise RuntimeError(f"{definition_id} is missing its entry questions: {missing}")
         for blank_id in spec["alignment_guards"]:
             if blank_id not in NODE_BY_ID:
-                raise RuntimeError(f"{definition_id} 的作用域题不存在：{blank_id}")
+                raise RuntimeError(f"{definition_id} is missing its scope question: {blank_id}")
         seeds = {
             blank_id for blank_id in changed
             if blank_id in spec["reads"] or not any(
@@ -1198,7 +1211,7 @@ def _build_effects() -> dict:
             for parent, child in zip(path, path[1:]):
                 if parent not in NODE_BY_ID[child].depends_on:
                     raise RuntimeError(
-                        f"{definition_id} 的回溯 ID{parent}→ID{child} 不是答案依赖边。"
+                        f"{definition_id} traceback ID{parent}->ID{child} is not an answer-dependency edge."
                     )
         accounted = {
             blank_id for blank_id, item in relations.items() if item["ground_truth_changes"]
@@ -1207,8 +1220,8 @@ def _build_effects() -> dict:
             missing_ids = sorted(changed - accounted, key=int)
             extra_ids = sorted(accounted - changed, key=int)
             raise RuntimeError(
-                f"{definition_id} 的答案变化没有全部进入定义图，"
-                f"缺 {missing_ids}，多 {extra_ids}。"
+                f"Not every answer change of {definition_id} entered the definition graph; "
+                f"missing {missing_ids}, extra {extra_ids}."
             )
         ordered = [relations[blank_id] for blank_id in sorted(relations, key=int)]
         for item in ordered:
@@ -1307,14 +1320,14 @@ def trace_error(
     """
     blank_id = str(blank_id)
     if blank_id not in NODE_BY_ID:
-        raise KeyError(f"没有 ID{blank_id}。")
+        raise KeyError(f"There is no ID{blank_id}.")
     observations = observations or {}
     traces = []
     for relation in definition_relations(blank_id):
         path = relation["path"]
         edge_types = relation["edge_types"]
         if path[-1] != blank_id:
-            raise RuntimeError(f"{relation['definition_id']} 的路径没有停在 ID{blank_id}。")
+            raise RuntimeError(f"The path of {relation['definition_id']} does not stop at ID{blank_id}.")
         steps = []
         for index, question_id in enumerate(path):
             observation = observations.get(question_id)
@@ -1384,10 +1397,10 @@ def trace_error(
 
 def _step_mark(correct: bool | None) -> str:
     if correct is True:
-        return "对"
+        return "right"
     if correct is False:
-        return "错"
-    return "缺"
+        return "wrong"
+    return "missing"
 
 
 _ENTRY_OF: dict[str, tuple[str, ...]] | None = None
@@ -1414,7 +1427,7 @@ def _node_text(blank_id: str, correct: bool | None) -> str:
     entries = _entry_of().get(str(blank_id), ())
     if not entries:
         return text
-    return f"{text}[入口:{'+'.join(entries)}]"
+    return f"{text}[entry:{'+'.join(entries)}]"
 
 
 def _prefix_mode(condition: str) -> str:
@@ -1662,7 +1675,7 @@ def _chain_lines(nodes: list[dict]) -> str:
             continue
         entry = ""
         if item["definition_entries"]:
-            entry = "[入口:" + "+".join(item["definition_entries"]) + "] "
+            entry = "[entry:" + "+".join(item["definition_entries"]) + "] "
         sources = ",".join(item["first_error_nodes"])
         lines.append(f"{item['target_id']} {item['error_type']} {entry}first:{sources}".rstrip())
     return "\n".join(lines)
@@ -1754,62 +1767,62 @@ def observations_from_jsonl(
         for blank in row.get("blanks") or []:
             found[str(blank["blank_id"])] = blank
     if condition is None and len(seen_conditions) > 1:
-        names = "、".join(sorted(seen_conditions))
-        raise RuntimeError(f"{sample_id} 同时有多种条件：{names}。请指定其中一种。")
+        names = ", ".join(sorted(seen_conditions))
+        raise RuntimeError(f"{sample_id} has more than one condition: {names}. Name one of them.")
     if not found:
-        raise RuntimeError(f"没有找到 {sample_id} 的评分记录。")
+        raise RuntimeError(f"No score record was found for {sample_id}.")
     return found
 
 
 def format_trace(report: dict) -> str:
     """One wrong blank, each definition path walked from its entry."""
-    labels = {"origin": "入口", "intermediate": "中间", "target": "本题", "direct": "入口兼本题"}
+    labels = {"origin": "entry", "intermediate": "intermediate", "target": "this question", "direct": "entry and this question"}
     arrival = {
-        "direct": "这道题直接读取该定义，错误出现在入口题本身",
-        "origin": "错误从定义入口题出现",
-        "intermediate": "错误从中间题出现",
-        "target": "入口和中间题都正确，错误出现在本题",
-        "incomplete": "路径上有题没出现在这份稿里，不能判断错误从哪里进入",
-        "none": "这条路径上没有记录到错误",
+        "direct": "This question reads the definition directly, and the error is in the entry question itself",
+        "origin": "The error appears at the definition entry",
+        "intermediate": "The error appears at an intermediate question",
+        "target": "The entry and the intermediate questions are right, and the error appears in this question",
+        "incomplete": "A question on the path is absent from this manuscript, so the entry of the error cannot be judged",
+        "none": "No error was recorded on this path",
     }
     lines = [
-        f"错题 ID{report['question_id']} {report['role']}",
+        f"Wrong question ID{report['question_id']} {report['role']}",
     ]
     if report["target_correct"] is True:
-        lines.append("本次记录里这道题是对的。下面仍给出能到达它的定义路径。")
+        lines.append("This question is right in the current record. The definition paths that reach it are still listed below.")
     elif report["target_correct"] is False:
-        lines.append("本次记录里这道题是错的。")
+        lines.append("This question is wrong in the current record.")
     else:
-        lines.append("本次记录里没有这道题的对错。")
+        lines.append("The current record does not say whether this question is right or wrong.")
     if not report["traces"]:
-        lines.append("没有定义能到达这道题。")
+        lines.append("No definition reaches this question.")
         return "\n".join(lines)
     for trace in report["traces"]:
         mark = ""
         if trace["perturbed_in_this_run"] is True:
-            mark = "，本次扰动的定义"
-        gold = "会改变正确答案" if trace["ground_truth_changes"] else "不改变正确答案"
+            mark = ", the definition perturbed in this run"
+        gold = "changes the correct answer" if trace["ground_truth_changes"] else "does not change the correct answer"
         route = " → ".join(f"ID{step['question_id']}" for step in trace["steps"])
         lines.append("")
         lines.append(
-            f"{trace['definition_id']} {trace['definition_name']}{mark}。"
-            f"{trace['relation_type']}，{gold}。"
+            f"{trace['definition_id']} {trace['definition_name']}{mark}. "
+            f"{trace['relation_type']}, {gold}."
         )
-        lines.append(f"标准：{trace['definition_standard']}。扰动：{trace['definition_perturbed']}。")
+        lines.append(f"Standard: {trace['definition_standard']}. Perturbed: {trace['definition_perturbed']}.")
         lines.append(route)
         for step in trace["steps"]:
             if step["correct"] is True:
-                state = "正确"
+                state = "right"
             elif step["correct"] is False:
-                state = "错误"
+                state = "wrong"
             else:
-                state = "未出现"
+                state = "absent"
             extra = ""
             if step["question_id"] == trace["first_wrong"]:
                 extra = (
-                    "，已记录的题里第一次出错"
+                    ", first error among the recorded questions"
                     if trace["where_error_appears"] == "incomplete"
-                    else "，这条路径上第一次出错"
+                    else ", first error on this path"
                 )
             lines.append(
                 f"  ID{step['question_id']} {step['role']}  "
@@ -1833,10 +1846,10 @@ def question_fields(process: str, blank_id: str, label: str) -> dict:
     """Fields stored on a generated question. Unknown blanks fail loudly."""
     found = node(process, blank_id)
     if found is None:
-        raise RuntimeError(f"依赖图没有 {process} ID{blank_id}。")
+        raise RuntimeError(f"The dependency graph has no {process} ID{blank_id}.")
     if found.label != label:
         raise RuntimeError(
-            f"{process} ID{blank_id} 的标签是 {label}，依赖图写的是 {found.label}。"
+            f"{process} ID{blank_id} is labeled {label}, but the dependency graph says {found.label}."
         )
     return found.public_fields()
 
@@ -1863,8 +1876,8 @@ def annotate_question(question: dict) -> dict:
         return question
     if question.get("label") != found.label:
         raise RuntimeError(
-            f"{question.get('process')} ID{question.get('id')} 的标签是 "
-            f"{question.get('label')}，依赖图写的是 {found.label}。"
+            f"{question.get('process')} ID{question.get('id')} is labeled "
+            f"{question.get('label')}, but the dependency graph says {found.label}."
         )
     question.update(found.public_fields())
     return question
@@ -1904,7 +1917,7 @@ def _direct_path(process: str, blank_ids: tuple[str, ...]) -> None:
     for source, target in zip(blank_ids, blank_ids[1:]):
         found = node(process, target)
         if found is None or source not in found.depends_on:
-            raise RuntimeError(f"{process} 不存在直接边 ID{source} → ID{target}。")
+            raise RuntimeError(f"{process} has no direct edge ID{source} -> ID{target}.")
 
 
 def _check_known_paths() -> None:
@@ -1920,7 +1933,7 @@ def _check_known_paths() -> None:
     _direct_path(REFERENCE_POINT, ("182", "184", "189", "195"))
     alpha_sign = node(WIND_TO_BODY, "68")
     if alpha_sign is None or "60" in alpha_sign.depends_on or "60" in alpha_sign.ancestors:
-        raise RuntimeError("YTZ 分量不能决定理论迎角的外层符号。")
+        raise RuntimeError("The YTZ component cannot decide the outer sign of the theoretical angle of attack.")
 
 
 def _check_generators() -> None:
@@ -1936,7 +1949,7 @@ def _check_generators() -> None:
     from domains.wind_tunnel.tz_fd_generate import generate as generate_attitude
 
     if generated_offset != PROCESS_OFFSET:
-        raise RuntimeError(f"依赖图偏移 {PROCESS_OFFSET} 与生成器 {generated_offset} 不同。")
+        raise RuntimeError(f"Dependency-graph offsets {PROCESS_OFFSET} differ from the generator offsets {generated_offset}.")
     produced = {
         WIND_TO_BODY: generate_attitude(attitude_spec)["items"],
         BALANCE_TO_BODY: generate_body(body_spec)["items"],
@@ -1946,24 +1959,24 @@ def _check_generators() -> None:
     for process, items in produced.items():
         removed = len(REMOVED_SLOTS.get(process, ()))
         if len(items) != PROCESS_SIZE[process] - removed:
-            raise RuntimeError(f"{process} 生成了 {len(items)} 空，依赖图是 {PROCESS_SIZE[process]}。")
+            raise RuntimeError(f"{process} generated {len(items)} blanks; the dependency graph has {PROCESS_SIZE[process]}.")
         for item in items:
             public_id = str(int(item["manuscript_id"]) + PROCESS_OFFSET[process])
             found = node(process, public_id)
             if found is None:
-                raise RuntimeError(f"{process} 生成了依赖图没有的 ID{public_id}。")
+                raise RuntimeError(f"{process} generated ID{public_id}, which is not in the dependency graph.")
             if found.label != item["label"]:
                 raise RuntimeError(
-                    f"{process} ID{public_id} 生成器标签 {item['label']}，"
-                    f"依赖图是 {found.label}。题干：{item['prompt']}"
+                    f"{process} ID{public_id} generator label is {item['label']}, "
+                    f"but the dependency graph says {found.label}. Stem: {item['prompt']}"
                 )
             output_format = _output_format(process, item)
-            format_code = "无" if output_format is None else _format_name(output_format)
+            format_code = "choice" if output_format is None else _format_name(output_format)
             allowed = FORMAT_OF_ANSWER[found.answer_type]
             if format_code not in allowed:
                 raise RuntimeError(
-                    f"{process} ID{public_id} 答案类型 {found.answer_type} "
-                    f"不能对应输出格式 {format_code}。题干：{item['prompt']}"
+                    f"{process} ID{public_id} answer type {found.answer_type} "
+                    f"does not match output format {format_code}. Stem: {item['prompt']}"
                 )
 
 
@@ -2010,11 +2023,11 @@ def document() -> dict:
         "edge_count": edge_count,
         "future_edge_count": future_count,
         "max_dependency_depth": max_depth,
-        "edge_meaning": "u→v 表示 v 的标准推导使用了 u 的结果。边是逻辑依赖，不是句子顺序。future_dependencies 只保留父空出现在更后句子的边；前缀截断停在当前句，这些父空的答案进不了前缀。",
-        "depth_meaning": "dependency_depth 是从声明根到该空的最长直接边数。min_dependency_depth 是最短边数。单点注入只改一个前置空、其余前缀保持正确时，看直接边；自然前缀传播看 descendants。",
-        "not_an_edge": "ID60 的 YTZ 分量不决定 ID65 的理论迎角外层符号。外层符号复用 ID22。YTZ 进入最终公式的路径是 ID60→ID80，以及 ID60→ID63→ID70→ID80。",
+        "edge_meaning": "u->v means the standard derivation of v uses the result of u. An edge is a logical dependency, not sentence order. future_dependencies keeps only edges whose parent blank appears in a later sentence; a prefix stops at the current sentence, so those parent answers cannot enter the prefix.",
+        "depth_meaning": "dependency_depth is the longest number of direct edges from a declaration root to this blank. min_dependency_depth is the shortest. A single-point injection changes one upstream blank and keeps the rest of the prefix correct, so it follows direct edges; natural prefix propagation follows descendants.",
+        "not_an_edge": "The YTZ component at ID60 does not decide the outer sign of the theoretical angle of attack at ID65. The outer sign reuses ID22. YTZ reaches the final formula by ID60->ID80 and by ID60->ID63->ID70->ID80.",
         "direct_paths": [list(path) for path in DIRECT_PATHS],
-        "definition_edge_meaning": "D→Q 是定义进入题目的边。direct_answer 表示这条定义的标准扰动会改变该题正确答案；direct_method 表示它决定算法或连乘位置；direct_scope 表示答案可以不变，但题目必须把定义绑定到正确的坐标系，不能串到别的轴系。downstream 是沿答案依赖边走出的后代。ground_truth_changes 只描述当前这一种标准扰动，不把作用域题当成答案应该变化的题。error_candidate 是回溯时的候选错误类，不是已经判定的模型错误。",
+        "definition_edge_meaning": "D->Q is an edge from a definition into a question. direct_answer means the standard perturbation of this definition changes that question's correct answer; direct_method means it decides the algorithm or a factor position; direct_scope means the answer may stay the same, but the question must bind the definition to the right frame and must not attach it to another axis system. downstream is the descendant reached along answer-dependency edges. ground_truth_changes describes only the current standard perturbation and does not treat a scope question as one whose answer should change. error_candidate is a candidate error class during traceback, not a model error that has already been decided.",
         "semantic_codes": {
             "direct_answer": 1,
             "direct_method": 2,
@@ -2022,13 +2035,13 @@ def document() -> dict:
             "downstream": 4,
         },
         "effect_codes": {
-            "0": "该扰动不改变此题正确答案",
-            "1": "该扰动直接改变此题正确答案",
-            "3": "该扰动通过前置答案改变此题正确答案",
-            "4": "该扰动通过矩阵或公式改变此题正确答案",
+            "0": "this perturbation does not change the correct answer",
+            "1": "this perturbation changes the correct answer directly",
+            "3": "this perturbation changes the correct answer through an upstream answer",
+            "4": "this perturbation changes the correct answer through a matrix or a formula",
         },
         "definitions": effects()["by_definition"],
-        "rule_mention_meaning": "recall 是过程里要求回忆或确认规则的空，构建无规则提及数据时按 rule_definition 取消。method 是题干里的方法提示，空本身保留。定义声明不因这些标注删除。",
+        "rule_mention_meaning": "recall is a blank that asks the process to recall or confirm a rule; the no-rule-mention build drops it by rule_definition. method is a method hint in the stem, and the blank itself is kept. The declaration is not deleted because of these marks.",
         "rule_mentions": _rule_mention_catalog(),
         "processes": processes,
     }
@@ -2046,7 +2059,7 @@ def _print_blank(process: str, blank_id: str) -> None:
                 found = nodes[blank_id]
                 break
     if found is None:
-        raise SystemExit(f"没有 ID{blank_id}。")
+        raise SystemExit(f"There is no ID{blank_id}.")
     print(
         f"ID{found.blank_id} [{found.label}] {found.role} "
         f"depth {found.dependency_depth} "
@@ -2062,21 +2075,21 @@ def _print_blank(process: str, blank_id: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="写出风洞流程的错误依赖图并核对生成器。")
-    parser.add_argument("--blank", action="append", default=[], help="打印这些空的直接前驱和后继。")
-    parser.add_argument("--trace", help="从这道错题沿定义路径向前核对每一题。")
-    parser.add_argument("--records", help="评分 jsonl。和 --trace 一起用。")
-    parser.add_argument("--sample", help="jsonl 里的 sample_id。")
-    parser.add_argument("--condition", help="gold-trunc 或 self-trunc。一份文件里有多种条件时必填。")
-    parser.add_argument("--run", type=int, default=0, help="同一样本的第几次运行，默认 0。")
-    parser.add_argument("--no-write", action="store_true", help="只核对，不写 JSON。")
+    parser = argparse.ArgumentParser(description="Write the wind-tunnel error-dependency graph and check it against the generators.")
+    parser.add_argument("--blank", action="append", default=[], help="Print the direct parents and children of these blanks.")
+    parser.add_argument("--trace", help="Walk every definition path that reaches this wrong question.")
+    parser.add_argument("--records", help="Score jsonl. Use it with --trace.")
+    parser.add_argument("--sample", help="sample_id in the jsonl.")
+    parser.add_argument("--condition", help="gold-trunc or self-trunc. Required when one file has more than one condition.")
+    parser.add_argument("--run", type=int, default=0, help="Which run of the same sample, default 0.")
+    parser.add_argument("--no-write", action="store_true", help="Check only; do not write JSON.")
     args = parser.parse_args()
     if args.trace:
         observations = {}
         factor = None
         if args.records:
             if not args.sample:
-                raise SystemExit("用 --records 时还要给出 --sample。")
+                raise SystemExit("--records also requires --sample.")
             observations = observations_from_jsonl(
                 Path(args.records), args.sample, args.condition, args.run,
             )
@@ -2087,7 +2100,7 @@ def main() -> None:
     _check_generators()
     payload = document()
     if payload["future_edge_count"] != 0:
-        raise RuntimeError(f"题面仍有 {payload['future_edge_count']} 条未来依赖。")
+        raise RuntimeError(f"The problem text still has {payload['future_edge_count']} future dependencies.")
     if not args.no_write:
         OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
         OUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

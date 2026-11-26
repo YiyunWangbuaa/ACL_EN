@@ -44,16 +44,16 @@ _EXPECTED_KERNEL = {
 def _session_for(target_id: str) -> str:
     number = int(target_id)
     if number <= 59:
-        return "坐标转换"
+        return "spatial transforms"
     if number <= 102:
-        return "气动力"
-    return "参考点"
+        return "aerodynamic loads"
+    return "reference point"
 
 
 def _kernel_for(target_id: str) -> tuple[str, ...]:
     fixes = minimal_fixes(target_id)
     if not fixes:
-        raise RuntimeError(f"ID{target_id} 没有修复核")
+        raise RuntimeError(f"ID{target_id} has no repair kernel")
     return tuple(fixes[0])
 
 
@@ -103,27 +103,27 @@ def _sentences_through(sample: dict, stop_id: str) -> list[tuple[dict, int]]:
             found.append((chain, index))
             if str(item["id"]) == stop_id:
                 return found
-    raise RuntimeError(f"{session} 没有 ID{stop_id}")
+    raise RuntimeError(f"{session} has no ID{stop_id}")
 
 
 def check_shape(target_id: str, kernel: tuple[str, ...]) -> None:
     expected = _EXPECTED_KERNEL.get(target_id)
     if expected is not None and kernel != expected:
-        raise RuntimeError(f"ID{target_id} 的核应为 {expected}，得到 {kernel}")
+        raise RuntimeError(f"ID{target_id} kernel should be {expected}, got {kernel}")
     for node in kernel:
         _gold_json(node)
-    print(f"形状检查通过：飞行力学 ID{target_id} 会话 {_session_for(target_id)} 核 {kernel}", flush=True)
+    print(f"shape check passed: flight mechanics ID{target_id} session {_session_for(target_id)} kernel {kernel}", flush=True)
 
 
 def _job(chain: dict, index: int, messages: list[dict], run: int, seed: int, max_tokens: int, condition: str) -> dict:
     item = chain["sentences"][index]["item"]
     question = "\n".join([
-        "填写当前这一句。",
+        "Fill the current sentence.",
         "",
-        "【子过程】",
+        "[Subprocess]",
         chain["process"],
         "",
-        "【问题】",
+        "[Question]",
         _turn_question(chain, index),
     ])
     blank = {
@@ -172,11 +172,11 @@ def run_trial(spec: str, sample: dict, client, model: str, thinking: str, effort
             messages.append({"role": "user", "content": record["question"]})
             messages.append({"role": "assistant", "content": record["committed"]})
             continue
-        print(f"第 {run + 1} 趟 提问 ID{item['id']}", flush=True)
+        print(f"run {run + 1} asking ID{item['id']}", flush=True)
         result = score_one(client, model, 0.0, thinking, job)
         reply = result.get("response") or ""
         if result.get("reasoning") and len(result["reasoning"]) > 40 and result["reasoning"] in job["question"]:
-            raise RuntimeError("思维链被写回了用户消息")
+            raise RuntimeError("the chain of thought was written into a user message")
         record = {
             "blank_ids": [item["id"]],
             "question": job["question"],
@@ -199,14 +199,14 @@ def run_trial(spec: str, sample: dict, client, model: str, thinking: str, effort
                 if str(blank.get("blank_id")) == node:
                     kernel[node] = _slim(blank)
         if node not in kernel:
-            raise RuntimeError(f"核槽 ID{node} 没有进入会话")
+            raise RuntimeError(f"kernel slot ID{node} did not enter the session")
     wrong_ids = [node for node in kernel_ids if not kernel[node].get("normalized")]
     chain, sentence_index = steps[-1]
     control_path = run_dir / "control.json"
     if control_path.is_file() and not _load(control_path).get("error"):
         control = _load(control_path)
     else:
-        print(f"第 {run + 1} 趟 对照提问 ID{target_id}（错槽 {','.join(wrong_ids) or '无'}）", flush=True)
+        print(f"run {run + 1} control question ID{target_id}(wrong slots {','.join(wrong_ids) or 'none'})", flush=True)
         job = _job(chain, sentence_index, messages, run, seed, max_tokens, SESSION_MODEL)
         result = score_one(client, model, 0.0, thinking, job)
         blank = {}
@@ -230,12 +230,12 @@ def run_trial(spec: str, sample: dict, client, model: str, thinking: str, effort
     control_blank = control.get("blank") or {}
     if not wrong_ids:
         status = "residue" if not control_blank.get("normalized") else "clean"
-        print(f"第 {run + 1} 趟 核槽都是金标，状态 {status}", flush=True)
+        print(f"run {run + 1} kernel slots are all gold, status {status}", flush=True)
         return {"run": run, "status": status, "wrong_ids": [], "control": control_blank}
     if control_only:
-        print(f"第 {run + 1} 趟 对照已记下，错槽 {','.join(wrong_ids)}，暂不分叉", flush=True)
+        print(f"run {run + 1} control recorded, wrong slots {','.join(wrong_ids)}, not forking yet", flush=True)
         return {"run": run, "status": "control", "wrong_ids": wrong_ids, "control": control_blank}
-    raise RuntimeError("本轮默认不分叉；去掉 --control-only 前先确认样本量")
+    raise RuntimeError("this round does not fork by default; confirm the sample size before dropping --control-only")
 
 
 def collect(out: Path, runs: int) -> list[dict]:
@@ -267,15 +267,15 @@ def render(model: str, thinking: str, effort: str, runs: int, rows: list[dict], 
     kept = [row for row in rows if row["status"] == "kept"]
     session = _session_for(target_id)
     lines = [
-        f"# 会话分叉：飞行力学 ID{target_id}",
+        f"# Session fork: flight mechanics ID{target_id}",
         "",
-        f"样本 sample_01，会话 {session} 走到 ID{target_id}。模型 {model}，思考 {thinking}，强度 {effort}。",
-        f"核槽 {list(kernel_ids)}。对照是 session-model；分叉只换错槽。思维链不写回。",
+        f"Sample sample_01, session {session} through ID{target_id}. Model {model}, thinking {thinking}, effort {effort}.",
+        f"Kernel slots {list(kernel_ids)}. The control is session-model; the fork replaces only wrong slots. The chain of thought is not written back.",
         "",
-        f"计划 {runs} 趟，完成记录 {len(rows)} 趟：分叉 {len(kept)}，待分叉 {len(waiting)}，"
-        f"公式层残留 {len(residue)}，干净 {len(clean)}，调用失败 {len(failed)}。",
+        f"Planned {runs} runs, records completed {len(rows)}: forked {len(kept)}, waiting to fork {len(waiting)},"
+        f"formula-layer residue {len(residue)}, clean {len(clean)}, call failed {len(failed)}.",
         "",
-        "| 槽 | 对照答错 |",
+        "| slot | control wrong |",
         "| --- | ---: |",
     ]
     finished = [row for row in rows if row["status"] != "failed"]
@@ -290,20 +290,20 @@ def render(model: str, thinking: str, effort: str, runs: int, rows: list[dict], 
     lines.append("")
     base = len(residue) + len(clean)
     if base:
-        lines.append(f"核槽全对时 ID{target_id} 仍错：{len(residue)}/{base} = {len(residue) / base:.0%}。")
+        lines.append(f"When all kernel slots are correct, ID{target_id} is still wrong: {len(residue)}/{base} = {len(residue) / base:.0%}.")
     else:
-        lines.append(f"核槽全对时 ID{target_id} 仍错：—（没有核槽全对的趟）。")
+        lines.append(f"When all kernel slots are correct, ID{target_id} is still wrong: —(no run has every kernel slot correct).")
     lines.append("")
-    lines.append(f"| 趟 | 状态 | 错的核槽 | 对照 ID{target_id} |")
+    lines.append(f"| run | status | wrong kernel slots | control ID{target_id} |")
     lines.append("| ---: | --- | --- | --- |")
-    labels = {"control": "待分叉", "kept": "已分叉", "residue": "残留", "clean": "干净", "failed": "失败"}
+    labels = {"control": "waiting to fork", "kept": "forked", "residue": "residue", "clean": "clean", "failed": "failed"}
     for row in rows:
-        wrong = "、".join(f"ID{item}" for item in row.get("wrong_ids") or []) or "—"
+        wrong = ", ".join(f"ID{item}" for item in row.get("wrong_ids") or []) or "—"
         pred = (row.get("control") or {}).get("prediction") or "—"
         lines.append(f"| {row['run'] + 1} | {labels.get(row['status'], row['status'])} | {wrong} | {pred} |")
     if waiting and not kept:
         lines.append("")
-        lines.append("对照已记下，分叉还没跑。")
+        lines.append("The control is recorded. The fork has not been run.")
     lines.append("")
     return "\n".join(lines)
 
@@ -325,11 +325,11 @@ def main() -> None:
     target_id = str(args.target)
     kernel_ids = _kernel_for(target_id)
     out = args.out or (ROOT / "results" / f"fork_flight_id{target_id}" / "sample_01")
-    report = args.report or (ROOT / "analysis" / f"会话分叉_飞行力学_ID{target_id}.md")
+    report = args.report or (ROOT / "doc" / f"session_fork_flight_ID{target_id}.md")
     control_only = False if args.allow_fork else True
     check_shape(target_id, kernel_ids)
     if args.check:
-        print("检验通过。", flush=True)
+        print("Check passed.", flush=True)
         return
     if not args.report_only:
         load_env_file(ROOT / ".env")
@@ -354,11 +354,11 @@ def main() -> None:
             saved = _load(meta_path)
             keys = ("sample", "model", "thinking", "effort", "kernel", "target")
             if {key: saved.get(key) for key in keys} != {key: meta[key] for key in keys}:
-                raise SystemExit("已有结果的条件与这次不一致")
+                raise SystemExit("saved results were run under different conditions")
         _save(meta_path, meta)
         print(
-            f"样本 sample_01 模型 {model} 思考 {args.thinking} 强度 {args.effort} "
-            f"核 {kernel_ids} 趟数 {args.runs} {'只跑对照' if control_only else '对照后分叉'}",
+            f"sample sample_01 model {model} thinking {args.thinking} effort {args.effort} "
+            f"kernel {kernel_ids} runs {args.runs} {'control only' if control_only else 'fork after control'}",
             flush=True,
         )
         try:
@@ -368,7 +368,7 @@ def main() -> None:
                     run, 20261102 + run, max_tokens, out, control_only, target_id, kernel_ids,
                 )
         except RunStop as exc:
-            print(f"调用中断：{exc}", flush=True)
+            print(f"call interrupted: {exc}", flush=True)
     rows = collect(out, args.runs)
     text = render(args.model, args.thinking, args.effort, args.runs, rows, target_id, kernel_ids)
     report.parent.mkdir(parents=True, exist_ok=True)

@@ -56,10 +56,10 @@ _RECOGNITION_CHECK = frozenset({
 })
 
 _SCOPE_NAME = {
-    DIR: "直接识别",
-    RSN: "推理识别",
-    EXE: "执行",
-    ALG: "数理",
+    DIR: "direct recognition",
+    RSN: "reasoning recognition",
+    EXE: "execution",
+    ALG: "algebra",
 }
 
 
@@ -95,7 +95,7 @@ def scope_of(node_id: str) -> str:
         return ALG
     if kind in _RECOGNITION_CHECK or kind is None:
         return DIR
-    raise RuntimeError(f"ID{node} 的验证器 {kind} 没有评估层")
+    raise RuntimeError(f"ID{node} validator {kind} has no evaluation layer")
 
 
 def scope_name(node_id: str) -> str:
@@ -107,13 +107,13 @@ def audit_scopes() -> dict[str, int]:
     counts = {name: 0 for name in _SCOPE_NAME}
     for node in LEVELS:
         if node not in TARGETS:
-            raise RuntimeError(f"ID{node} 在层级表里，不在题目表里。")
+            raise RuntimeError(f"ID{node} is in the layer table but not in the question table.")
         counts[scope_of(node)] += 1
     missing = sorted(set(TARGETS) - set(LEVELS), key=int)
     if missing:
-        raise RuntimeError(f"这些题没有评估层：{missing}")
+        raise RuntimeError(f"These questions have no evaluation layer: {missing}")
     if sum(counts.values()) != len(LEVELS):
-        raise RuntimeError("评估层之和不等于题目数。")
+        raise RuntimeError("The evaluation layers do not add up to the question count.")
     return counts
 
 

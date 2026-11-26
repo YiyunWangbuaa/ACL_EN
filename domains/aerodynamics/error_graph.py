@@ -45,14 +45,14 @@ def future_edges() -> tuple[tuple[str, str], ...]:
 def check_graph() -> None:
     graph = nodes()
     if set(graph) != set(NODE_IDS) or len(graph) != 131:
-        raise RuntimeError(f"节点数应为 131，得到 {len(graph)}")
+        raise RuntimeError(f"Expected 131 nodes, got {len(graph)}")
     for parent, child in edges():
         if parent not in graph or child not in graph:
-            raise RuntimeError(f"边 {parent}->{child} 指向缺失节点")
+            raise RuntimeError(f"Edge {parent}->{child} points at a missing node")
     bad = future_edges()
     if bad:
-        raise RuntimeError(f"存在后句指向前句的边：{bad}")
-    print(f"阶段1 依赖图：节点 {len(graph)}，边 {len(edges())}，未来边 0。", flush=True)
+        raise RuntimeError(f"An edge runs from a later sentence to an earlier one: {bad}")
+    print(f"Stage 1 dependency graph: {len(graph)} nodes, {len(edges())} edges, 0 future edges.", flush=True)
 
 
 def main() -> None:

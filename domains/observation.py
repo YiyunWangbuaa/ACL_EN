@@ -24,7 +24,7 @@ from pathlib import Path
 from domains.conflict_diagnosis import node_phi, target_note
 from domains.contract_cognition import answer_sheet
 from domains.phi_result import Contradiction
-from domains.mbd_kernel import DomainView, sort_key
+from domains.mbd_kernel import DomainView, canon_format, sort_key
 
 
 @dataclass(frozen=True)
@@ -76,14 +76,14 @@ def load_answers(path: Path | str) -> dict[str, str]:
             continue
         found[node] = "" if value is None else str(value)
     if not found:
-        raise RuntimeError(f"{path} 没有答案行")
+        raise RuntimeError(f"{path} has no answer rows")
     return found
 
 
 def diagnose(view: DomainView, answers: dict[str, str], *, prefix: str = "model") -> tuple[Case, ...]:
     """Classify one trajectory and attach parent-subset fault sets."""
     if prefix not in {"model", "gold"}:
-        raise RuntimeError(f"前缀只能是 model 或 gold，收到 {prefix!r}")
+        raise RuntimeError(f"Prefix must be model or gold, got {prefix!r}")
     gold = view.gold()
     present = [node for node in view.node_ids if node in answers]
     correct: dict[str, bool] = {}
@@ -103,7 +103,7 @@ def diagnose(view: DomainView, answers: dict[str, str], *, prefix: str = "model"
         if node in blank:
             cases.append(Case(
                 node, "wrong_answer", "UNPARSEABLE_PENDING_REVIEW",
-                prefix=prefix, note="空答案",
+                prefix=prefix, note="empty answer",
             ))
             continue
         if prefix != "model":
@@ -124,12 +124,12 @@ def diagnose(view: DomainView, answers: dict[str, str], *, prefix: str = "model"
             if isinstance(phi, Contradiction):
                 cases.append(Case(
                     node, "latent", "UNRELIABLE_CORRECT",
-                    prefix=prefix, note="随机性正确",
+                    prefix=prefix, note="chance_correct",
                 ))
             elif any(not correct.get(item, True) for item in _ancestors(view, node)):
                 cases.append(Case(
                     node, "latent", "UNRELIABLE_CORRECT",
-                    prefix=prefix, note="可追溯答案遮蔽",
+                    prefix=prefix, note="traceable_masking",
                 ))
             continue
         phi = node_phi(view, node, _sheet)
@@ -137,20 +137,20 @@ def diagnose(view: DomainView, answers: dict[str, str], *, prefix: str = "model"
             if correct[node]:
                 cases.append(Case(
                     node, "latent", "UNRELIABLE_CORRECT",
-                    upstream_wrong=wrong, prefix=prefix, note="随机性正确",
+                    upstream_wrong=wrong, prefix=prefix, note="chance_correct",
                 ))
             else:
                 cases.append(Case(
                     node, "wrong_answer", "UNRESOLVED",
                     candidate_fault_sets=_contradiction_sets(wrong, node),
-                    upstream_wrong=wrong, prefix=prefix, note="局部矛盾",
+                    upstream_wrong=wrong, prefix=prefix, note="local contradiction",
                 ))
             continue
         if phi is None:
             if not correct[node]:
                 cases.append(Case(
                     node, "wrong_answer", "UNRESOLVED",
-                    upstream_wrong=wrong, prefix=prefix, note="计算器拒绝",
+                    upstream_wrong=wrong, prefix=prefix, note="calculator refused",
                 ))
             continue
         matches = _same(view, node, raw, phi)
@@ -159,7 +159,7 @@ def diagnose(view: DomainView, answers: dict[str, str], *, prefix: str = "model"
             if not wrong:
                 cases.append(Case(
                     node, "wrong_answer", "UNRESOLVED",
-                    phi=phi_text, prefix=prefix, note="无错误父节点",
+                    phi=phi_text, prefix=prefix, note="no wrong parent",
                 ))
                 continue
             observed_parents = {
@@ -241,7 +241,7 @@ def observation_fixes(
             target in nodes,
             upstream,
             (),
-            "局部偏差" if nodes else "无法从局部重算读出",
+            "local deviation" if nodes else "not readable from local recomputation",
             (nodes,) if nodes else (),
         ))
     return tuple(found)
@@ -268,19 +268,19 @@ def audit_control(view: DomainView, targets: tuple[str, ...]) -> dict:
     assert_root_explained(view, faithful, report, root)
     assert_consistent_upstream(view, report)
     if report["repair_cardinality"] != 1:
-        raise RuntimeError(f"{view.name} 忠实轨迹的修复基数不是 1：{report['repair_cardinality']}")
+        raise RuntimeError(f"{view.name} faithful trajectory repair cardinality is not 1: {report['repair_cardinality']}")
     classes = {case.node: case.final_class for case in cases}
     for case in attach(cases, report):
         if classes[case.node] != case.final_class:
-            raise RuntimeError(f"{view.name} {_tag(case.node)} 的局部类被候选报告改写")
+            raise RuntimeError(f"{view.name} {_tag(case.node)} local class was overwritten by the candidate report")
     gold_report = explain(view, faithful, targets, prefix="gold")
     assert_report(gold_report)
     if gold_report["status"] != "gold_prefix":
-        raise RuntimeError(f"{view.name} 金标前缀生成了诊断：{gold_report['status']}")
+        raise RuntimeError(f"{view.name} gold prefix produced a diagnosis: {gold_report['status']}")
     clean = explain(view, dict(view.gold()), targets)
     assert_report(clean)
     if clean["status"] != "consistent":
-        raise RuntimeError(f"{view.name} 全金标轨迹不是 consistent：{clean['status']}")
+        raise RuntimeError(f"{view.name} all-gold trajectory is not consistent: {clean['status']}")
     local_report = explain(view, local_answers, targets, prefix="model")
     assert_report(local_report)
     assert_consistent_upstream(view, local_report)
@@ -293,15 +293,15 @@ def audit_control(view: DomainView, targets: tuple[str, ...]) -> dict:
     summary["targets"] = report["targets"]
     flagged = target_note(report["targets"])
     print(
-        f"观测归因：{view.name} 忠实轨迹 {_tag(root)}，"
-        f"传播 {summary['propagated']}，潜伏 {summary['latent']}，"
-        f"未解析 {summary['unresolved']}，终点 { _fix_text(fixes) }。"
-        f"局部轨迹 {_tag(local_node)} 为局部错误"
-        + (f"，修好 {_join(local_targets)}" if local_targets else "，终点即该节点")
-        +         f"。阶段5 候选 {report['status']}，"
-        f"修复基数 {report['repair_cardinality']}，由局部偏差读出。"
-        + (f"{flagged}" if flagged else "")
-        + "金标前缀不生成诊断。",
+        f"Observation attribution: {view.name} faithful trajectory {_tag(root)}, "
+        f"propagated {summary['propagated']}, latent {summary['latent']}, "
+        f"unresolved {summary['unresolved']}, terminals {_fix_text(fixes)}. "
+        f"Local trajectory {_tag(local_node)} is a local error"
+        + (f", repaired {_join(local_targets)}" if local_targets else ", and the terminal is that node")
+        + f". Stage 5 candidates {report['status']}, "
+        f"repair cardinality {report['repair_cardinality']}, read from local deviations."
+        + (f" {flagged}" if flagged else "")
+        + " A gold prefix does not produce a diagnosis.",
         flush=True,
     )
     return summary
@@ -326,7 +326,7 @@ def _propagation(
     if kernels is None:
         return Case(
             node, "wrong_answer", "UNRESOLVED",
-            upstream_wrong=wrong, phi=phi, prefix=prefix, note="父节点过多",
+            upstream_wrong=wrong, phi=phi, prefix=prefix, note="too many parents",
         )
     if len(kernels) == 1:
         only = kernels[0]
@@ -338,7 +338,7 @@ def _propagation(
     if not kernels:
         return Case(
             node, "wrong_answer", "UNRESOLVED",
-            upstream_wrong=wrong, phi=phi, prefix=prefix, note="空核",
+            upstream_wrong=wrong, phi=phi, prefix=prefix, note="empty kernel",
         )
     return Case(
         node, "wrong_answer", "UNRESOLVED",
@@ -391,7 +391,7 @@ def _kernels(
 
 def _faithful_root(view: DomainView, targets: tuple[str, ...]):
     gold = view.gold()
-    last_error = f"{view.name} 没有能改变终点的声明根"
+    last_error = f"{view.name} has no declaration root that changes a terminal"
     for node, alt in _root_alts(view):
         answers = dict(gold)
         answers[node] = alt
@@ -422,27 +422,27 @@ def _assert_faithful(view: DomainView, answers: dict[str, str], cases: tuple[Cas
     if {case.node for case in wrong_cases} != set(wrong):
         missing = set(wrong) - {case.node for case in wrong_cases}
         extra = {case.node for case in wrong_cases} - set(wrong)
-        raise RuntimeError(f"{view.name} 错题与案例不一致：缺 {sorted(missing)} 多 {sorted(extra)}")
+        raise RuntimeError(f"{view.name} wrong blanks and cases disagree: missing {sorted(missing)} extra {sorted(extra)}")
     if len({case.node for case in cases}) != len(cases):
-        raise RuntimeError(f"{view.name} 同一节点有多条观测案例")
+        raise RuntimeError(f"{view.name} has more than one observation case for the same node")
     roots = [case for case in wrong_cases if case.final_class == "ROOT_ERROR"]
     if len(roots) != 1 or roots[0].node != root:
-        raise RuntimeError(f"{view.name} 忠实轨迹的根不是 {_tag(root)}")
+        raise RuntimeError(f"{view.name} faithful trajectory root is not {_tag(root)}")
     if roots[0].minimal_fault_set != (root,):
-        raise RuntimeError(f"{view.name} {_tag(root)} 的极小集不是它自己")
+        raise RuntimeError(f"{view.name} {_tag(root)} minimal set is not itself")
     locals_ = [case.node for case in wrong_cases if case.final_class == "NEW_LOCAL_ERROR"]
     if locals_:
-        raise RuntimeError(f"{view.name} 忠实轨迹出现局部错误：{locals_}")
+        raise RuntimeError(f"{view.name} faithful trajectory has a local error: {locals_}")
     for case in wrong_cases:
         if case.final_class == "PROPAGATED_ERROR" and not case.propagated_from:
-            raise RuntimeError(f"{view.name} {_tag(case.node)} 标成传播但没有父节点")
-        if case.final_class == "UNRESOLVED" and not case.candidate_fault_sets and case.note not in {"计算器拒绝", "局部矛盾", "父节点过多", "无错误父节点", "空核"}:
-            raise RuntimeError(f"{view.name} {_tag(case.node)} 未解析却没有候选核")
+            raise RuntimeError(f"{view.name} {_tag(case.node)} is marked propagated but has no parent")
+        if case.final_class == "UNRESOLVED" and not case.candidate_fault_sets and case.note not in {"calculator refused", "local contradiction", "too many parents", "no wrong parent", "empty kernel"}:
+            raise RuntimeError(f"{view.name} {_tag(case.node)} is unresolved but has no candidate kernel")
         if case.final_class not in {"ROOT_ERROR", "PROPAGATED_ERROR", "UNRESOLVED"}:
-            raise RuntimeError(f"{view.name} {_tag(case.node)} 的类是 {case.final_class}")
+            raise RuntimeError(f"{view.name} {_tag(case.node)} class is {case.final_class}")
     for case in cases:
         if case.origin == "latent" and case.final_class not in {"RESULT_EQUIVALENCE", "CONTRACT_TARGET_DISCONNECT", "UNRELIABLE_CORRECT"}:
-            raise RuntimeError(f"{view.name} {_tag(case.node)} 潜伏类是 {case.final_class}")
+            raise RuntimeError(f"{view.name} {_tag(case.node)} latent class is {case.final_class}")
 
 
 def _assert_gold_prefix(answers: dict[str, str], view: DomainView, cases: tuple[Case, ...]) -> None:
@@ -452,10 +452,10 @@ def _assert_gold_prefix(answers: dict[str, str], view: DomainView, cases: tuple[
         if node in answers and not _same(view, node, answers[node], gold[node])
     ]
     if {case.node for case in cases} != set(wrong):
-        raise RuntimeError(f"{view.name} 金标前缀没有盖住错题")
+        raise RuntimeError(f"{view.name} gold prefix does not cover the wrong blanks")
     bad = [case.node for case in cases if case.final_class != "CONDITIONAL_FAILURE"]
     if bad:
-        raise RuntimeError(f"{view.name} 金标前缀把 {_tag(bad[0])} 标成了传播或根")
+        raise RuntimeError(f"{view.name} gold prefix marked {_tag(bad[0])} as propagated or root")
 
 
 def _assert_root_repairs(
@@ -476,9 +476,9 @@ def _assert_root_repairs(
             continue
         checked += 1
         if (root,) not in fix.minimal:
-            raise RuntimeError(f"{view.name} 修复 {_tag(root)} 没有恢复 {_tag(fix.target)}（{fix.grade}）")
+            raise RuntimeError(f"{view.name} repairing {_tag(root)} did not restore {_tag(fix.target)} ({fix.grade})")
     if checked == 0:
-        raise RuntimeError(f"{view.name} 注入 {_tag(root)} 后没有终点可修")
+        raise RuntimeError(f"{view.name} injecting {_tag(root)} left no terminal to repair")
 
 
 def _assert_disconnect(view: DomainView, answers: dict[str, str], cases: tuple[Case, ...]) -> None:
@@ -493,7 +493,7 @@ def _assert_disconnect(view: DomainView, answers: dict[str, str], cases: tuple[C
     tweaked[propagated] = gold[propagated]
     found = next(case for case in diagnose(view, tweaked) if case.node == propagated)
     if found.origin != "latent" or found.final_class != "CONTRACT_TARGET_DISCONNECT":
-        raise RuntimeError(f"{view.name} {_tag(propagated)} 在答案回到金标后不是断开，而是 {found.final_class}")
+        raise RuntimeError(f"{view.name} {_tag(propagated)} after the answer returns to gold is not disconnected; it is {found.final_class}")
 
 
 def _assert_local(view: DomainView, targets: tuple[str, ...]) -> tuple[str, tuple[str, ...], dict[str, str]]:
@@ -535,7 +535,7 @@ def _assert_local(view: DomainView, targets: tuple[str, ...]) -> tuple[str, tupl
         own_fix = next(fix for fix in fixes if fix.target == node)
         if own_fix.direct and own_fix.minimal == ((node,),):
             return node, (), answers
-    raise RuntimeError(f"{view.name} 没有可单独归因的局部执行错误")
+    raise RuntimeError(f"{view.name} has no local execution error that can be attributed on its own")
 
 
 def _root_alts(view: DomainView) -> tuple[tuple[str, str], ...]:
@@ -585,13 +585,13 @@ def _summary(cases: tuple[Case, ...], fixes: tuple[TargetFix, ...]) -> dict:
 
 def _alt(view: DomainView, node: str) -> str | None:
     gold = str(view.gold()[node])
-    options = [str(item) for item in (view.question(node).get("options") or []) if str(item) not in {"", "无"}]
+    options = [str(item) for item in (view.question(node).get("options") or []) if str(item) not in {"", "none", "\u65e0"}]
     for option in options:
         if not _same(view, node, option, gold):
             return option
     if options:
         return None
-    fmt = str(view.question(node).get("format") or "无")
+    fmt = canon_format(str(view.question(node).get("format") or ""))
     slipped = _slip(gold, fmt)
     if _same(view, node, slipped, gold):
         return None
@@ -600,9 +600,9 @@ def _alt(view: DomainView, node: str) -> str | None:
 
 def _slip(gold: str, fmt: str) -> str:
     text = gold.strip()
-    if fmt == "矩阵" and text.startswith("[["):
+    if fmt == "matrix" and text.startswith("[["):
         return text.replace("1", "0", 1) if "1" in text else text[:-2] + ", 0]]"
-    if fmt == "向量" and text.startswith("["):
+    if fmt == "vector" and text.startswith("["):
         return "[0, 0, 0]" if text != "[0, 0, 0]" else "[1, 0, 0]"
     if text.startswith("-"):
         return text[1:].strip() or "0"
@@ -670,13 +670,13 @@ def _tag(node: str) -> str:
 
 
 def _join(nodes: tuple[str, ...]) -> str:
-    return "、".join(_tag(node) for node in nodes)
+    return ", ".join(_tag(node) for node in nodes)
 
 
 def _fix_text(fixes: tuple[TargetFix, ...]) -> str:
     if not fixes:
-        return "无"
+        return "none"
     parts = []
     for fix in fixes:
         parts.append(f"{_tag(fix.target)} {fix.grade}")
-    return "，".join(parts)
+    return ", ".join(parts)

@@ -53,31 +53,31 @@ _ATTITUDE = {
 # Declared nodes. They have a calculator and no replaceable parent.
 # ID16–ID18 are also the order probes T4 will branch on.
 _NO_SLOT_REASON = {
-    "16": "隐含契约顺序槽，没有可替换前置；RSN 推理识别测点",
-    "17": "隐含契约顺序槽，没有可替换前置；RSN 推理识别测点",
-    "18": "隐含契约顺序槽，没有可替换前置；RSN 推理识别测点",
-    "20": "方向读数由声明决定，没有可替换前置",
-    "21": "方向读数由声明决定，没有可替换前置",
-    "28": "方向读数由声明决定，没有可替换前置",
-    "29": "方向读数由声明决定，没有可替换前置",
-    "69": "反三角函数由定义声明，没有可替换前置",
-    "75": "反三角函数由定义声明，没有可替换前置",
-    "98": "乘积槽由声明的顺序决定，没有可替换前置",
-    "99": "乘积槽由声明的顺序决定，没有可替换前置",
-    "100": "乘积槽由声明的顺序决定，没有可替换前置",
-    "133": "乘积槽由声明的顺序决定，没有可替换前置",
-    "134": "乘积槽由声明的顺序决定，没有可替换前置",
-    "155": "方向读数由声明决定，没有可替换前置",
-    "156": "方向读数由声明决定，没有可替换前置",
-    "179": "方向读数由声明决定，没有可替换前置",
-    "180": "方向读数由声明决定，没有可替换前置",
-    "182": "固定常数，没有可替换前置",
-    "201": "力系数由力矩名读出，没有可替换前置",
-    "202": "力系数由力矩名读出，没有可替换前置",
-    "203": "力系数由力矩名读出，没有可替换前置",
-    "204": "力系数由力矩名读出，没有可替换前置",
-    "205": "力系数由力矩名读出，没有可替换前置",
-    "206": "力系数由力矩名读出，没有可替换前置",
+    "16": "implicit contract order slot, no replaceable prefix; RSN reasoning-recognition probe",
+    "17": "implicit contract order slot, no replaceable prefix; RSN reasoning-recognition probe",
+    "18": "implicit contract order slot, no replaceable prefix; RSN reasoning-recognition probe",
+    "20": "the direction reading is fixed by the declaration and has no replaceable prefix",
+    "21": "the direction reading is fixed by the declaration and has no replaceable prefix",
+    "28": "the direction reading is fixed by the declaration and has no replaceable prefix",
+    "29": "the direction reading is fixed by the declaration and has no replaceable prefix",
+    "69": "the inverse trigonometric function is fixed by the declaration and has no replaceable prefix",
+    "75": "the inverse trigonometric function is fixed by the declaration and has no replaceable prefix",
+    "98": "the product slot is fixed by the declared order and has no replaceable prefix",
+    "99": "the product slot is fixed by the declared order and has no replaceable prefix",
+    "100": "the product slot is fixed by the declared order and has no replaceable prefix",
+    "133": "the product slot is fixed by the declared order and has no replaceable prefix",
+    "134": "the product slot is fixed by the declared order and has no replaceable prefix",
+    "155": "the direction reading is fixed by the declaration and has no replaceable prefix",
+    "156": "the direction reading is fixed by the declaration and has no replaceable prefix",
+    "179": "the direction reading is fixed by the declaration and has no replaceable prefix",
+    "180": "the direction reading is fixed by the declaration and has no replaceable prefix",
+    "182": "a fixed constant with no replaceable prefix",
+    "201": "the force coefficient is read from the moment name and has no replaceable prefix",
+    "202": "the force coefficient is read from the moment name and has no replaceable prefix",
+    "203": "the force coefficient is read from the moment name and has no replaceable prefix",
+    "204": "the force coefficient is read from the moment name and has no replaceable prefix",
+    "205": "the force coefficient is read from the moment name and has no replaceable prefix",
+    "206": "the force coefficient is read from the moment name and has no replaceable prefix",
 }
 BRANCH_PROBES = ("16", "17", "18")
 
@@ -290,7 +290,7 @@ def _options() -> dict[str, tuple[str, ...]]:
     found = {}
     for question in _rows()[_DEFAULT_SAMPLE]["questions"]:
         options = tuple(
-            str(item) for item in (question.get("options") or []) if str(item) not in {"", "无"}
+            str(item) for item in (question.get("options") or []) if str(item) not in {"", "none"}
         )
         found[str(question["id"])] = options
     return found
@@ -323,7 +323,7 @@ def _parent_alts(parent: str, sample_id: str, current: str) -> tuple[Slot, ...]:
     found: dict[str, Slot] = {}
     options = _options().get(parent, ())
     if kind == "sign":
-        for word in ("正", "负"):
+        for word in ("positive", "negative"):
             _remember(found, word, Slot(parent, word, "sign_flip", family))
     elif kind == "choice" and options:
         for option in options:
@@ -408,19 +408,19 @@ def audit(sample_id: str = "body-rule") -> Mapping[str, int]:
     _check_registry()
     nodes = calculator_nodes()
     if len(nodes) != 122:
-        raise RuntimeError(f"计算器节点应为 122 个，现在是 {len(nodes)} 个。")
+        raise RuntimeError(f"There should be 122 calculator nodes, but there are {len(nodes)}.")
     missing = []
     for node_id in nodes:
         reason = no_slot_reason(node_id)
         if slots(node_id, sample_id):
             if reason:
-                missing.append(f"ID{node_id} 有槽，不能标成 no_slots")
+                missing.append(f"ID{node_id} has a slot, so it cannot be marked no_slots")
         elif not reason:
-            missing.append(f"ID{node_id} 没有槽，也没有 no_slots 原因")
+            missing.append(f"ID{node_id} has no slot and no no_slots reason")
     if missing:
-        raise RuntimeError("；".join(missing[:8]))
+        raise RuntimeError("; ".join(missing[:8]))
     if tuple(no_slot_nodes()) != tuple(sorted(_NO_SLOT_REASON, key=int)):
-        raise RuntimeError("no_slots 与声明型清单不一致。")
+        raise RuntimeError("no_slots does not match the declared list.")
     total = 0
     accepted = 0
     invalid = []
@@ -443,7 +443,7 @@ def audit(sample_id: str = "body-rule") -> Mapping[str, int]:
                 answer, reason = _outcome(sample_id, node_id, slot.node, slot.alt)
                 if not answer:
                     rejected.append(f"ID{node_id}←ID{slot.node}:{slot.alt}")
-                    reasons[reason.split("。", 1)[0]] += 1
+                    reasons[reason.split(".", 1)[0]] += 1
                     continue
                 form = parse_answer(answer, kind, None if kind in {"choice", "sign"} else _parse_options(node_id))
                 if form.status != "ok":
@@ -466,14 +466,14 @@ def audit(sample_id: str = "body-rule") -> Mapping[str, int]:
                     cell_mismatches.append(f"ID{node_id}←ID{slot.node}")
     elapsed = time.perf_counter() - started
     if total == 0:
-        raise RuntimeError("没有枚举到任何替代值。")
+        raise RuntimeError("No alternative value was enumerated.")
     comparable = accepted + len(invalid)
     rate = accepted / comparable if comparable else 1.0
     if rate < 0.95:
-        preview = "；".join(invalid[:8])
-        raise RuntimeError(f"answer_under 可解析率 {rate:.1%}，低于 95%。{preview}")
+        preview = "; ".join(invalid[:8])
+        raise RuntimeError(f"The answer_under parse rate is {rate:.1%}, below 95%. {preview}")
     if cell_mismatches:
-        raise RuntimeError("cells 与 cell_delta 不一致：" + "；".join(cell_mismatches[:8]))
+        raise RuntimeError("cells does not agree with cell_delta: " + "; ".join(cell_mismatches[:8]))
     inert = inert_slots(sample_id)
     masked = [(node_id, parent) for node_id in nodes for parent in masked_parents(node_id)]
     print(
@@ -491,7 +491,7 @@ def audit(sample_id: str = "body-rule") -> Mapping[str, int]:
             print(f"  {count} {reason}")
         hidden = len(reasons) - len(shown)
         if hidden:
-            print(f"  …其余 {hidden} 种原因")
+            print(f"  ... {hidden} more reasons")
     if invalid:
         print("invalid_alt")
         for item in invalid:
@@ -518,23 +518,23 @@ def audit(sample_id: str = "body-rule") -> Mapping[str, int]:
 def _check_registry() -> None:
     empty = [node_id for node_id in NODE_BY_ID if validator_of(node_id) and not input_ids(node_id)]
     if set(empty) != set(_NO_SLOT_REASON):
-        raise RuntimeError(f"声明型空与注册表空输入不一致：{sorted(set(empty) ^ set(_NO_SLOT_REASON), key=int)}")
+        raise RuntimeError(f"Declared blanks do not match the registry blanks with no inputs: {sorted(set(empty) ^ set(_NO_SLOT_REASON), key=int)}")
     for node_id, parents in _SPECIAL_INPUTS.items():
         if input_ids(node_id):
-            raise RuntimeError(f"ID{node_id} 已经有注册输入，手工表会重复。")
+            raise RuntimeError(f"ID{node_id} already has registered inputs, so the manual table would repeat them.")
         if _inputs(node_id) != parents:
-            raise RuntimeError(f"ID{node_id} 的手工输入应为 {parents}。")
+            raise RuntimeError(f"The manual inputs of ID{node_id} should be {parents}.")
     for node_id in BRANCH_PROBES:
         if RSN not in no_slot_reason(node_id):
-            raise RuntimeError(f"ID{node_id} 应标成 RSN 推理识别测点。")
-    if cells("16", Slot("16", "迎角", "standard"), _DEFAULT_SAMPLE) is not None:
-        raise RuntimeError("声明型节点的 cells 应为 None。")
+            raise RuntimeError(f"ID{node_id} should be marked an RSN reasoning-recognition probe.")
+    if cells("16", Slot("16", "angle of attack", "standard"), _DEFAULT_SAMPLE) is not None:
+        raise RuntimeError("cells of a declared node should be None.")
 
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="验收单槽签名")
+    parser = argparse.ArgumentParser(description="Check single-slot signatures.")
     parser.add_argument("sample", nargs="?", default="body-rule")
     args = parser.parse_args()
     audit(args.sample)

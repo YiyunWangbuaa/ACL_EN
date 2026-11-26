@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""图可达 D 矩阵。支持层只读依赖图，不注入错文、不重算。"""
+"""Graph-reachability D matrix. The support layer reads the dependency graph only. It does not inject a wrong text and does not recompute."""
 from __future__ import annotations
 
 from domains.fault_class import DIR, EXE, RSN
@@ -26,53 +26,53 @@ def _report_rows(title: str, rows) -> None:
     for classes in overlap.values():
         key = "+".join(sorted(classes))
         pairs[key] = pairs.get(key, 0) + 1
-    true = [group for group in groups if group["kind"] == "真模糊"]
-    copied = [group for group in groups if group["kind"] == "类标签重复"]
-    same = [group for group in groups if group["kind"] == "同注入同标签"]
-    partial = [group for group in groups if group["kind"] == "同标签部分重叠"]
+    true = [group for group in groups if group["kind"] == "true-ambiguity"]
+    copied = [group for group in groups if group["kind"] == "label-repeat"]
+    same = [group for group in groups if group["kind"] == "same-injection-same-label"]
+    partial = [group for group in groups if group["kind"] == "same-label-partial-overlap"]
     _line(title)
     print(
-        f"行 {len(rows)}，多成员组 {len(groups)}"
-        f"（类标签重复 {len(copied)}，同注入同标签 {len(same)}，"
-        f"同标签部分重叠 {len(partial)}，真模糊 {len(true)}）"
-        f"，最大组 {max((len(group['members']) for group in groups), default=0)}"
+        f"rows {len(rows)}, multi-member groups {len(groups)}"
+        f" (label-repeat {len(copied)}, same-injection-same-label {len(same)}, "
+        f"same-label-partial-overlap {len(partial)}, true-ambiguity {len(true)})"
+        f", largest group {max((len(group['members']) for group in groups), default=0)}"
     )
     print(
-        f"DIR/RSN/EXE 共写的空 {len(overlap)}"
-        + (f"：{pairs}" if pairs else "")
+        f"blanks written by both DIR/RSN/EXE {len(overlap)}"
+        + (f": {pairs}" if pairs else "")
     )
-    _print_groups("真模糊", true)
-    _print_groups("同标签部分重叠", partial)
+    _print_groups("true-ambiguity", true)
+    _print_groups("same-label-partial-overlap", partial)
 
 
 def _print_groups(title: str, groups) -> None:
     if not groups:
-        print(f"{title}：0")
+        print(f"{title}: 0")
         return
-    print(f"{title}：")
+    print(f"{title}:")
     for group in groups:
-        print(f"  {len(group['members'])} 人 共有空 {','.join(group['shared']) or '无'}")
+        print(f"  {len(group['members'])} members, shared blanks {','.join(group['shared']) or 'none'}")
         for blanks, member in zip(group["blank_sets"], group["members"]):
-            print(f"    {member}  空 {','.join(blanks)}")
+            print(f"    {member}  blanks {','.join(blanks)}")
 
 
 def _wind(sample_id: str) -> None:
     view = render(sample_id)
     _line(sample_id)
     print(
-        f"行 {len(view['rows'])}，测点列 {len(view['columns'])}，"
-        f"多成员组 {view['n_ambiguity']}"
-        f"（类标签重复 {view['n_label_repeat']}，同注入同标签 {view['n_same_label']}，"
-        f"同标签部分重叠 {view['n_partial']}，真模糊 {view['n_true']}），最大组 {view['max_group']}"
+        f"rows {len(view['rows'])}, probe columns {len(view['columns'])}, "
+        f"multi-member groups {view['n_ambiguity']}"
+        f" (label-repeat {view['n_label_repeat']}, same-injection-same-label {view['n_same_label']}, "
+        f"same-label-partial-overlap {view['n_partial']}, true-ambiguity {view['n_true']}), largest group {view['max_group']}"
     )
     overlap = view["multi_class_blanks"]
     pairs = {}
     for classes in overlap.values():
         key = "+".join(sorted(classes))
         pairs[key] = pairs.get(key, 0) + 1
-    print(f"DIR/RSN/EXE 共写的空 {len(overlap)}" + (f"：{pairs}" if pairs else ""))
-    _print_groups("真模糊", [group for group in view["groups"] if group["kind"] == "真模糊"])
-    _print_groups("同标签部分重叠", [group for group in view["groups"] if group["kind"] == "同标签部分重叠"])
+    print(f"blanks written by both DIR/RSN/EXE {len(overlap)}" + (f": {pairs}" if pairs else ""))
+    _print_groups("true-ambiguity", [group for group in view["groups"] if group["kind"] == "true-ambiguity"])
+    _print_groups("same-label-partial-overlap", [group for group in view["groups"] if group["kind"] == "same-label-partial-overlap"])
 
 
 def main() -> None:
@@ -83,16 +83,16 @@ def main() -> None:
     from domains.robotics.kin_aligned import view as kin
 
     for title, build in (
-        ("飞行力学", flight),
-        ("机器人学运动学", kin),
+        ("flight mechanics", flight),
+        ("robot kinematics", kin),
     ):
         _report_rows(title, instances(build()))
-    _line("机器视觉")
+    _line("computer vision")
     for title, build in (
-        ("基础理论环节", vision),
-        ("物体与双目环节", scene),
+        ("vision basics", vision),
+        ("Object and stereo", scene),
     ):
-        _report_rows(f"机器视觉 · {title}", instances(build()))
+        _report_rows(f"computer vision · {title}", instances(build()))
     for sample_id in (
         "standard-default",
         "standard-order",
@@ -103,7 +103,7 @@ def main() -> None:
         "body-rule",
     ):
         _wind(sample_id)
-    print("\n图可达 D 矩阵完成（未注入）")
+    print("\nGraph-reachability D matrix finished (no injection)")
 
 
 if __name__ == "__main__":

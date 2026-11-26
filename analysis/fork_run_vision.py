@@ -34,9 +34,9 @@ from semi_auto_eval import load_env_file, make_client, resolve_api_config  # noq
 
 BASIC = ROOT / "data" / "vision" / "review" / "scene" / "sample_03.md"
 _SPEC = "\n".join([
-    "选择题只回答一个选项字母。",
-    "矩阵写成 [[a, b, c], [d, e, f], [g, h, i]]。",
-    "向量写成 [a, b, c]。",
+    "A choice answer is only one option letter.",
+    "Write a matrix as [[a, b, c], [d, e, f], [g, h, i]].",
+    "Write a vector as [a, b, c].",
 ])
 _EXPECTED = {"41": ("37", "38", "39", "40"), "47": ("41",), "53": ("41", "49")}
 
@@ -72,7 +72,7 @@ def _sentences_by_slot(body: str) -> list[dict]:
         chunk = body[cursor:match.end()]
         # Keep trailing punctuation that belongs to this blank if present.
         end = match.end()
-        while end < len(body) and body[end] in "。；;，,":
+        while end < len(body) and body[end] in ".；;，,":
             end += 1
             break
         chunk = body[cursor:end]
@@ -89,7 +89,7 @@ def _sentences_by_slot(body: str) -> list[dict]:
         cursor = end
     tail = body[cursor:].strip()
     if tail and SLOT_RE.search(tail):
-        raise RuntimeError(f"未消化的空：{tail[:80]}")
+        raise RuntimeError(f"unparsed blank: {tail[:80]}")
     return pieces
 
 
@@ -102,7 +102,7 @@ def _chains_by_slot(title: str, process: str, declaration: str) -> tuple[list[di
         sentences = _sentences_by_slot(body.strip() + ("\n" if not body.endswith("\n") else ""))
         ids = [item["item"]["id"] for item in sentences if item["item"] is not None]
         if not ids:
-            raise RuntimeError(f"{title} / {name.strip()} 没有空。")
+            raise RuntimeError(f"{title} / {name.strip()} has no blank.")
         seen.extend(ids)
         chains.append({
             "process": name.strip(),
@@ -117,20 +117,20 @@ def _chains_by_slot(title: str, process: str, declaration: str) -> tuple[list[di
 
 def load_basic(path: Path, section: str = "theory") -> tuple[str, dict]:
     raw = path.read_text(encoding="utf-8")
-    if "# 前置环节：基础理论" in raw and "# 物体与双目" in raw:
-        theory, scene = raw.split("# 前置环节：基础理论", 1)[1].split("# 物体与双目", 1)
+    if "# Basic theory" in raw and "# Object and stereo" in raw:
+        theory, scene = raw.split("# Basic theory", 1)[1].split("# Object and stereo", 1)
         raw = theory if section == "theory" else scene
-    declaration = raw.split("## 定义声明", 1)[1].split("## 完整过程", 1)[0]
-    process = raw.split("## 完整过程", 1)[1]
+    declaration = raw.split("## Declaration", 1)[1].split("## Full process", 1)[0]
+    process = raw.split("## Full process", 1)[1]
     if "\n### " in process:
         process = process[process.index("\n### "):]
-    chains, seen = _chains_by_slot("基础理论", process, declaration.strip())
+    chains, seen = _chains_by_slot("basics", process, declaration.strip())
     expected = [str(number) for number in range(1, len(seen) + 1)]
     if seen != expected:
-        raise RuntimeError(f"视觉题号是 {seen[:8]}…{seen[-4:]}，应当是 1 到 {len(seen)}")
+        raise RuntimeError(f"vision ids are {seen[:8]}…{seen[-4:]}, expected 1 through {len(seen)}")
     sample = {
         "sample_id": "basic-01",
-        "title": "基础理论",
+        "title": "basics",
         "declaration": declaration.strip(),
         "prior": "",
         "chains": chains,
@@ -149,18 +149,18 @@ def _sentences_through(sample: dict, stop_id: str) -> list[tuple[dict, int]]:
             found.append((chain, index))
             if str(item["id"]) == stop_id:
                 return found
-    raise RuntimeError(f"基础理论没有 ID{stop_id}")
+    raise RuntimeError(f"basics has no ID{stop_id}")
 
 
 def _job(chain, index, messages, run, seed, max_tokens, condition) -> dict:
     item = chain["sentences"][index]["item"]
     question = "\n".join([
-        "填写当前这一句。",
+        "Fill the current sentence.",
         "",
-        "【子过程】",
+        "[Subprocess]",
         chain["process"],
         "",
-        "【问题】",
+        "[Question]",
         _turn_question(chain, index),
     ])
     blank = {
@@ -188,7 +188,7 @@ def _job(chain, index, messages, run, seed, max_tokens, condition) -> dict:
         "question": question,
         "messages": history,
         "prompt": question,
-        "session": "基础理论",
+        "session": "basics",
         "system": messages[0]["content"],
     }
 
@@ -209,7 +209,7 @@ def run_trial(spec, sample, client, model, thinking, effort, run, seed, max_toke
             messages.append({"role": "user", "content": record["question"]})
             messages.append({"role": "assistant", "content": record["committed"]})
             continue
-        print(f"第 {run + 1} 趟 提问 ID{item['id']}", flush=True)
+        print(f"run {run + 1} asking ID{item['id']}", flush=True)
         result = score_one(client, model, 0.0, thinking, job)
         reply = result.get("response") or ""
         record = {
@@ -234,14 +234,14 @@ def run_trial(spec, sample, client, model, thinking, effort, run, seed, max_toke
                 if str(blank.get("blank_id")) == node:
                     kernel_rows[node] = _slim(blank)
         if node not in kernel_rows:
-            raise RuntimeError(f"核槽 ID{node} 没有进入会话")
+            raise RuntimeError(f"kernel slot ID{node} did not enter the session")
     wrong_ids = [node for node in kernel if not kernel_rows[node].get("normalized")]
     chain, sentence_index = steps[-1]
     control_path = run_dir / "control.json"
     if control_path.is_file() and not _load(control_path).get("error"):
         control = _load(control_path)
     else:
-        print(f"第 {run + 1} 趟 对照提问 ID{target}（错槽 {','.join(wrong_ids) or '无'}）", flush=True)
+        print(f"run {run + 1} control question ID{target}(wrong slots {','.join(wrong_ids) or 'none'})", flush=True)
         job = _job(chain, sentence_index, messages, run, seed, max_tokens, SESSION_MODEL)
         result = score_one(client, model, 0.0, thinking, job)
         blank = {}
@@ -267,9 +267,9 @@ def run_trial(spec, sample, client, model, thinking, effort, run, seed, max_toke
         status = "residue" if not control_blank.get("normalized") else "clean"
         return {"run": run, "status": status, "wrong_ids": [], "control": control_blank}
     if control_only:
-        print(f"第 {run + 1} 趟 对照已记下，错槽 {','.join(wrong_ids)}，暂不分叉", flush=True)
+        print(f"run {run + 1} control recorded, wrong slots {','.join(wrong_ids)}, not forking yet", flush=True)
         return {"run": run, "status": "control", "wrong_ids": wrong_ids, "control": control_blank}
-    raise RuntimeError("本轮默认不分叉")
+    raise RuntimeError("this round does not fork by default")
 
 
 def collect(out: Path, runs: int) -> list[dict]:
@@ -296,14 +296,14 @@ def render(model, thinking, effort, runs, rows, target, kernel) -> str:
     clean = [row for row in rows if row["status"] == "clean"]
     failed = [row for row in rows if row["status"] == "failed"]
     lines = [
-        f"# 会话分叉：机器视觉 ID{target}",
+        f"# Session fork: computer vision ID{target}",
         "",
-        f"样本 basic/sample_01，走到 ID{target}。模型 {model}，思考 {thinking}，强度 {effort}。",
-        f"核槽 {list(kernel)}。对照 session-model；暂不分叉。",
+        f"Sample basic/sample_01, through ID{target}. Model {model}, thinking {thinking}, effort {effort}.",
+        f"Kernel slots {list(kernel)}. Control is session-model; not forking yet.",
         "",
-        f"计划 {runs} 趟，完成 {len(rows)}：待分叉 {len(waiting)}，残留 {len(residue)}，干净 {len(clean)}，失败 {len(failed)}。",
+        f"Planned {runs} runs, completed {len(rows)}: waiting to fork {len(waiting)}, residue {len(residue)}, clean {len(clean)}, failed {len(failed)}.",
         "",
-        "| 槽 | 对照答错 |",
+        "| slot | control wrong |",
         "| --- | ---: |",
     ]
     finished = [row for row in rows if row["status"] != "failed"]
@@ -317,15 +317,15 @@ def render(model, thinking, effort, runs, rows, target, kernel) -> str:
     lines.append("")
     base = len(residue) + len(clean)
     if base:
-        lines.append(f"核槽全对时 ID{target} 仍错：{len(residue)}/{base} = {len(residue) / base:.0%}。")
+        lines.append(f"When all kernel slots are correct, ID{target} is still wrong: {len(residue)}/{base} = {len(residue) / base:.0%}.")
     else:
-        lines.append(f"核槽全对时 ID{target} 仍错：—（没有核槽全对的趟）。")
+        lines.append(f"When all kernel slots are correct, ID{target} is still wrong: —(no run has every kernel slot correct).")
     lines.append("")
-    lines.append(f"| 趟 | 状态 | 错的核槽 | 对照 ID{target} |")
+    lines.append(f"| run | status | wrong kernel slots | control ID{target} |")
     lines.append("| ---: | --- | --- | --- |")
-    labels = {"control": "待分叉", "residue": "残留", "clean": "干净", "failed": "失败"}
+    labels = {"control": "waiting to fork", "residue": "residue", "clean": "clean", "failed": "failed"}
     for row in rows:
-        wrong = "、".join(f"ID{item}" for item in row.get("wrong_ids") or []) or "—"
+        wrong = ", ".join(f"ID{item}" for item in row.get("wrong_ids") or []) or "—"
         pred = (row.get("control") or {}).get("prediction") or "—"
         lines.append(f"| {row['run'] + 1} | {labels.get(row['status'], row['status'])} | {wrong} | {pred} |")
     lines.append("")
@@ -349,14 +349,14 @@ def main() -> None:
     kernel = tuple(minimal_fixes(target)[0])
     expected = _EXPECTED.get(target)
     if expected is not None and kernel != expected:
-        raise RuntimeError(f"ID{target} 核应为 {expected}，得到 {kernel}")
+        raise RuntimeError(f"ID{target} kernel should be {expected}, got {kernel}")
     for node in kernel:
         _ = gold_scored()[node]
         _ = questions()[node]
     out = args.out or (ROOT / "results" / f"fork_vision_id{target}" / "sample_01")
-    report = args.report or (ROOT / "analysis" / f"会话分叉_机器视觉_ID{target}.md")
+    report = args.report or (ROOT / "doc" / f"session_fork_vision_ID{target}.md")
     control_only = False if args.allow_fork else True
-    print(f"形状检查通过：机器视觉 ID{target} 核 {kernel}", flush=True)
+    print(f"shape check passed: computer vision ID{target} kernel {kernel}", flush=True)
     if args.check:
         return
     load_env_file(ROOT / ".env")
@@ -379,11 +379,11 @@ def main() -> None:
         saved = _load(meta_path)
         keys = ("sample", "model", "thinking", "effort", "kernel", "target")
         if {key: saved.get(key) for key in keys} != {key: meta[key] for key in keys}:
-            raise SystemExit("已有结果的条件与这次不一致")
+            raise SystemExit("saved results were run under different conditions")
     _save(meta_path, meta)
     print(
-        f"样本 basic 模型 {model} 思考 {args.thinking} 强度 {args.effort} "
-        f"核 {kernel} 趟数 {args.runs} {'只跑对照' if control_only else '对照后分叉'}",
+        f"sample basic model {model} thinking {args.thinking} effort {args.effort} "
+        f"kernel {kernel} runs {args.runs} {'control only' if control_only else 'fork after control'}",
         flush=True,
     )
     try:
@@ -393,7 +393,7 @@ def main() -> None:
                 run, 20261102 + run, max_tokens, out, control_only, target, kernel,
             )
     except RunStop as exc:
-        print(f"调用中断：{exc}", flush=True)
+        print(f"call interrupted: {exc}", flush=True)
     rows = collect(out, args.runs)
     text = render(args.model, args.thinking, args.effort, args.runs, rows, target, kernel)
     report.parent.mkdir(parents=True, exist_ok=True)

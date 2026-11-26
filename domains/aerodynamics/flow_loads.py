@@ -53,8 +53,8 @@ def _apply(matrix, attack, sideslip):
 def _sign(value) -> str:
     number = sp.N(value)
     if abs(number) < sp.Float("1e-8"):
-        return "零"
-    return "正" if number > 0 else "负"
+        return "zero"
+    return "positive" if number > 0 else "negative"
 
 
 def build_loads(body_speed: sp.Matrix, attack, sideslip, show, lift_z: int = -1, side_y: int = 1) -> dict:
@@ -135,11 +135,11 @@ def build_loads(body_speed: sp.Matrix, attack, sideslip, show, lift_z: int = -1,
     example_force = sp.Matrix([sp.nsimplify(sp.simplify(item.subs(example))) for item in body_force])
     pitch_axis = air_y.subs({attack: sp.Float("0.2"), sideslip: 0})
     if abs(sp.N(pitch_axis[1]) - 1) < sp.Float("1e-8"):
-        pitch_relation = "重合"
+        pitch_relation = "aligned"
     elif abs(sp.N(pitch_axis.dot(sp.Matrix([0, 1, 0])))) < sp.Float("1e-8"):
-        pitch_relation = "相互垂直"
+        pitch_relation = "perpendicular"
     else:
-        pitch_relation = "方向无法确定"
+        pitch_relation = "direction indeterminate"
     roll_into_pitch = body_moment[1].subs({attack: 0, sideslip: sp.Float("0.4"), ROLL_A: 1, PITCH_A: 0, YAW_A: 0})
 
     def component(expr, canonical=None) -> str:
@@ -184,13 +184,13 @@ def build_loads(body_speed: sp.Matrix, attack, sideslip, show, lift_z: int = -1,
         "dynamic": "ρ*V^2/2",
         "coefficient_force": f"[-q_bar*S*C_D, {dimensional_y}, {dimensional_l}]",
         "pitch_coefficient": component(by_dimension[1], (pitch_coeff, "(b/c_bar)*C_la*sin(β) + C_ma*cos(β)")),
-        "stable_side": "下方" if stable_forward[2] > 0 else "上方",
+        "stable_side": "downward" if stable_forward[2] > 0 else "upward",
         "stable_z": _sign(stable_forward[2]),
-        "air_side": "右方" if air_forward[1] > 0 else "左方",
+        "air_side": "right" if air_forward[1] > 0 else "left",
         "air_y": _sign(air_forward[1]),
         "lift_x": _sign(body_force[0].subs(lift_only)),
         "lift_z": _sign(body_force[2].subs(lift_only)),
-        "axial_sign": "不能确定" if _sign(drag_and_lift[0]) != _sign(drag_and_lift[1]) else f"一定为{_sign(drag_and_lift[0])}",
+        "axial_sign": "indeterminate" if _sign(drag_and_lift[0]) != _sign(drag_and_lift[1]) else f"certainly {_sign(drag_and_lift[0])}",
         "pitch_relation": pitch_relation,
         "roll_to_pitch": _sign(roll_into_pitch),
         "lever_x": "X_N - x_Ge",
@@ -230,7 +230,7 @@ def _added_signs() -> dict[tuple[str, str], str]:
     """Sign of one additional moment component for one positive force."""
     arm = sp.Matrix([1, 1, 1])
     names = {"X": sp.Matrix([1, 0, 0]), "Y_b": sp.Matrix([0, 1, 0]), "Z": sp.Matrix([0, 0, 1])}
-    moments = ("滚转", "俯仰", "偏航")
+    moments = ("roll", "pitch", "yaw")
     found = {}
     for force_name, force in names.items():
         added = -_cross(arm, force)
@@ -242,7 +242,7 @@ def _added_signs() -> dict[tuple[str, str], str]:
 def _nose_direction() -> str:
     """Positive pitch raises the nose when Z points down. Upward force has Z<0."""
     added = -_cross(sp.Matrix([1, 0, 0]), sp.Matrix([0, 0, -1]))
-    return "抬头方向" if added[1] > 0 else "低头方向"
+    return "nose-up" if added[1] > 0 else "nose-down"
 
 
 def _check_order(to_air: sp.Matrix, body_from_air: sp.Matrix, attack, sideslip) -> None:

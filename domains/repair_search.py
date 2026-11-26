@@ -13,8 +13,8 @@ from typing import Callable, Sequence
 
 def order_grade(order: int) -> str:
     if order == 1:
-        return "单因素"
-    return f"{order}元"
+        return "single-factor"
+    return f"{order}-factor"
 
 
 def _sort_key(node: str) -> tuple[int, str]:

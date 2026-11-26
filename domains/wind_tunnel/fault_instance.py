@@ -55,7 +55,7 @@ class FaultInstance:
 
 def outside() -> tuple[tuple[str, str], ...]:
     """Classes that cannot be rows. A prediction needs an injector."""
-    return ((RES, "残差没有注入器"),)
+    return ((RES, "residual has no injector"),)
 
 
 @lru_cache(maxsize=None)
@@ -79,7 +79,7 @@ def e1_census(sample_id: str = "standard-default") -> dict[str, int]:
         elif status == "derived":
             derived += 1
         if iid not in recognition and status == "observed":
-            raise RuntimeError(f"{item.id} 标成 observed，但没有识别空。")
+            raise RuntimeError(f"{item.id} is marked observed, but it has no recognition blank.")
     return {"rows": len(e1_instances(sample_id)), "observed": observed, "derived": derived}
 
 
@@ -98,10 +98,10 @@ def instances(sample_id: str) -> tuple[FaultInstance, ...]:
     rows = _resolve_duplicate_site(rows)
     bad = sorted({item.klass for item in rows} - _ROW_CLASSES)
     if bad:
-        raise RuntimeError(f"库外的类进了行：{bad}")
+        raise RuntimeError(f"A class outside the library entered a row: {bad}")
     ids = [item.id for item in rows]
     if len(ids) != len(set(ids)):
-        raise RuntimeError("故障实例 id 重复。")
+        raise RuntimeError("A fault-instance id is repeated.")
     return rows
 
 
@@ -187,7 +187,7 @@ def _e1(sample_id: str) -> tuple[FaultInstance, ...]:
         _process, scope = _scope_of(iid)
         found.append(FaultInstance(f"{DIR}:{iid}", DIR, scope, injector, direct, potential))
     if not found:
-        raise RuntimeError(f"{sample_id} 没有 DIR 实例。")
+        raise RuntimeError(f"{sample_id} has no DIR instance.")
     return tuple(found)
 
 
@@ -255,12 +255,12 @@ def _e3(sample_id: str) -> tuple[FaultInstance, ...]:
             potential,
         ))
     if not found:
-        raise RuntimeError(f"{sample_id} 没有 EXE 实例。")
+        raise RuntimeError(f"{sample_id} has no EXE instance.")
     return tuple(found)
 
 
 def _e4(sample_id: str) -> tuple[FaultInstance, ...]:
-    """One 数理错误 per blank that asks for a matrix, vector, or formula."""
+    """One algebra error per blank that asks for a matrix, vector, or formula."""
     gold = _manuscript(sample_id)
     found = []
     for node_id in sorted(NODE_BY_ID, key=int):
@@ -269,19 +269,19 @@ def _e4(sample_id: str) -> tuple[FaultInstance, ...]:
             continue
         text = gold.get(node_id, "")
         if not text:
-            raise RuntimeError(f"{sample_id} 的 ID{node_id} 没有金标，写不出数理错误。")
+            raise RuntimeError(f"ID{node_id} of {sample_id} has no gold, so an algebra error cannot be written.")
         rewritten, _form = _algebraic_slip(text, node.answer_type, f"ID{node_id}")
         direct, potential = _reach((node_id,))
         found.append(FaultInstance(
             f"{ALG}:ID{node_id}",
             ALG,
-            f"{node.role}数理错误",
+            f"{node.role} algebra error",
             ((node_id, rewritten),),
             direct,
             potential,
         ))
     if not found:
-        raise RuntimeError(f"{sample_id} 没有 ALG 实例。")
+        raise RuntimeError(f"{sample_id} has no ALG instance.")
     return tuple(found)
 
 
@@ -289,7 +289,7 @@ def _algebraic_slip(text: str, kind: str, node_id: str) -> tuple[str, str]:
     """A local writing error. Transpose and full negation stay with EXE."""
     form = parse_answer(text, kind)
     if form.status != "ok":
-        raise RuntimeError(f"{node_id} 的金标无法解析：{form.status} {form.note}")
+        raise RuntimeError(f"The gold of {node_id} cannot parse: {form.status} {form.note}")
     if kind == "matrix":
         rewritten, name = _slip_matrix(form.value)
     elif kind == "vector":
@@ -298,12 +298,12 @@ def _algebraic_slip(text: str, kind: str, node_id: str) -> tuple[str, str]:
         rewritten, name = _slip_expression(form.value)
     got = parse_answer(rewritten, kind)
     if got.status != "ok":
-        raise RuntimeError(f"{node_id} 的数理错误无法解析：{got.status} {got.note}")
+        raise RuntimeError(f"The algebra error of {node_id} cannot parse: {got.status} {got.note}")
     hits = match_predicate(got, form)
     if hits != ("P7",):
-        raise RuntimeError(f"{node_id} 的数理错误命中了 {hits}，不是单独的结构差。")
+        raise RuntimeError(f"The algebra error of {node_id} hit {hits}, so it is not one structural difference.")
     if kind == "expression" and sp.simplify(got.value) == 0:
-        raise RuntimeError(f"{node_id} 的数理错误化成了 0。")
+        raise RuntimeError(f"The algebra error of {node_id} simplified to 0.")
     return rewritten, name
 
 
@@ -316,15 +316,15 @@ def _slip_matrix(matrix) -> tuple[str, str]:
             if upper == 0 or sp.simplify(upper + lower) != 0:
                 continue
             grid[row, column] = -grid[row, column]
-            return _matrix_text(grid), f"第{row + 1}行第{column + 1}列的正弦符号写反"
+            return _matrix_text(grid), f"the sine sign in row {row + 1} column {column + 1} is flipped"
     for row in range(3):
         for column in range(3):
             if row == column or sp.simplify(grid[row, column]) == 0:
                 continue
             grid[row, column] = -grid[row, column]
-            return _matrix_text(grid), f"第{row + 1}行第{column + 1}列的符号写反"
+            return _matrix_text(grid), f"the sign in row {row + 1} column {column + 1} is flipped"
     grid[0, 1] = grid[0, 1] + 1
-    return _matrix_text(grid), "第1行第2列的零元写成了 1"
+    return _matrix_text(grid), "the zero in row 1 column 2 was written as 1"
 
 
 def _slip_vector(matrix) -> tuple[str, str]:
@@ -337,10 +337,10 @@ def _slip_vector(matrix) -> tuple[str, str]:
     if len(nonzero) >= 2:
         index = nonzero[0]
         values[index] = -values[index]
-        return _vector_text(values), f"第{index + 1}个分量的符号写反"
+        return _vector_text(values), f"the sign of component {index + 1} is flipped"
     index = ((nonzero[0] + 1) % 3) if nonzero else 1
     values[index] = values[index] + 1
-    return _vector_text(values), f"第{index + 1}个为零的分量写成了 1"
+    return _vector_text(values), f"zero component {index + 1} was written as 1"
 
 
 def _show_expr(expr) -> str:
@@ -355,15 +355,15 @@ def _slip_expression(expr) -> tuple[str, str]:
     if expr.is_Add and len(expr.args) >= 2:
         args = list(expr.args)
         args[-1] = -args[-1]
-        return _show_expr(sp.Add(*args)), "一项的符号写反"
+        return _show_expr(sp.Add(*args)), "the sign of one term is flipped"
     numer, denom = sp.fraction(sp.together(expr))
     if sp.simplify(denom - 1) != 0:
-        return _show_expr(numer * denom), "除法写成了乘法"
+        return _show_expr(numer * denom), "a quotient was written as a product"
     summed = _product_to_sum(expr)
     if summed is not None:
-        return _show_expr(summed), "乘积写成了和"
+        return _show_expr(summed), "a product was written as a sum"
     angle = sp.cos(sp.Symbol("gamma_tp"))
-    return _show_expr(expr * angle), "单项又乘上了 cos(γ_tp)"
+    return _show_expr(expr * angle), "one term was also multiplied by cos(γ_tp)"
 
 
 def _slip_inverse(expr):
@@ -379,15 +379,15 @@ def _slip_inverse(expr):
     numer, denom = sp.fraction(sp.together(arg))
     if sp.simplify(denom - 1) != 0:
         new_arg = numer * denom
-        name = "反函数里的分式写成了乘积"
+        name = "the quotient inside the inverse function was written as a product"
     elif arg.is_Add and len(arg.args) >= 2:
         args = list(arg.args)
         args[-1] = -args[-1]
         new_arg = sp.Add(*args)
-        name = "反函数里一项的符号写反"
+        name = "the sign of one term inside the inverse function is flipped"
     else:
         new_arg = arg + 1
-        name = "反函数的自变量多加了 1"
+        name = "1 was added to the argument of the inverse function"
     return sign * body.func(new_arg), name
 
 
@@ -412,7 +412,7 @@ def _reach(injected: tuple[str, ...], extra: tuple[str, ...] = ()) -> tuple[froz
     pending = list(closure)
     for node_id in pending:
         if node_id not in NODE_BY_ID:
-            raise RuntimeError(f"注入点 ID{node_id} 不在公开节点里。")
+            raise RuntimeError(f"Injection point ID{node_id} is not a public node.")
         closure.update(diagnosis_descendants(node_id))
     columns = by_node()
     direct = frozenset(column.id for node_id in injected for column in columns[node_id])
@@ -422,8 +422,8 @@ def _reach(injected: tuple[str, ...], extra: tuple[str, ...] = ()) -> tuple[froz
 
 # These two blanks share one role string but ask different judgments.
 _ROLE_QUALIFIER = {
-    "119": "正方向",
-    "125": "坐标对应",
+    "119": " positive direction",
+    "125": " axis correspondence",
 }
 
 
@@ -431,11 +431,11 @@ def _concept(node_id: str) -> str:
     """Judgment that failed. The chosen option is not part of the name."""
     node = NODE_BY_ID[node_id]
     if _axis_judgment(node):
-        kind = "轴向判断失败"
+        kind = "axial judgment failed"
     elif _angle_judgment(node):
-        kind = "角度判断失败"
+        kind = "angle judgment failed"
     else:
-        kind = "判断失败"
+        kind = "judgment failed"
     role = node.role + _ROLE_QUALIFIER.get(node_id, "")
     return f"{node.process}·{role}·{kind}"
 
@@ -447,14 +447,14 @@ def _axis_judgment(node) -> bool:
     key = node.target_definition
     if key.endswith("_axis") or key.endswith("_component"):
         return True
-    return node.role.endswith(("法向", "轴向", "侧向", "坐标轴", "绝对轴"))
+    return node.role.endswith(("normal", "axial", "lateral", "coordinate axis", "absolute axis"))
 
 
 def _angle_judgment(node) -> bool:
     """The blank judges the sense of an angle, not which value was written."""
     if node.answer_type not in {"choice", "sign"} or _axis_judgment(node):
         return False
-    return any(token in node.role for token in ("迎角", "侧滑", "滚转", "转向", "右手", "安装角", "弹性角"))
+    return any(token in node.role for token in ("angle of attack", "sideslip", "roll", "right-hand", "installation angle", "elastic", "turning sense"))
 
 
 def _scope_of(instance_id: str) -> tuple[str, str]:
